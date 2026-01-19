@@ -47,6 +47,7 @@ pipeline {
                         --name ${CONTAINER_NAME} \
                         -p ${HOST_PORT}:80 \
                         --restart unless-stopped \
+                        -v /var/log/my-app-nginx:/var/log/nginx \
                         ${DOCKER_IMAGE}:${DOCKER_TAG}
                     """
                 }

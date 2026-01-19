@@ -1,26 +1,23 @@
-# --- Stage 1: Build Angular App ---
+# ... (Stage 1 Build Angular giữ nguyên) ...
 FROM node:22-alpine as build-stage
-
 WORKDIR /app
-
-# Copy package files và cài đặt dependencies
 COPY package*.json ./
 RUN npm ci
-
-# Copy toàn bộ source code
 COPY . .
-
-# Build project (Output sẽ nằm trong folder dist/my-app)
+# Lưu ý: check lại folder output trong angular.json, thường là dist/my-app/browser hoặc dist/my-app
 RUN npm run build -- --configuration production
 
-# --- Stage 2: Serve with Nginx ---
+# ... (Stage 2 Nginx) ...
 FROM nginx:alpine as production-stage
 
-# Copy file cấu hình Nginx custom vào container
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# [THAY ĐỔI QUAN TRỌNG]
+# Xóa file config mặc định cũ
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy build artifacts từ stage 1 sang thư mục phục vụ của Nginx
-# Lưu ý: Kiểm tra kỹ folder output, Angular mới thường là dist/my-app/browser
+# Copy file nginx.conf mới của mình đè vào file cấu hình gốc
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Copy source code đã build
 COPY --from=build-stage /app/dist/my-app/browser /usr/share/nginx/html
 
 EXPOSE 80
