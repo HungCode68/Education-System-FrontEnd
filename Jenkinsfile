@@ -7,7 +7,7 @@ pipeline {
         DOCKER_TAG = 'latest'
         CONTAINER_NAME = 'frontend-app'
         // Cổng muốn chạy trên server
-        HOST_PORT = '80' 
+        HOST_PORT = '3000' 
     }
 
     stages {
