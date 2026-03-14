@@ -1,0 +1,288 @@
+// ============================================================================
+// LMS DESIGN SYSTEM - SCSS Mixins & Helper Classes
+// ============================================================================
+
+@use './design-tokens.scss' as *;
+
+// RESPONSIVE BREAKPOINTS
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
+  } @else if $breakpoint == 'md' {
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
+  } @else if $breakpoint == 'lg' {
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
+  } @else if $breakpoint == 'xl' {
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
+  } @else if $breakpoint == 'max-sm' {
+    @media (max-width: calc(#{$breakpoint-sm} - 1px)) {
+      @content;
+    }
+  }
+}
+
+// TYPOGRAPHY MIXINS
+@mixin heading-1 {
+  font-size: $font-4xl;
+  font-weight: $font-bold;
+  line-height: $line-tight;
+  color: $text-primary;
+}
+
+@mixin heading-2 {
+  font-size: $font-3xl;
+  font-weight: $font-bold;
+  line-height: $line-tight;
+  color: $text-primary;
+}
+
+@mixin heading-3 {
+  font-size: $font-2xl;
+  font-weight: $font-semibold;
+  line-height: $line-tight;
+  color: $text-primary;
+}
+
+@mixin heading-4 {
+  font-size: $font-xl;
+  font-weight: $font-semibold;
+  line-height: $line-normal;
+  color: $text-primary;
+}
+
+@mixin body-lg {
+  font-size: $font-lg;
+  font-weight: $font-normal;
+  line-height: $line-relaxed;
+  color: $text-primary;
+}
+
+@mixin body-base {
+  font-size: $font-base;
+  font-weight: $font-normal;
+  line-height: $line-relaxed;
+  color: $text-primary;
+}
+
+@mixin body-sm {
+  font-size: $font-sm;
+  font-weight: $font-normal;
+  line-height: $line-normal;
+  color: $text-secondary;
+}
+
+@mixin caption {
+  font-size: $font-xs;
+  font-weight: $font-normal;
+  line-height: $line-normal;
+  color: $text-tertiary;
+}
+
+@mixin label {
+  font-size: $font-sm;
+  font-weight: $font-medium;
+  line-height: $line-normal;
+  color: $text-primary;
+}
+
+// COLOR VARIANTS MIXIN
+@mixin color-variant($color, $color-dark, $color-light) {
+  background-color: $color;
+  color: $white;
+
+  &:hover:not(:disabled) {
+    background-color: $color-dark;
+  }
+
+  &.variant-outlined {
+    background-color: transparent;
+    color: $color;
+    border: 1px solid $color;
+
+    &:hover:not(:disabled) {
+      background-color: $color-light;
+    }
+  }
+
+  &.variant-ghost {
+    background-color: $color-light;
+    color: $color;
+
+    &:hover:not(:disabled) {
+      background-color: rgba($color, 0.15);
+    }
+  }
+}
+
+// CARD DESIGN MIXIN
+@mixin card($p: $space-4, $radius: $radius-lg, $shadow: $shadow-md) {
+  background-color: $bg-default;
+  border-radius: $radius;
+  padding: $p;
+  box-shadow: $shadow;
+  border: 1px solid $border-color;
+  transition: box-shadow $transition-base, border-color $transition-base;
+
+  &:hover {
+    box-shadow: $shadow-lg;
+  }
+}
+
+// FLEX CENTER
+@mixin flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+// FLEX BETWEEN
+@mixin flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+// TRUNCATE TEXT
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin truncate-lines($lines: 2) {
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// FOCUS STATE (A11Y)
+@mixin focus-ring($color: $primary) {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+
+  &:focus-visible {
+    outline: 2px solid $color;
+    outline-offset: 2px;
+  }
+}
+
+// DISABLED STATE
+@mixin disabled-state {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+// SPINNER/LOADER
+@mixin spinner($size: 24px, $border-width: 3px, $color: $primary) {
+  display: inline-block;
+  width: $size;
+  height: $size;
+  border: $border-width solid rgba($color, 0.2);
+  border-top-color: $color;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// SMOOTHLY HIDDEN/SHOWN
+@mixin hidden-visually {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// COMMON LAYOUT PATTERNS
+@mixin page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: $space-6;
+}
+
+@mixin grid-auto {
+  display: grid;
+  gap: $space-6;
+  grid-auto-flow: dense;
+}
+
+@mixin stack-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: $space-4;
+}
+
+@mixin stack-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: $space-4;
+  align-items: center;
+}
+
+// LINK STYLES
+@mixin link-base {
+  color: $primary;
+  text-decoration: none;
+  transition: color $transition-fast;
+
+  &:hover {
+    color: $primary-dark;
+    text-decoration: underline;
+  }
+
+  @include focus-ring;
+}
+
+// FORM CONTROL BASE
+@mixin form-control {
+  padding: $space-2 $space-3;
+  border: 1px solid $border-color;
+  border-radius: $radius-md;
+  font-size: $font-base;
+  font-family: $font-family-base;
+  color: $text-primary;
+  transition: border-color $transition-fast, box-shadow $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+
+  &:disabled {
+    @include disabled-state;
+    background-color: $bg-dark;
+  }
+}
+
+// BADGE VARIANT
+@mixin badge-variant($bg-color, $text-color) {
+  display: inline-flex;
+  align-items: center;
+  padding: $space-1 $space-2;
+  background-color: $bg-color;
+  color: $text-color;
+  border-radius: $radius-full;
+  font-size: $font-xs;
+  font-weight: $font-medium;
+  white-space: nowrap;
+}
