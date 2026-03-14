@@ -1,0 +1,73 @@
+@reference "tailwindcss";
+.tab-container {
+  @apply p-6;
+}
+
+.tab-title {
+  @apply text-2xl font-bold text-gray-900 mb-6;
+}
+
+.loading-wrapper {
+  @apply flex justify-center py-12;
+}
+
+.loading-text {
+  @apply text-gray-500;
+}
+
+.alert-error {
+  @apply bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded;
+}
+
+.empty-state {
+  @apply text-center py-12 text-gray-500;
+}
+
+.table-wrapper {
+  @apply overflow-x-auto;
+}
+
+.progress-table {
+  @apply min-w-full;
+}
+
+.table-head {
+  @apply bg-gray-100 border-b border-gray-200;
+}
+
+.th-left {
+  @apply px-4 py-3 text-left text-sm font-semibold text-gray-900;
+}
+
+.th-center {
+  @apply px-4 py-3 text-center text-sm font-semibold text-gray-900;
+}
+
+.table-body {
+  @apply divide-y divide-gray-200;
+}
+
+.table-row {
+  @apply hover:bg-gray-50;
+}
+
+.td-text {
+  @apply px-4 py-3 text-sm text-gray-900;
+}
+
+.td-code {
+  @apply px-4 py-3 text-sm text-gray-600;
+}
+
+.td-center {
+  @apply px-4 py-3 text-center;
+}
+
+.td-medium {
+  @apply px-4 py-3 text-center text-sm font-medium text-gray-900;
+}
+
+.status-badge {
+  @apply inline-block px-3 py-1 rounded-full text-sm;
+}
+

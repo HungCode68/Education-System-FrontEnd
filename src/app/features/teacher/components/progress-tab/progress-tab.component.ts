@@ -8,55 +8,56 @@ import { StudentProgress } from '../../models/teacher.model';
   selector: 'app-progress-tab',
   standalone: true,
   imports: [CommonModule],
+  styleUrls: ['./progress-tab.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Class Progress</h2>
+    <div class="tab-container">
+      <h2 class="tab-title">Class Progress</h2>
 
       @if (loading()) {
-        <div class="flex justify-center py-12">
-          <div class="text-gray-500">Loading progress data...</div>
+        <div class="loading-wrapper">
+          <div class="loading-text">Loading progress data...</div>
         </div>
       } @else if (error()) {
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div class="alert-error">
           Failed to load progress data.
         </div>
       } @else if (progressData().length === 0) {
-        <div class="text-center py-12 text-gray-500">
+        <div class="empty-state">
           No progress data available.
         </div>
       } @else {
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-gray-100 border-b border-gray-200">
+        <div class="table-wrapper">
+          <table class="progress-table">
+            <thead class="table-head">
               <tr>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Student</th>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Code</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Attendance</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Submission Rate</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Avg Score</th>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Last Activity</th>
+                <th class="th-left">Student</th>
+                <th class="th-left">Code</th>
+                <th class="th-center">Attendance</th>
+                <th class="th-center">Submission Rate</th>
+                <th class="th-center">Avg Score</th>
+                <th class="th-left">Last Activity</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody class="table-body">
               @for (item of progressData(); track item.studentId) {
-                <tr class="hover:bg-gray-50">
-                  <td class="px-4 py-3 text-sm text-gray-900">{{ item.studentName }}</td>
-                  <td class="px-4 py-3 text-sm text-gray-600">{{ item.studentCode }}</td>
-                  <td class="px-4 py-3 text-center">
-                    <span class="inline-block px-3 py-1 rounded-full text-sm" [class]="getAttendanceClass(item.attendanceRate)">
+                <tr class="table-row">
+                  <td class="td-text">{{ item.studentName }}</td>
+                  <td class="td-code">{{ item.studentCode }}</td>
+                  <td class="td-center">
+                    <span class="status-badge" [class]="getAttendanceClass(item.attendanceRate)">
                       {{ item.attendanceRate }}%
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-center">
-                    <span class="inline-block px-3 py-1 rounded-full text-sm" [class]="getSubmissionClass(item.assignmentSubmissionRate)">
+                  <td class="td-center">
+                    <span class="status-badge" [class]="getSubmissionClass(item.assignmentSubmissionRate)">
                       {{ item.assignmentSubmissionRate }}%
                     </span>
                   </td>
-                  <td class="px-4 py-3 text-center text-sm font-medium text-gray-900">
+                  <td class="td-medium">
                     {{ item.averageScore.toFixed(1) }}
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">
+                  <td class="td-code">
                     {{ item.lastActivityDate | date: 'short' }}
                   </td>
                 </tr>
