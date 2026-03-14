@@ -1,0 +1,61 @@
+@reference "tailwindcss";
+.tab-container {
+  @apply p-6;
+}
+
+.tab-title {
+  @apply text-2xl font-bold text-gray-900 mb-6;
+}
+
+.loading-wrapper {
+  @apply flex justify-center py-12;
+}
+
+.loading-text {
+  @apply text-gray-500;
+}
+
+.alert-error {
+  @apply bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded;
+}
+
+.empty-state {
+  @apply text-center py-12 text-gray-500;
+}
+
+.list-layout {
+  @apply space-y-4;
+}
+
+.student-card {
+  @apply border border-gray-200 rounded-lg p-4 hover:shadow-md transition;
+}
+
+.flex-start-gap {
+  @apply flex items-start gap-4;
+}
+
+.avatar {
+  @apply w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0;
+}
+
+.flex-1-container {
+  @apply flex-1;
+}
+
+.student-name {
+  @apply font-semibold text-gray-900;
+}
+
+.student-code {
+  @apply text-sm text-gray-600;
+}
+
+.contact-grid {
+  @apply mt-2 grid grid-cols-2 gap-4 text-sm text-gray-600;
+}
+
+.contact-label {
+  @apply text-gray-500;
+}
+

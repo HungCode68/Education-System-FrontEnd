@@ -9,92 +9,93 @@ import { StudentGrade } from '../../models/teacher.model';
   selector: 'app-grades-tab',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  styleUrls: ['./grades-tab.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Class Grades</h2>
+    <div class="tab-container">
+      <h2 class="tab-title">Class Grades</h2>
 
       @if (loading()) {
-        <div class="flex justify-center py-12">
-          <div class="text-gray-500">Loading grades...</div>
+        <div class="loading-wrapper">
+          <div class="loading-text">Loading grades...</div>
         </div>
       } @else if (error()) {
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div class="alert-error">
           Failed to load grades.
         </div>
       } @else if (grades().length === 0) {
-        <div class="text-center py-12 text-gray-500">
+        <div class="empty-state">
           No grades available.
         </div>
       } @else {
-        <div class="overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-gray-100 border-b border-gray-200">
+        <div class="table-wrapper">
+          <table class="grades-table">
+            <thead class="table-head">
               <tr>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Student</th>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-900">Code</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Midterm</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Final</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Average</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Grade</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-900">Status</th>
+                <th class="th-left">Student</th>
+                <th class="th-left">Code</th>
+                <th class="th-center">Midterm</th>
+                <th class="th-center">Final</th>
+                <th class="th-center">Average</th>
+                <th class="th-center">Grade</th>
+                <th class="th-center">Status</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-200">
+            <tbody class="table-body">
               @for (grade of grades(); track grade.studentId) {
-                <tr class="hover:bg-gray-50">
-                  <td class="px-4 py-3 text-sm text-gray-900">
+                <tr class="table-row">
+                  <td class="td-text">
                     <button
                       (click)="toggleEdit(grade.studentId)"
-                      class="hover:text-blue-600 cursor-pointer"
+                      class="btn-student"
                     >
                       {{ grade.studentName }}
                     </button>
                   </td>
-                  <td class="px-4 py-3 text-sm text-gray-600">{{ grade.studentCode }}</td>
-                  <td class="px-4 py-3 text-center">
+                  <td class="td-code">{{ grade.studentCode }}</td>
+                  <td class="td-center">
                     @if (editingId() === grade.studentId) {
                       <input
                         type="number"
                         [(ngModel)]="grade.midtermScore"
-                        class="w-16 px-2 py-1 border border-gray-300 rounded"
+                        class="input-score"
                       />
                     } @else {
                       <span>{{ grade.midtermScore }}</span>
                     }
                   </td>
-                  <td class="px-4 py-3 text-center">
+                  <td class="td-center">
                     @if (editingId() === grade.studentId) {
                       <input
                         type="number"
                         [(ngModel)]="grade.finalScore"
-                        class="w-16 px-2 py-1 border border-gray-300 rounded"
+                        class="input-score"
                       />
                     } @else {
                       <span>{{ grade.finalScore }}</span>
                     }
                   </td>
-                  <td class="px-4 py-3 text-center font-medium text-gray-900">
+                  <td class="td-medium">
                     {{ grade.averageScore.toFixed(1) }}
                   </td>
-                  <td class="px-4 py-3 text-center font-medium">{{ grade.grade }}</td>
-                  <td class="px-4 py-3 text-center">
-                    <span class="inline-block px-3 py-1 rounded-full text-sm" [class]="getStatusClass(grade.status)">
+                  <td class="td-medium-center">{{ grade.grade }}</td>
+                  <td class="td-center">
+                    <span class="status-badge" [class]="getStatusClass(grade.status)">
                       {{ grade.status }}
                     </span>
                   </td>
                   @if (editingId() === grade.studentId) {
-                    <td class="px-4 py-3 text-center">
+                    <td class="td-center">
                       <button
                         (click)="saveGrade(grade)"
                         [disabled]="saving()"
-                        class="text-green-600 hover:text-green-700 font-medium disabled:text-gray-400"
+                        class="btn-save"
                       >
                         Save
                       </button>
                       <button
                         (click)="cancelEdit()"
-                        class="ml-2 text-gray-600 hover:text-gray-700 font-medium"
+                        class="btn-cancel"
                       >
                         Cancel
                       </button>

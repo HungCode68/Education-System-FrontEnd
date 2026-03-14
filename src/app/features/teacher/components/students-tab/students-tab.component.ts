@@ -8,41 +8,42 @@ import { StudentClass } from '../../models/teacher.model';
   selector: 'app-students-tab',
   standalone: true,
   imports: [CommonModule],
+  styleUrls: ['./students-tab.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Class Students</h2>
+    <div class="tab-container">
+      <h2 class="tab-title">Class Students</h2>
 
       @if (loading()) {
-        <div class="flex justify-center py-12">
-          <div class="text-gray-500">Loading students...</div>
+        <div class="loading-wrapper">
+          <div class="loading-text">Loading students...</div>
         </div>
       } @else if (error()) {
-        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div class="alert-error">
           Failed to load students.
         </div>
       } @else if (students().length === 0) {
-        <div class="text-center py-12 text-gray-500">
+        <div class="empty-state">
           No students found.
         </div>
       } @else {
-        <div class="space-y-4">
+        <div class="list-layout">
           @for (student of students(); track student.id) {
-            <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
-              <div class="flex items-start gap-4">
-                <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+            <div class="student-card">
+              <div class="flex-start-gap">
+                <div class="avatar">
                   {{ student.name.charAt(0).toUpperCase() }}
                 </div>
-                <div class="flex-1">
-                  <h3 class="font-semibold text-gray-900">{{ student.name }}</h3>
-                  <p class="text-sm text-gray-600">{{ student.studentCode }}</p>
-                  <div class="mt-2 grid grid-cols-2 gap-4 text-sm text-gray-600">
+                <div class="flex-1-container">
+                  <h3 class="student-name">{{ student.name }}</h3>
+                  <p class="student-code">{{ student.studentCode }}</p>
+                  <div class="contact-grid">
                     <div>
-                      <p class="text-gray-500">Email</p>
+                      <p class="contact-label">Email</p>
                       <p>{{ student.email }}</p>
                     </div>
                     <div>
-                      <p class="text-gray-500">Phone</p>
+                      <p class="contact-label">Phone</p>
                       <p>{{ student.phone }}</p>
                     </div>
                   </div>

@@ -6,13 +6,14 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-student',
   standalone: true,
   imports: [CommonModule],
+  styleUrls: ['./student.component.css'],
   template: `
-    <div class="p-8">
-      <h1 class="text-3xl font-bold">Student Dashboard</h1>
-      <p class="mt-4 text-gray-600">Welcome, {{ authService.authState().email }}</p>
+    <div class="student-container">
+      <h1 class="student-title">Student Dashboard</h1>
+      <p class="student-welcome">Welcome, {{ authService.authState().email }}</p>
       <button
         (click)="logout()"
-        class="mt-6 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        class="student-logout-btn"
       >
         Logout
       </button>

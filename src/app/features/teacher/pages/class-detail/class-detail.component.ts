@@ -8,86 +8,87 @@ import { ClassDetail } from '../../models/teacher.model';
   selector: 'app-class-detail',
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
+  styleUrls: ['./class-detail.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-gray-50">
+    <div class="page-container">
       @if (loading()) {
-        <div class="flex justify-center items-center h-screen">
-          <div class="text-gray-500">Loading class details...</div>
+        <div class="loading-wrapper">
+          <div class="loading-text">Loading class details...</div>
         </div>
       } @else if (error()) {
-        <div class="max-w-7xl mx-auto px-4 py-8">
-          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <div class="error-wrapper">
+          <div class="alert-error">
             Failed to load class details. Please try again.
           </div>
         </div>
       } @else if (classDetail()) {
-        <div class="bg-white border-b border-gray-200">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <h1 class="text-3xl font-bold text-gray-900">{{ classDetail()?.name }}</h1>
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+        <div class="header-section">
+          <div class="header-content">
+            <h1 class="class-title">{{ classDetail()?.name }}</h1>
+            <div class="class-info-grid">
               <div>
-                <p class="text-gray-600">Subject</p>
-                <p class="font-semibold text-gray-900">{{ classDetail()?.subject }}</p>
+                <p class="info-label">Subject</p>
+                <p class="info-value">{{ classDetail()?.subject }}</p>
               </div>
               <div>
-                <p class="text-gray-600">Room</p>
-                <p class="font-semibold text-gray-900">{{ classDetail()?.room }}</p>
+                <p class="info-label">Room</p>
+                <p class="info-value">{{ classDetail()?.room }}</p>
               </div>
               <div>
-                <p class="text-gray-600">Teacher</p>
-                <p class="font-semibold text-gray-900">{{ classDetail()?.teacherName }}</p>
+                <p class="info-label">Teacher</p>
+                <p class="info-value">{{ classDetail()?.teacherName }}</p>
               </div>
               <div>
-                <p class="text-gray-600">Students</p>
-                <p class="font-semibold text-gray-900">{{ classDetail()?.studentCount }}</p>
+                <p class="info-label">Students</p>
+                <p class="info-value">{{ classDetail()?.studentCount }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div class="border-b border-gray-200 mb-6">
-            <nav class="flex space-x-8" aria-label="Tabs">
+        <div class="main-content">
+          <div class="tabs-container">
+            <nav class="tabs-nav" aria-label="Tabs">
               <a
                 [routerLink]="['students']"
-                routerLinkActive="border-blue-500 text-blue-600"
-                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                routerLinkActive="active"
+                class="tab-link"
               >
                 Students
               </a>
               <a
                 [routerLink]="['materials']"
-                routerLinkActive="border-blue-500 text-blue-600"
-                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                routerLinkActive="active"
+                class="tab-link"
               >
                 Materials
               </a>
               <a
                 [routerLink]="['assignments']"
-                routerLinkActive="border-blue-500 text-blue-600"
-                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                routerLinkActive="active"
+                class="tab-link"
               >
                 Assignments
               </a>
               <a
                 [routerLink]="['progress']"
-                routerLinkActive="border-blue-500 text-blue-600"
-                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                routerLinkActive="active"
+                class="tab-link"
               >
                 Progress
               </a>
               <a
                 [routerLink]="['grades']"
-                routerLinkActive="border-blue-500 text-blue-600"
-                class="py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                routerLinkActive="active"
+                class="tab-link"
               >
                 Grades
               </a>
             </nav>
           </div>
 
-          <div class="bg-white rounded-lg shadow">
+          <div class="outlet-wrapper">
             <router-outlet />
           </div>
         </div>
