@@ -4,6 +4,6 @@
 // };
 export const environment = {
   production: false,
-  apiUrl: 'http://103.57.220.127:8090'
+  apiUrl: '/api'
 };
 
