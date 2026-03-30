@@ -1,0 +1,137 @@
+<div class="space-y-6">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <a routerLink="/admin/online-classes" class="flex items-center space-x-2 text-sm text-indigo-600 mb-2 cursor-pointer hover:underline font-medium inline-block w-fit">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        <span>Quay lại danh sách Lớp học phần</span>
+      </a>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Thành viên Lớp: <span class="text-indigo-600">{{ currentClassInfo()?.name || '...' }}</span></h1>
+      <p class="text-sm text-gray-500 mt-1">Lớp gốc (Nguồn đồng bộ): <strong class="text-gray-800">{{ currentClassInfo()?.physicalClassName || '...' }}</strong></p>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+      <button (click)="openAddModal()" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold py-2.5 px-4 rounded-xl flex items-center transition shadow-sm text-sm shrink-0">
+        <svg class="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+        Thêm ngoài luồng
+      </button>
+
+      <button (click)="openSyncModal()" [disabled]="isSyncing()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0 disabled:bg-emerald-400">
+        Đồng bộ Lớp gốc
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-sm text-left text-gray-500">
+      <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+        <tr>
+          <th scope="col" class="px-6 py-4">Mã HS</th>
+          <th scope="col" class="px-6 py-4">Họ và Tên</th>
+          <th scope="col" class="px-6 py-4 text-center">Phương thức thêm</th>
+          <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+          <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        <tr *ngIf="isLoading() && students().length === 0">
+          <td colspan="5" class="px-6 py-12 text-center text-gray-500">Đang tải dữ liệu...</td>
+        </tr>
+        <tr *ngIf="!isLoading() && students().length === 0">
+          <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+            Lớp học phần chưa có thành viên. Hãy bấm <strong>Đồng bộ Lớp gốc</strong>.
+          </td>
+        </tr>
+        
+        <tr *ngFor="let item of students()" class="bg-white hover:bg-indigo-50/30 transition duration-200">
+          <td class="px-6 py-4 text-gray-600 font-mono">{{ item.studentCode }}</td>
+          <td class="px-6 py-4 font-bold text-gray-900">{{ item.studentName }}</td>
+          
+          <td class="px-6 py-4 text-center">
+            <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border"
+                  [ngClass]="item.enrollmentSource === 'system' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-purple-50 text-purple-700 border-purple-200'">
+              {{ item.enrollmentSource === 'system' ? 'Tự động' : 'THÊM TAY' }}
+            </span>
+          </td>
+          
+          <td class="px-6 py-4 text-center">
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                  [ngClass]="item.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'">
+              {{ item.status === 'active' ? 'Đang học' : 'Đã xóa/Rút môn' }}
+            </span>
+          </td>
+          
+          <td class="px-6 py-4 text-right space-x-3">
+            <button *ngIf="item.status === 'active'" (click)="openConfirmModal(item.studentId)" class="font-medium text-red-600 hover:text-red-800 transition bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200">
+              Gỡ bỏ (Rút môn)
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div *ngIf="isAddModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeAddModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">Thêm học sinh (Ngoại lệ)</h3>
+      <button (click)="closeAddModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <form [formGroup]="addForm" (ngSubmit)="submitAddManual()" class="space-y-6">
+      <div class="p-3 bg-purple-50 text-purple-800 text-sm rounded-xl border border-purple-100">
+        Tính năng này dùng để thêm các học sinh <strong>học vượt, học lại, hoặc học ghép</strong> không thuộc danh sách gốc của Lớp sinh hoạt hiện tại.
+      </div>
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Gõ Mã HS hoặc Chọn từ danh sách *</label>
+        <input type="text" formControlName="studentId" list="hs-list" placeholder="VD: HS26001" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block w-full p-3 outline-none">
+        <datalist id="hs-list">
+          <option *ngFor="let std of availableStudents()" [value]="std.id">{{ std.studentCode }} - {{ std.fullName }}</option>
+        </datalist>
+      </div>
+      
+      <div class="flex justify-end space-x-3.5 pt-5 border-t border-gray-100">
+        <button type="button" (click)="closeAddModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50">Hủy</button>
+        <button type="submit" [disabled]="addForm.invalid || isLoading()" class="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-md">Thêm vào lớp</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="isConfirmModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeConfirmModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full mb-6 border-4 border-white shadow-lg bg-red-100">
+      <svg class="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    </div>
+    <h3 class="text-2xl font-extrabold text-gray-900">{{ actionType() === 'DELETE' ? 'Gỡ học sinh khỏi lớp?' : 'Xác nhận Rút môn?' }}</h3>
+    <p class="text-gray-600 mt-3 text-sm leading-relaxed">
+      Lưu ý: Nếu học sinh này có Nguồn ghi danh là <strong>LỚP GỐC</strong>, việc xóa/rút môn sẽ không làm mất học sinh ở Lớp sinh hoạt vật lý.
+    </p>
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeConfirmModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50">Hủy</button>
+      <button (click)="executeConfirm()" class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md">Đồng ý</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isSyncModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeSyncModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full mb-6 border-4 border-white shadow-lg bg-emerald-100">
+      <svg class="h-10 w-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+    </div>
+    <h3 class="text-2xl font-extrabold text-gray-900">Đồng bộ danh sách?</h3>
+    <p class="text-gray-600 mt-3 text-sm leading-relaxed">
+      Hệ thống sẽ quét Lớp sinh hoạt gốc và tự động thêm các học sinh mới vào lớp học phần này. Những học sinh đã có sẵn trong lớp sẽ không bị ảnh hưởng.
+    </p>
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeSyncModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">Hủy bỏ</button>
+      <button (click)="executeSync()" [disabled]="isSyncing()" class="px-5 py-3.5 text-sm font-semibold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 disabled:bg-emerald-400 transition shadow-md flex items-center justify-center">
+        <svg *ngIf="isSyncing()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Đồng ý chạy
+      </button>
+    </div>
+  </div>
+</div>

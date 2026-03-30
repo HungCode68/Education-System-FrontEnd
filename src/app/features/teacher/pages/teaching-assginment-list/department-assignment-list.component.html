@@ -1,0 +1,145 @@
+<div class="max-w-6xl mx-auto space-y-6">
+  
+  <div class="flex justify-between items-end">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Danh sách Phân công giảng dạy</h1>
+      <p class="text-sm text-gray-500 mt-1">Quản lý và theo dõi lịch giảng dạy của các giáo viên trong tổ</p>
+    </div>
+  </div>
+
+  <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+    <div>
+      <label class="block text-xs font-bold text-gray-700 mb-1.5">Năm học</label>
+      <select [(ngModel)]="filters.schoolYearId" (change)="onFilterSchoolYearChange()" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 transition">
+        <option value="">-- Tất cả --</option>
+        <option *ngFor="let sy of schoolYears()" [value]="sy.id">{{ sy.name }}</option>
+      </select>
+    </div>
+    
+    <div>
+      <label class="block text-xs font-bold text-gray-700 mb-1.5">Học kỳ</label>
+      <select [(ngModel)]="filters.semesterId" (change)="applyFilter()" [disabled]="!filters.schoolYearId" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 transition disabled:opacity-60">
+        <option value="">-- Tất cả --</option>
+        <option *ngFor="let sem of semesters()" [value]="sem.id">{{ sem.name }}</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-700 mb-1.5">Giáo viên</label>
+      <select [(ngModel)]="filters.teacherId" (change)="applyFilter()" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 transition">
+        <option value="">-- Tất cả GV trong tổ --</option>
+        <option *ngFor="let t of teachers()" [value]="t.id">{{ t.fullName }} ({{ t.teacherCode }})</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-700 mb-1.5">Lớp học</label>
+      <select [(ngModel)]="filters.physicalClassId" (change)="applyFilter()" [disabled]="!filters.schoolYearId" class="w-full text-sm bg-gray-50 border border-gray-300 rounded-xl px-3 py-2 outline-none focus:border-indigo-500 transition disabled:opacity-60">
+        <option value="">-- Tất cả --</option>
+        <option *ngFor="let pc of physicalClasses()" [value]="pc.id">{{ pc.name }}</option>
+      </select>
+    </div>
+
+    <div class="flex space-x-2">
+      <button (click)="resetFilters()" class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition">
+        Xóa lọc
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="py-20 text-center text-indigo-500">
+    <svg class="animate-spin inline-block h-8 w-8" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+  </div>
+
+  <div *ngIf="!isLoading()" class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-sm text-gray-600">
+        <thead class="bg-gray-50/50 text-gray-700 font-bold border-b border-gray-100">
+          <tr>
+            <th class="px-5 py-4">Giáo viên</th>
+            <th class="px-5 py-4">Môn dạy</th>
+            <th class="px-5 py-4">Lớp</th>
+            <th class="px-5 py-4">Thời gian</th>
+            <th class="px-5 py-4">Trạng thái</th>
+            <th class="px-5 py-4 text-center">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngIf="assignments().length === 0">
+            <td colspan="6" class="px-5 py-12 text-center text-gray-500">Không có dữ liệu phân công phù hợp.</td>
+          </tr>
+          <tr *ngFor="let item of assignments()" class="hover:bg-gray-50/50 transition">
+            <td class="px-5 py-4">
+              <div *ngIf="!item.substituted">
+                <div class="font-bold text-gray-900">{{ item.teacherName }}</div>
+                <div class="text-xs text-indigo-600">{{ item.teacherCode }}</div>
+              </div>
+
+              <div *ngIf="item.substituted" class="flex flex-col gap-1">
+                <div class="flex items-center space-x-2">
+                  <span class="font-bold text-amber-600">{{ item.subTeacherName }}</span>
+                  <span class="px-1.5 py-0.5 text-[10px] font-bold text-white bg-amber-500 rounded uppercase tracking-wider shadow-sm">Dạy thay</span>
+                </div>
+                <div class="text-xs text-gray-400 flex items-center">
+                  <span class="mr-1">Gốc:</span>
+                  <span class="line-through">{{ item.teacherName }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="px-5 py-4 font-semibold text-gray-800">{{ item.subjectName }}</td>
+            <td class="px-5 py-4 font-bold text-indigo-700">{{ item.physicalClassName }}</td>
+            <td class="px-5 py-4">
+              <div class="text-gray-900">{{ item.semesterName }}</div>
+              <div class="text-xs text-gray-500">{{ item.schoolYearName }}</div>
+            </td>
+            <td class="px-5 py-4">
+              <span *ngIf="item.status === 'active'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">Đang dạy</span>
+              <span *ngIf="item.status !== 'active'" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-gray-100 text-gray-800">Đã hủy</span>
+            </td>
+            <td class="px-5 py-4 text-center">
+              <button *ngIf="item.status === 'active'" (click)="openUnassignModal(item)" class="text-red-500 hover:text-red-700 font-bold text-xs p-2 hover:bg-red-50 rounded-lg transition">Hủy</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <div *ngIf="totalPages() > 1" class="px-5 py-4 border-t border-gray-100 flex justify-end">
+      <div class="flex space-x-2">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">Trước</button>
+        <span class="px-4 py-1.5 text-sm font-bold text-gray-900 bg-gray-100 rounded-lg">{{ currentPage() }} / {{ totalPages() }}</span>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50">Sau</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div *ngIf="isUnassignModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-opacity">
+  <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-[fadeIn_0.2s_ease-out]">
+    
+    <div class="p-6 pt-8">
+      <div class="flex items-center justify-center w-14 h-14 mx-auto bg-red-100 rounded-full mb-5 shadow-inner">
+        <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      </div>
+      <h3 class="text-xl font-extrabold text-center text-gray-900 mb-2">Hủy phân công giảng dạy?</h3>
+      <p class="text-sm text-center text-gray-500 leading-relaxed px-2">
+        Bạn đang thực hiện gỡ phân công giáo viên <span class="font-bold text-gray-800">{{ assignmentToUnassign()?.teacherName }}</span> 
+        khỏi môn <span class="font-bold text-indigo-600">{{ assignmentToUnassign()?.subjectName }}</span> 
+        lớp <span class="font-bold text-indigo-600">{{ assignmentToUnassign()?.physicalClassName }}</span>. 
+        Lớp học trực tuyến liên kết với giáo viên này cũng sẽ bị khóa lại.
+      </p>
+    </div>
+
+    <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
+      <button (click)="closeUnassignModal()" [disabled]="isProcessing()" class="px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-100 hover:text-gray-900 transition disabled:opacity-50 shadow-sm">
+        Quay lại
+      </button>
+      <button (click)="confirmUnassign()" [disabled]="isProcessing()" class="flex items-center px-5 py-2.5 text-sm font-bold text-white bg-red-600 border border-transparent rounded-xl hover:bg-red-700 transition disabled:opacity-50 shadow-md">
+        <svg *ngIf="isProcessing()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        {{ isProcessing() ? 'Đang xử lý...' : 'Hủy phân công' }}
+      </button>
+    </div>
+    
+  </div>
+</div>

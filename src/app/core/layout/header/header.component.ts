@@ -1,176 +1,64 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Output, EventEmitter, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="header-content">
-      <div class="header-left">
-        <button class="menu-toggle" aria-label="Toggle menu">
-          ☰
+    <header class="header bg-white border-b border-gray-100 flex items-center justify-between px-6 shadow-sm z-30">
+      
+      <div class="flex items-center space-x-2 text-sm text-gray-500">
+          <span class="breadcrumb-item font-medium text-gray-800">Trang chủ</span>
+          <span class="separator">/</span>
+          <span class="breadcrumb-item">Dashboard</span>
+      </div>
+
+      <button (click)="onToggleSidebar()" class="md:hidden text-gray-500 hover:text-gray-800 p-2 rounded-lg bg-gray-50">
+        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+      </button>
+
+      <div class="user-menu flex items-center space-x-5">
+        
+        <div class="flex items-center space-x-3 group cursor-pointer p-1.5 rounded-full hover:bg-gray-50">
+            <div class="avatar w-9 h-9 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-blue-700 font-bold uppercase shadow-inner">
+                {{ userEmail().charAt(0) }}
+            </div>
+            <div class="hidden md:block">
+                <p class="text-sm font-semibold text-gray-800">{{ userEmail() }}</p>
+                <p class="text-xs text-gray-500">System Administrator</p>
+            </div>
+        </div>
+
+        <div class="h-6 w-px bg-gray-200"></div> 
+        
+        <button (click)="onLogout()" class="text-sm font-medium text-red-600 hover:text-red-800 transition flex items-center p-2 rounded-lg hover:bg-red-50">
+          <svg class="w-4.5 h-4.5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          <span class="hidden sm:inline">Đăng xuất</span>
         </button>
-        <h1 class="header-title">Hệ thống quản lý học tập</h1>
       </div>
-
-      <div class="header-right">
-        <div class="search-box">
-          <input
-            type="text"
-            placeholder="Tìm kiếm..."
-            class="search-input"
-          />
-          <span class="search-icon">🔍</span>
-        </div>
-
-        <div class="header-actions">
-          <button class="action-btn" title="Notifications">
-            🔔
-            <span class="notification-badge">3</span>
-          </button>
-          <button class="action-btn" title="Settings">⚙️</button>
-        </div>
-      </div>
-    </div>
+    </header>
   `,
   styles: [`
-    @use '../../ui/design-tokens.scss' as *;
-    @use '../../ui/mixins.scss' as *;
-
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: $space-4;
-      flex: 1;
-
-      .menu-toggle {
-        display: none;
-        width: 40px;
-        height: 40px;
-        border: 1px solid $border-color;
-        background-color: $bg-default;
-        border-radius: $radius-md;
-        cursor: pointer;
-        font-size: $font-xl;
-        @include flex-center;
-        transition: all $transition-fast;
-        @include focus-ring;
-
-        &:hover {
-          background-color: $bg-dark;
-        }
-
-        @media (max-width: 768px) {
-          display: flex;
-        }
-      }
-
-      .header-title {
-        margin: 0;
-        @include heading-3;
-        color: $text-primary;
-
-        @media (max-width: 768px) {
-          @include heading-4;
-        }
-      }
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: $space-4;
-
-      @media (max-width: 640px) {
-        gap: $space-2;
-      }
-    }
-
-    .search-box {
-      position: relative;
-      display: flex;
-      align-items: center;
-
-      .search-input {
-        @include form-control;
-        padding-right: $space-4;
-        width: 280px;
-        @include body-sm;
-
-        &::placeholder {
-          color: $text-tertiary;
-        }
-
-        @media (max-width: 640px) {
-          width: 200px;
-        }
-
-        @media (max-width: 480px) {
-          display: none;
-        }
-      }
-
-      .search-icon {
-        position: absolute;
-        right: $space-2;
-        color: $text-tertiary;
-        pointer-events: none;
-      }
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: $space-2;
-    }
-
-    .action-btn {
-      position: relative;
-      width: 40px;
-      height: 40px;
-      border: 1px solid $border-color;
-      background-color: $bg-default;
-      border-radius: $radius-md;
-      cursor: pointer;
-      font-size: $font-lg;
-      @include flex-center;
-      transition: all $transition-fast;
-      @include focus-ring;
-
-      &:hover {
-        background-color: $bg-dark;
-        border-color: $border-color-dark;
-      }
-
-      &:active {
-        transform: scale(0.95);
-      }
-
-      .notification-badge {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        min-width: 20px;
-        height: 20px;
-        background-color: $error;
-        color: $white;
-        border-radius: 50%;
-        @include flex-center;
-        font-size: $font-xs;
-        font-weight: $font-bold;
-        border: 2px solid $white;
-      }
-    }
+    :host { display: block; width: 100%; }
+    .header { h: 64px; }
   `],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class HeaderComponent {}
+export class HeaderComponent {
+  private authService = inject(AuthService);
+  
+  @Output() toggleSidebar = new EventEmitter<void>();
+
+  // Lấy email từ authState
+  userEmail = computed(() => this.authService.authState().email || 'Admin');
+
+  onToggleSidebar() {
+    this.toggleSidebar.emit();
+  }
+
+  onLogout(): void {
+    this.authService.logout();
+  }
+}

@@ -1,0 +1,215 @@
+<div class="space-y-6">
+    <div class="flex justify-between items-end">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Quản lý Năm học</h1>
+            <p class="text-sm text-gray-500 mt-1">Danh sách các năm học và học kỳ của hệ thống</p>
+        </div>
+        <div class="flex space-x-3">
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+                <input type="text" [formControl]="searchControl" placeholder="Tìm kiếm năm học..."
+       class="bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-64 pl-10 p-2.5 outline-none transition">
+            </div>
+            <button (click)="openModal()"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg flex items-center transition text-sm shadow-sm">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Thêm năm học
+            </button>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-100">
+                <tr>
+                    <th scope="col" class="px-6 py-4">Tên năm học</th>
+                    <th scope="col" class="px-6 py-4">Thời gian bắt đầu</th>
+                    <th scope="col" class="px-6 py-4">Thời gian kết thúc</th>
+                    <th scope="col" class="px-6 py-4">Trạng thái</th>
+                    <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (isLoading()) {
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">Đang tải dữ liệu...</td>
+                </tr>
+                } @else if (schoolYears().length === 0) {
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">Chưa có dữ liệu năm học</td>
+                </tr>
+                } @else {
+                @for (year of schoolYears(); track year.id) {
+                <tr class="bg-white border-b border-gray-50 hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 font-semibold text-gray-900">{{ year.name }}</td>
+                    <td class="px-6 py-4">{{ year.startDate | date:'dd/MM/yyyy' }}</td>
+                    <td class="px-6 py-4">{{ year.endDate | date:'dd/MM/yyyy' }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2.5 py-1 text-xs font-medium rounded-full" [ngClass]="{
+        'bg-green-100 text-green-800': year.status === 'ACTIVE',
+        'bg-gray-100 text-gray-800': year.status === 'ARCHIVED'
+      }">
+                            {{ year.status === 'ACTIVE' ? 'Đang hoạt động' : (year.status === 'ARCHIVED' ? 'Đã lưu trữ'
+                            : year.status) }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-right space-x-3">
+                        <button (click)="openModal(year)"
+                            class="font-medium text-blue-600 hover:text-blue-800 hover:underline">Sửa</button>
+                        <button (click)="onArchive(year.id)"
+                            class="font-medium text-amber-600 hover:text-amber-800 hover:underline">Lưu trữ</button>
+                        <button (click)="onDelete(year.id)"
+                            class="font-medium text-red-600 hover:text-red-800 hover:underline">Xóa</button>
+                    </td>
+                </tr>
+                }
+                }
+            </tbody>
+        </table>
+
+        <div class="flex items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl">
+      
+      <div class="text-sm text-gray-500">
+        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> 
+        - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> 
+        trong số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> kết quả
+      </div>
+      
+      <div class="flex space-x-2">
+        <button 
+          (click)="changePage(currentPage() - 1)" 
+          [disabled]="currentPage() === 1"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex items-center"
+        >
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+          Trước
+        </button>
+        
+        <div class="flex items-center justify-center px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+          Trang {{ currentPage() }} / {{ totalPages() === 0 ? 1 : totalPages() }}
+        </div>
+
+        <button 
+          (click)="changePage(currentPage() + 1)" 
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex items-center"
+        >
+          Sau
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+    </div>
+    </div>
+</div>
+
+<div *ngIf="isModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeModal()"></div>
+
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl p-8 border border-gray-100">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">
+        {{ isEditing() ? 'Cập nhật năm học' : 'Thêm năm học mới' }}
+      </h3>
+      <button (click)="closeModal()" class="text-gray-400 hover:text-gray-900 hover:bg-gray-100 p-2 rounded-full transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <form [formGroup]="schoolYearForm" (ngSubmit)="onSubmit()" class="space-y-5">
+      <div>
+        <label class="block mb-1.5 text-sm font-semibold text-gray-700">Tên năm học *</label>
+        <input type="text" formControlName="name" placeholder="VD: Năm học 2026-2027" 
+               class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 block w-full p-3 outline-none transition">
+      </div>
+      
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="block mb-1.5 text-sm font-semibold text-gray-700">Ngày bắt đầu *</label>
+          <input type="date" formControlName="startDate" 
+                 class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 block w-full p-3 outline-none transition">
+        </div>
+        <div>
+          <label class="block mb-1.5 text-sm font-semibold text-gray-700">Ngày kết thúc *</label>
+          <input type="date" formControlName="endDate" 
+                 class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-200 focus:border-blue-500 block w-full p-3 outline-none transition">
+        </div>
+      </div>
+      
+      <div class="flex justify-end space-x-3.5 mt-8 pt-5 border-t border-gray-100">
+        <button type="button" (click)="closeModal()" 
+                class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">
+          Hủy bỏ
+        </button>
+        <button type="submit" [disabled]="schoolYearForm.invalid" 
+                class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 transition shadow-md hover:shadow-lg disabled:shadow-none flex items-center">
+          <svg *ngIf="isEditing()" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+          <svg *ngIf="!isEditing()" class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+          {{ isEditing() ? 'Lưu thay đổi' : 'Tạo mới' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<div *ngIf="isDeleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeDeleteModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6 border-4 border-white shadow-lg">
+      <svg class="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    </div>
+    
+    <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Xác nhận xóa?</h3>
+    <p class="text-gray-600 mt-3 text-base leading-relaxed">
+      Bạn có chắc chắn muốn xóa năm học này? Hành động này <strong class="text-red-700 font-semibold">không thể hoàn tác</strong>.
+    </p>
+    
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button type="button" (click)="closeDeleteModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">
+        Hủy bỏ
+      </button>
+      <button type="button" (click)="confirmDelete()" class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition shadow-md hover:shadow-lg flex items-center justify-center">
+        Đồng ý xóa
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<div *ngIf="isArchiveModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeArchiveModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 mb-6 border-4 border-white shadow-lg">
+      <svg class="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+      </svg>
+    </div>
+    
+    <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Xác nhận lưu trữ?</h3>
+    <p class="text-gray-600 mt-3 text-base leading-relaxed">
+      Sau khi lưu trữ, hệ thống <strong class="text-amber-700 font-semibold">sẽ khóa chức năng chỉnh sửa</strong> đối với dữ liệu năm học này.
+    </p>
+    
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button type="button" (click)="closeArchiveModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">
+        Hủy bỏ
+      </button>
+      <button type="button" (click)="confirmArchive()" class="px-5 py-3.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 transition shadow-md hover:shadow-lg flex items-center justify-center">
+        Đồng ý lưu trữ
+      </button>
+    </div>
+  </div>
+</div>

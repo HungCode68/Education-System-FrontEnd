@@ -1,0 +1,171 @@
+<div class="space-y-6">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <a routerLink="/admin/physical-classes" class="flex items-center space-x-2 text-sm text-blue-600 mb-2 cursor-pointer hover:underline font-medium inline-block w-fit">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        <span>Quay lại danh sách Lớp</span>
+      </a>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Danh sách Học sinh - Lớp <span class="text-blue-600">{{ currentClassInfo()?.name || '...' }}</span></h1>
+      <p class="text-sm text-gray-500 mt-1">Sĩ số hiện tại: <strong class="text-gray-900">{{ students().length }}</strong> / {{ currentClassInfo()?.maxStudents || 40 }}</p>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+      <select (change)="onFilterChange($event)" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium">
+        <option value="">Tất cả trạng thái</option>
+        <option value="studying">Đang học</option>
+        <option value="transferred">Đã chuyển đi</option>
+        <option value="dropped">Bỏ học</option>
+        <option value="completed">Đã hoàn thành</option>
+      </select>
+
+      <button (click)="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Thêm Học Sinh
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-sm text-left text-gray-500">
+      <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+        <tr>
+          <th scope="col" class="px-6 py-4 text-center w-16">STT</th>
+          <th scope="col" class="px-6 py-4">Mã HS</th>
+          <th scope="col" class="px-6 py-4">Họ và Tên</th>
+          <th scope="col" class="px-6 py-4">Ngày vào lớp</th>
+          <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+          <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        <tr *ngIf="isLoading() && students().length === 0">
+          <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+            <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            Đang tải dữ liệu...
+          </td>
+        </tr>
+        <tr *ngIf="!isLoading() && students().length === 0">
+          <td colspan="6" class="px-6 py-12 text-center text-gray-500">Lớp chưa có học sinh nào.</td>
+        </tr>
+        
+        <tr *ngFor="let item of students()" class="bg-white hover:bg-blue-50/50 transition duration-200">
+          <td class="px-6 py-4 text-center font-bold text-gray-900">{{ item.studentNumber }}</td>
+          <td class="px-6 py-4 text-gray-600 font-mono">{{ item.studentCode }}</td>
+          <td class="px-6 py-4 font-bold text-blue-700">{{ item.studentName }}</td>
+          <td class="px-6 py-4 text-gray-600">{{ item.enrollmentDate | date:'dd/MM/yyyy' }}</td>
+          <td class="px-6 py-4 text-center">
+            <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                  [ngClass]="{
+                    'bg-green-50 text-green-700 border-green-200': item.status === 'studying',
+                    'bg-amber-50 text-amber-700 border-amber-200': item.status === 'transferred',
+                    'bg-red-50 text-red-700 border-red-200': item.status === 'dropped',
+                    'bg-blue-50 text-blue-700 border-blue-200': item.status === 'completed'
+                  }">
+              {{ item.status === 'studying' ? 'Đang học' : 
+                 item.status === 'transferred' ? 'Chuyển lớp' : 
+                 item.status === 'dropped' ? 'Bỏ học/Thôi học' : 'Hoàn thành' }}
+            </span>
+          </td>
+          <td class="px-6 py-4 text-right space-x-3">
+             <select *ngIf="item.status === 'studying'" 
+                     (change)="openConfirmModal('CHANGE_STATUS', item.id, $any($event.target).value)" 
+                     class="text-xs bg-gray-50 border border-gray-200 text-gray-700 rounded-md p-1 outline-none cursor-pointer">
+              <option value="" disabled selected>Đổi trạng thái</option>
+              <option value="transferred">Chuyển lớp</option>
+              <option value="dropped">Bỏ học/Thôi học</option>
+            </select>
+
+            <button *ngIf="item.status === 'studying'" (click)="openTransferModal(item)" class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 px-2.5 py-1.5 rounded-lg">Chuyển lớp</button>
+            <button (click)="openConfirmModal('DELETE', item.id)" class="font-medium text-red-600 hover:text-red-800 transition">Gỡ bỏ</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div *ngIf="isModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">Thêm học sinh mới</h3>
+      <button (click)="closeModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <form [formGroup]="addForm" (ngSubmit)="onSubmitAdd()" class="space-y-6">
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Chọn học sinh *</label>
+        <select formControlName="studentId" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
+          <option value="" disabled>-- Chọn học sinh --</option>
+          <option *ngFor="let std of availableStudents()" [value]="std.id">
+            {{ std.studentCode }} - {{ std.fullName }} (Sinh năm: {{ std.dateOfBirth | date:'yyyy' }})
+          </option>
+        </select>
+        <p class="text-xs text-gray-500 mt-2">*Hệ thống sẽ tự động xếp STT cuối danh sách. Báo lỗi nếu HS đã có lớp.</p>
+      </div>
+      
+      <div class="flex justify-end space-x-3.5 mt-8 pt-5 border-t border-gray-100">
+        <button type="button" (click)="closeModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50">Hủy</button>
+        <button type="submit" [disabled]="addForm.invalid || isLoading()" class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300">Thêm vào lớp</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="isConfirmModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeConfirmModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full mb-6 border-4 border-white shadow-lg"
+         [ngClass]="actionType() === 'DELETE' ? 'bg-red-100' : 'bg-amber-100'">
+      <svg *ngIf="actionType() === 'DELETE'" class="h-10 w-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+      <svg *ngIf="actionType() !== 'DELETE'" class="h-10 w-10 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+    </div>
+    
+    <h3 class="text-2xl font-extrabold text-gray-900">{{ actionType() === 'DELETE' ? 'Gỡ học sinh khỏi lớp?' : 'Xác nhận đổi trạng thái?' }}</h3>
+    <p class="text-gray-600 mt-3 text-sm leading-relaxed">
+      {{ actionType() === 'DELETE' ? 'Chỉ nên gỡ bỏ nếu xếp nhầm lớp. Nếu học sinh nghỉ học, vui lòng dùng chức năng Đổi trạng thái.' : 'Trạng thái mới sẽ được cập nhật vào hồ sơ học sinh.' }}
+    </p>
+    
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeConfirmModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50">Hủy</button>
+      <button (click)="executeConfirm()" class="px-5 py-3.5 text-sm font-semibold text-white rounded-xl shadow-md"
+              [ngClass]="actionType() === 'DELETE' ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-500 hover:bg-amber-600'">Đồng ý</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isTransferModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeTransferModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">Điều chuyển Lớp học</h3>
+      <button (click)="closeTransferModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <form [formGroup]="transferForm" (ngSubmit)="submitTransfer()" class="space-y-5">
+      <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 text-sm text-amber-900">
+        Học sinh: <strong class="font-bold">{{ selectedStudentForTransfer()?.studentName }}</strong><br>
+        Lớp hiện tại: <strong class="font-bold">{{ currentClassInfo()?.name }}</strong>
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Chọn lớp chuyển đến (To Class) *</label>
+        <select formControlName="toClassId" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-amber-500 block w-full p-3 outline-none">
+          <option value="" disabled>-- Chọn lớp học --</option>
+          <option *ngFor="let cls of availableClasses()" [value]="cls.id">{{ cls.name }} (Sĩ số MAX: {{ cls.maxStudents }})</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Lý do chuyển lớp</label>
+        <textarea formControlName="reason" rows="3" placeholder="Ghi chú lý do chuyển..." class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-amber-500 block w-full p-3 outline-none resize-none"></textarea>
+      </div>
+
+      <div class="flex justify-end space-x-3.5 pt-5 border-t border-gray-100">
+        <button type="button" (click)="closeTransferModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50">Hủy</button>
+        <button type="submit" [disabled]="transferForm.invalid || isLoading()" class="px-5 py-2.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 shadow-md">Xác nhận chuyển</button>
+      </div>
+    </form>
+  </div>
+</div>

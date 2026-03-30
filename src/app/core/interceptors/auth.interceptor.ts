@@ -1,81 +1,50 @@
-import { Injectable, inject } from '@angular/core';
-import {
-  HttpRequest,
-  HttpHandler,
-  HttpEvent,
-  HttpInterceptor,
-  HttpErrorResponse
-} from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject } from 'rxjs';
-import { catchError, filter, take, switchMap } from 'rxjs/operators';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
-@Injectable()
-export class AuthInterceptor implements HttpInterceptor {
-  private authService = inject(AuthService);
-  private isRefreshing = false;
-  private refreshTokenSubject: BehaviorSubject<any> = new BehaviorSubject<any>(null);
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const token = authService.getAccessToken();
 
-  intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    const accessToken = this.authService.getAccessToken();
-
-    if (accessToken && !this.isTokenExpired(accessToken)) {
-      request = this.addToken(request, accessToken);
-    }
-
-    return next.handle(request).pipe(
-      catchError(error => {
-        if (error instanceof HttpErrorResponse && error.status === 401) {
-          return this.handle401Error(request, next);
-        }
-        return throwError(() => error);
-      })
-    );
-  }
-
-  private addToken(request: HttpRequest<any>, token: string): HttpRequest<any> {
-    return request.clone({
-      setHeaders: {
-        Authorization: `Bearer ${token}`
-      }
+  // Gắn Access Token vào Header của mọi Request gửi đi
+  let authReq = req;
+  if (token) {
+    authReq = req.clone({
+      headers: req.headers.set('Authorization', `Bearer ${token}`)
     });
   }
 
-  private handle401Error(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    if (!this.isRefreshing) {
-      this.isRefreshing = true;
-      this.refreshTokenSubject.next(null);
+  // Gửi Request đi và lắng nghe phản hồi từ Server
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // Nếu Server báo lỗi 401 (Token hết hạn hoặc không hợp lệ) và không phải đang gọi API Login
+      if (error.status === 401 && !req.url.includes('/api/auth/signin')) {
+        
+        // Kích hoạt cơ chế tự động lấy Token mới (Refresh Token)
+        return authService.refreshToken().pipe(
+          switchMap((res) => {
+            if (res && res.accessToken) {
+              // Lấy được token mới thành công -> Gắn token mới vào request vừa bị lỗi và gọi lại API đó
+              const newReq = req.clone({
+                headers: req.headers.set('Authorization', `Bearer ${res.accessToken}`)
+              });
+              return next(newReq);
+            }
+            // Nếu không có kết quả trả về, ép đăng xuất
+            authService.logout();
+            return throwError(() => error);
+          }),
+          catchError((refreshErr) => {
+            // Nếu Refresh Token cũng hết hạn nốt -> Bắt buộc người dùng đăng nhập lại
+            authService.logout();
+            return throwError(() => refreshErr);
+          })
+        );
+      }
 
-      return this.authService.refreshToken().pipe(
-        switchMap((response: any) => {
-          this.isRefreshing = false;
-          this.refreshTokenSubject.next(response.accessToken);
-          return next.handle(this.addToken(request, response.accessToken));
-        }),
-        catchError(error => {
-          this.isRefreshing = false;
-          this.authService.logout();
-          return throwError(() => error);
-        })
-      );
-    } else {
-      return this.refreshTokenSubject.pipe(
-        filter(token => token != null),
-        take(1),
-        switchMap(token => {
-          return next.handle(this.addToken(request, token));
-        })
-      );
-    }
-  }
-
-  private isTokenExpired(token: string): boolean {
-    try {
-      const decoded = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Math.floor(Date.now() / 1000);
-      return decoded.exp < currentTime;
-    } catch {
-      return true;
-    }
-  }
-}
+      // Các lỗi khác (400, 403, 500...) thì cứ ném ra bình thường
+      return throwError(() => error);
+    })
+  );
+};

@@ -1,0 +1,210 @@
+<div class="max-w-6xl mx-auto space-y-6 pb-10">
+
+  <div *ngIf="isLoading()" class="py-20 flex justify-center">
+    <svg class="animate-spin h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+  </div>
+
+  <ng-container *ngIf="!isLoading() && classDetail()">
+    <div class="relative bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-10 text-white shadow-lg overflow-hidden">
+      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
+      <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
+      
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">{{ classDetail().subjectName || classDetail().name }}</h1>
+          <div class="flex items-center space-x-4 text-indigo-100 font-medium text-sm">
+            <span class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Lớp: {{ classDetail().physicalClassName }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="border-b border-gray-200">
+      <nav class="-mb-px flex space-x-8 px-4" aria-label="Tabs">
+        <button (click)="changeTab('materials')" [ngClass]="{'border-indigo-500 text-indigo-600': activeTab() === 'materials', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab() !== 'materials'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition">
+            Tài liệu
+        </button>
+        <button (click)="changeTab('assignments')" [ngClass]="{'border-indigo-500 text-indigo-600': activeTab() === 'assignments', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab() !== 'assignments'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition">
+          Bài tập
+        </button>
+        <button (click)="changeTab('members')" [ngClass]="{'border-indigo-500 text-indigo-600': activeTab() === 'members', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab() !== 'members'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition">
+          Mọi người
+        </button>
+      </nav>
+    </div>
+
+    <div *ngIf="activeTab() === 'members'" class="max-w-4xl mx-auto space-y-10 py-6 animate-[fadeIn_0.3s_ease-out]">
+      
+      <section>
+        <h2 class="text-2xl font-extrabold text-indigo-700 border-b-2 border-indigo-100 pb-3 mb-6">Giáo viên giảng dạy</h2>
+        <div class="flex items-center p-4 rounded-2xl hover:bg-gray-50 transition cursor-pointer">
+          <div class="h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg shadow-sm border border-indigo-200">
+            {{ getInitials(classDetail().teacherName) }}
+          </div>
+          <div class="ml-4 flex-1">
+            <h3 class="text-lg font-bold text-gray-900">{{ classDetail().teacherName }}</h3>
+            <p class="text-sm text-gray-500">Mã GV: {{ classDetail().teacherCode }}</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="flex items-end justify-between border-b-2 border-indigo-100 pb-3 mb-6">
+          <h2 class="text-2xl font-extrabold text-indigo-700">Thành viên lớp</h2>
+          <span class="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{{ classmates().length }} học sinh</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div *ngFor="let student of classmates()" class="flex items-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+            <div class="h-10 w-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shadow-inner">
+              {{ getInitials(student.studentName) }}
+            </div>
+            <div class="ml-4 flex-1 overflow-hidden">
+              <h3 class="text-sm font-bold text-gray-900 truncate">{{ student.studentName }}</h3>
+              <p class="text-xs text-gray-500 truncate">{{ student.studentCode }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="classmates().length === 0" class="text-center py-10 text-gray-500">
+          Chưa có học sinh nào trong lớp này.
+        </div>
+      </section>
+
+    </div>
+
+    <div *ngIf="activeTab() === 'materials'" class="max-w-4xl mx-auto space-y-6 py-6 animate-[fadeIn_0.3s_ease-out]">
+      
+      <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-start gap-4">
+        <div class="h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0">
+          {{ getInitials(classDetail().teacherName) }}
+        </div>
+        <div class="flex-1">
+          <p class="text-gray-900 font-medium mt-1">
+            Chào mừng các bạn đến với lớp học <span class="font-bold text-indigo-600">{{ classDetail().subjectName }}</span>. 
+            Tất cả tài liệu bài giảng, video hướng dẫn và tham khảo sẽ được thầy/cô đăng tải tại đây nhé!
+          </p>
+          <p class="text-xs text-gray-400 mt-2">Đăng tự động bởi Hệ thống</p>
+        </div>
+      </div>
+
+      <div *ngIf="materials().length === 0" class="text-center py-16 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+        <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Chưa có tài liệu nào</h3>
+        <p class="text-sm text-gray-500 mt-1">Giáo viên của bạn chưa đăng tải tài liệu học tập nào cho lớp này.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div *ngFor="let item of materials()" 
+             (click)="openMaterial(item.id)"
+             class="group flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative">
+          
+          <div *ngIf="isOpeningFile() === item.id" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+            <svg class="animate-spin h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="ml-2 text-sm font-bold text-indigo-600">Đang mở tài liệu...</span>
+          </div>
+
+          <div class="flex items-start gap-4 flex-1 min-w-0">
+            <div [class]="'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ' + getFileIcon(item.fileType).bg">
+              <svg [class]="'w-6 h-6 ' + getFileIcon(item.fileType).color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getFileIcon(item.fileType).icon"></path>
+              </svg>
+            </div>
+            
+            <div class="flex-1 min-w-0 pr-4">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-500">{{ item.uploadedByName || 'Giáo viên' }}</span>
+                <span class="text-gray-300">•</span>
+                <span class="text-xs text-gray-500">{{ item.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <h3 class="text-base font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">{{ item.title }}</h3>
+              <p *ngIf="item.description" class="text-sm text-gray-500 line-clamp-2 mt-1">{{ item.description }}</p>
+              
+              <div class="mt-2 flex sm:hidden gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600">{{ item.fileType }}</span>
+                <span *ngIf="item.fileSize" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600">{{ formatBytes(item.fileSize) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hidden sm:flex items-center gap-4 shrink-0 pl-4 border-l border-gray-100 ml-4">
+            <div class="text-right">
+              <p class="text-xs font-bold text-gray-900 uppercase">{{ item.fileType }}</p>
+              <p *ngIf="item.fileSize" class="text-xs text-gray-500 mt-0.5">{{ formatBytes(item.fileSize) }}</p>
+              <p *ngIf="!item.fileSize && item.fileType === 'link'" class="text-xs text-gray-500 mt-0.5">Liên kết ngoài</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
+               <svg class="w-5 h-5 text-gray-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab() === 'assignments'" class="max-w-4xl mx-auto space-y-6 py-6 animate-[fadeIn_0.3s_ease-out]">
+      
+      <div *ngIf="isAssignmentsLoading()" class="py-12 flex justify-center">
+        <svg class="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+      </div>
+
+      <div *ngIf="!isAssignmentsLoading() && assignments().length === 0" class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
+        <div class="mx-auto w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
+          <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Tuyệt vời! Bạn chưa có bài tập nào.</h3>
+        <p class="text-sm text-gray-500 mt-1">Hãy theo dõi bảng tin thường xuyên để không bỏ lỡ bài tập mới nhé.</p>
+      </div>
+
+      <div *ngIf="!isAssignmentsLoading() && assignments().length > 0" class="space-y-4">
+        
+        <div *ngFor="let item of assignments()" 
+             routerLink="/student/assignment/{{item.id}}"
+             class="group flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border-l-4"
+             [ngClass]="isOverdue(item.dueTime) ? 'border-l-red-500 border-gray-200' : 'border-l-indigo-500 border-indigo-50'">
+          
+          <div class="flex items-start gap-4 flex-1 min-w-0">
+            <div [class]="'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ' + getAssignmentTypeUI(item.assignmentType).bg">
+              <svg [class]="'w-6 h-6 ' + getAssignmentTypeUI(item.assignmentType).text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getAssignmentTypeUI(item.assignmentType).icon"></path>
+              </svg>
+            </div>
+            
+            <div class="flex-1 min-w-0 pr-4">
+              <h3 class="text-base font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">{{ item.title }}</h3>
+              
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
+                <span class="flex items-center">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  Đăng ngày: {{ item.createdAt | date:'dd/MM/yyyy' }}
+                </span>
+                
+                <span class="flex items-center font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px]">
+                  Điểm: {{ item.maxScore }}
+                </span>
+
+                <span *ngIf="item.dueTime" class="flex items-center font-bold" [ngClass]="isOverdue(item.dueTime) ? 'text-red-500' : 'text-emerald-600'">
+                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Hạn nộp: {{ item.dueTime | date:'HH:mm dd/MM/yyyy' }}
+                  <span *ngIf="isOverdue(item.dueTime)" class="ml-1 text-[10px] uppercase bg-red-100 text-red-700 px-1.5 rounded">(Đã quá hạn)</span>
+                </span>
+                <span *ngIf="!item.dueTime" class="flex items-center text-emerald-600 font-bold">Không có hạn nộp</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hidden sm:flex items-center shrink-0 pl-4">
+            <span class="text-sm font-bold text-indigo-600 group-hover:text-indigo-800 transition-colors flex items-center">
+              Làm bài
+              <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

@@ -22,6 +22,8 @@ export class AuthService {
   private router = inject(Router);
   private apiUrl = `${environment.apiUrl}/api/auth`;
 
+  currentUser = signal<any | null>(null);
+
   authState = signal<AuthState>(this.initializeAuthState());
 
   private initializeAuthState(): AuthState {
@@ -102,9 +104,19 @@ export class AuthService {
     return this.authState().isAuthenticated;
   }
 
-  hasRole(role: string): boolean {
-    const roles = this.authState().roles;
-    return roles.some(r => r === role || r === `ROLE_${role}` || r.endsWith(`_${role}`));
+  hasRole(expectedRole: string): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    
+    // So sánh roleCode từ Backend trả về
+    return user.roleCode === expectedRole;
+  }
+
+  // Hàm kiểm tra nhiều role 
+  hasAnyRole(expectedRoles: string[]): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    return expectedRoles.includes(user.roleCode);
   }
 
   hasPermission(permission: string): boolean {
@@ -177,4 +189,5 @@ export class AuthService {
       return {};
     }
   }
+
 }

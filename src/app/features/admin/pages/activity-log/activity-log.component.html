@@ -1,0 +1,159 @@
+<div class="space-y-6">
+  <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Nhật ký Hệ thống (Activity Logs)</h1>
+      <p class="text-sm text-gray-500 mt-1">Giám sát và truy vết mọi thao tác của người dùng trên toàn hệ thống</p>
+    </div>
+  </div>
+
+  <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap items-end gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Thời gian từ</label>
+      <input type="date" [formControl]="startDateControl" class="bg-white border border-slate-300 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-slate-400">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Đến ngày</label>
+      <input type="date" [formControl]="endDateControl" class="bg-white border border-slate-300 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-slate-400">
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Phân hệ (Module)</label>
+      <select [formControl]="moduleControl" class="bg-white border border-slate-300 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-slate-400 w-40">
+        <option value="">Tất cả Module</option>
+        <option *ngFor="let mod of modules" [value]="mod">{{ mod }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Trạng thái</label>
+      <select [formControl]="statusControl" class="bg-white border border-slate-300 text-sm rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-slate-400 w-36">
+        <option value="">Tất cả</option>
+        <option value="success">Thành công (Success)</option>
+        <option value="failure">Thất bại (Failure)</option>
+        <option value="error">Lỗi (Error)</option>
+      </select>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <label class="block text-xs font-semibold text-slate-600 mb-1">Tìm kiếm IP / User / Action</label>
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" [formControl]="searchControl" placeholder="Gõ từ khóa..." class="bg-white border border-slate-300 text-sm rounded-lg pl-10 p-2.5 outline-none focus:ring-2 focus:ring-slate-400 w-full">
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-slate-600 min-w-[1000px]">
+        <thead class="text-xs text-slate-500 uppercase bg-slate-100 border-b border-slate-200 font-bold">
+          <tr>
+            <th scope="col" class="px-6 py-4">Thời gian</th>
+            <th scope="col" class="px-6 py-4">Người thao tác</th>
+            <th scope="col" class="px-6 py-4">Module / Hành động</th>
+            <th scope="col" class="px-6 py-4">Đối tượng (Target)</th>
+            <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          <tr *ngIf="isLoading() && logs().length === 0">
+            <td colspan="6" class="px-6 py-12 text-center text-slate-500">Đang truy xuất nhật ký...</td>
+          </tr>
+          <tr *ngIf="!isLoading() && logs().length === 0">
+            <td colspan="6" class="px-6 py-12 text-center text-slate-500">Không tìm thấy bản ghi nào.</td>
+          </tr>
+          
+          <tr *ngFor="let log of logs()" class="hover:bg-slate-50 transition duration-150">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="font-bold text-slate-900">{{ log.createdAt | date:'dd/MM/yyyy' }}</div>
+              <div class="text-xs text-slate-500 font-mono mt-0.5">{{ log.createdAt | date:'HH:mm:ss' }}</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="font-bold text-blue-700">{{ log.actorName }}</div>
+              <div class="text-[11px] text-slate-500 mt-1 flex items-center" [title]="log.userAgent">
+                <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path></svg>
+                {{ log.ipAddress || 'Unknown IP' }}
+              </div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="inline-block px-2 py-0.5 bg-slate-200 text-slate-800 text-[10px] font-bold rounded mb-1">{{ log.module }}</span>
+              <div class="font-semibold text-slate-900 uppercase text-xs">{{ log.action }}</div>
+            </td>
+            <td class="px-6 py-4 font-mono text-xs">
+              <span *ngIf="log.targetType" class="text-purple-700">{{ log.targetType }}</span><br>
+              <span *ngIf="log.targetId" class="text-slate-500">{{ log.targetId }}</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border"
+                    [ngClass]="{
+                      'bg-green-50 text-green-700 border-green-200': log.status === 'success',
+                      'bg-amber-50 text-amber-700 border-amber-200': log.status === 'failure',
+                      'bg-red-50 text-red-700 border-red-200': log.status === 'error'
+                    }">
+                {{ log.status }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button (click)="openDetailModal(log)" class="font-medium text-slate-600 hover:text-blue-700 transition bg-white border border-slate-300 hover:border-blue-300 px-3 py-1.5 rounded-lg shadow-sm text-xs">Xem JSON</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-3 bg-slate-50 border-t border-slate-200">
+      <div class="text-sm text-slate-500">Trang <span class="font-bold text-slate-900">{{ currentPage() }}</span> / {{ totalPages() }}</div>
+      <div class="flex space-x-2">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1" class="px-3 py-1.5 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50 text-sm font-medium">Trước</button>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() >= totalPages()" class="px-3 py-1.5 bg-white border border-slate-300 rounded hover:bg-slate-100 disabled:opacity-50 text-sm font-medium">Sau</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isDetailModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" (click)="closeDetailModal()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl border border-slate-200 flex flex-col max-h-[90vh]">
+    
+    <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100 bg-slate-50 rounded-t-2xl shrink-0">
+      <div>
+        <h3 class="text-xl font-bold text-slate-900 flex items-center">
+          <svg class="w-5 h-5 mr-2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+          Chi tiết Nhật ký
+        </h3>
+        <p class="text-xs text-slate-500 font-mono mt-1">Log ID: {{ selectedLog()?.id }}</p>
+      </div>
+      <button (click)="closeDetailModal()" class="text-slate-400 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-100 p-2 rounded-lg transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <div class="p-6 overflow-y-auto scrollbar-thin">
+      <div class="grid grid-cols-2 gap-6 mb-6">
+        <div>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Thiết bị (User Agent)</p>
+          <div class="bg-slate-100 p-3 rounded-lg text-sm text-slate-800 break-words">{{ selectedLog()?.userAgent || 'Unknown' }}</div>
+        </div>
+        <div>
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mục tiêu (Target)</p>
+          <div class="bg-slate-100 p-3 rounded-lg text-sm text-slate-800 font-mono">
+            {{ selectedLog()?.targetType || 'N/A' }} <br>
+            <span class="text-xs text-slate-500">{{ selectedLog()?.targetId || '' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Dữ liệu thay đổi (JSON Details)</p>
+        <div class="bg-slate-900 rounded-lg overflow-hidden border border-slate-700">
+          <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex items-center justify-between">
+            <span class="text-xs font-mono text-slate-400">Payload / Data diff</span>
+            <button class="text-slate-400 hover:text-white" title="Copy JSON" (click)="copyToClipboard()">
+               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </button>
+          </div>
+          <pre class="p-4 text-sm text-green-400 font-mono overflow-x-auto"><code>{{ formattedJsonDetails() }}</code></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

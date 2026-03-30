@@ -1,0 +1,232 @@
+<div class="space-y-6">
+  <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Quản lý Vai trò (Roles)</h1>
+      <p class="text-sm text-gray-500 mt-1">Thiết lập các nhóm quyền và gán tính năng cho từng vai trò</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+      <select [formControl]="statusFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium">
+        <option value="">Tất cả trạng thái</option>
+        <option value="active">Đang hoạt động</option>
+        <option value="inactive">Ngừng hoạt động</option>
+      </select>
+
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" [formControl]="searchControl" placeholder="Tìm tên hoặc mã role..." class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-48 xl:w-64 pl-10 p-2.5 outline-none transition shadow-sm">
+      </div>
+
+      <button (click)="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Tạo Vai trò mới
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+          <tr>
+            <th scope="col" class="px-6 py-4">Tên Vai trò</th>
+            <th scope="col" class="px-6 py-4">Mã Code</th>
+            <th scope="col" class="px-6 py-4 text-center">Số quyền (Permissions)</th>
+            <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngIf="isLoading() && roles().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+              <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Đang tải dữ liệu...
+            </td>
+          </tr>
+          <tr *ngIf="!isLoading() && roles().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">Không tìm thấy dữ liệu.</td>
+          </tr>
+          
+          <tr *ngFor="let role of roles()" class="bg-white hover:bg-blue-50/50 transition duration-200">
+            <td class="px-6 py-4">
+              <div class="font-extrabold text-gray-900 text-base">{{ role.name }}</div>
+              <div class="text-xs text-gray-500 mt-1">Cập nhật: {{ role.updatedAt | date:'dd/MM/yyyy HH:mm' }}</div>
+            </td>
+            <td class="px-6 py-4">
+              <span class="font-mono font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+                {{ role.code }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-800 font-bold border border-gray-200">
+                {{ role.permissions ? role.permissions.length : 0 }}
+              </div>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                    [ngClass]="role.status === 'active' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'">
+                <span class="inline-block w-1.5 h-1.5 rounded-full mr-1" [ngClass]="role.status === 'active' ? 'bg-green-500' : 'bg-gray-400'"></span>
+                {{ role.status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right space-x-4">
+              <button (click)="openPermissionModal(role)" class="font-semibold text-purple-600 hover:text-purple-800 transition">Phân quyền</button>
+              <button (click)="openModal(role)" class="font-semibold text-blue-600 hover:text-blue-800 transition">Sửa</button>
+              <button (click)="onDelete(role.id)" class="font-semibold text-red-600 hover:text-red-800 transition">Xóa</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl">
+      <div class="text-sm text-gray-500">
+        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> 
+        trong số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> kết quả
+      </div>
+      <div class="flex space-x-2">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">
+          Trước
+        </button>
+        <div class="flex items-center justify-center px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+          Trang {{ currentPage() }} / {{ totalPages() === 0 ? 1 : totalPages() }}
+        </div>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">
+          Sau
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 border border-gray-100">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">{{ isEditing() ? 'Cập nhật Vai trò' : 'Tạo Vai trò mới' }}</h3>
+      <button (click)="closeModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <form [formGroup]="roleForm" (ngSubmit)="onSubmit()" class="space-y-5">
+      
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Mã Vai trò (Code) *</label>
+        <input type="text" formControlName="code" placeholder="VD: ROLE_ADMIN" class="bg-gray-50 border border-gray-200 text-gray-900 font-mono text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none uppercase transition">
+        <p class="text-xs text-gray-500 mt-1.5">Mã viết liền không dấu, in hoa. VD: SYSTEM_ADMIN, STUDENT...</p>
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Tên hiển thị *</label>
+        <input type="text" formControlName="name" placeholder="VD: Quản trị viên hệ thống" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none transition">
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Trạng thái</label>
+        <select formControlName="status" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
+          <option value="active">Đang hoạt động</option>
+          <option value="inactive">Ngừng hoạt động</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100">
+        <button type="button" (click)="closeModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy bỏ</button>
+        <button type="submit" [disabled]="roleForm.invalid || isLoading()" class="px-5 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 shadow-md">
+          {{ isEditing() ? 'Lưu cập nhật' : 'Tạo vai trò' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="isDeleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeDeleteModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6 border-4 border-white shadow-lg">
+      <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    </div>
+    <h3 class="text-2xl font-extrabold text-gray-900">Xóa Vai trò (Role)?</h3>
+    <div class="p-3 bg-red-50 text-red-800 text-sm rounded-lg mt-3 text-left">
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Nếu <strong>chưa có</strong> tài khoản nào được gán: Vai trò sẽ bị <strong>xóa vĩnh viễn</strong>.</li>
+        <li>Nếu <strong>đã có</strong> tài khoản được gán: Hệ thống sẽ tự động <strong>Ngừng hoạt động</strong> để tránh lỗi dữ liệu.</li>
+      </ul>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeDeleteModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy</button>
+      <button (click)="confirmDelete()" [disabled]="isLoading()" class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md">Đồng ý xử lý</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isPermissionModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closePermissionModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-5xl p-8 border border-gray-100 flex flex-col max-h-[90vh]">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4 shrink-0">
+      <div>
+        <h3 class="text-2xl font-extrabold text-gray-900">Cấu hình Phân quyền</h3>
+        <p class="text-sm text-gray-500 mt-1">Vai trò đang cấu hình: <strong class="text-purple-600 text-base uppercase">{{ selectedRoleForPermission()?.name }}</strong></p>
+      </div>
+      <button (click)="closePermissionModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-6">
+      
+      <div *ngIf="isLoading()" class="text-center py-10 text-gray-500">Đang tải danh sách quyền...</div>
+
+      <div *ngFor="let group of groupedPermissions()" class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+          <h4 class="font-bold text-gray-800 flex items-center">
+            <svg class="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            Nhóm quyền: {{ group.scope }}
+          </h4>
+          <label class="flex items-center space-x-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-purple-50 transition">
+            <input type="checkbox" 
+                   [checked]="isScopeGroupFullySelected(group.permissions)"
+                   (change)="toggleScopeGroup(group.permissions, $event)"
+                   class="w-4 h-4 text-purple-600 rounded cursor-pointer">
+            <span class="text-sm font-semibold text-gray-700">Chọn tất cả</span>
+          </label>
+        </div>
+        
+        <div class="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <label *ngFor="let perm of group.permissions" 
+                 class="flex items-start p-3 border border-gray-100 rounded-lg cursor-pointer hover:bg-purple-50/50 hover:border-purple-200 transition"
+                 [ngClass]="{'bg-purple-50/30 border-purple-200': selectedPermissionIds().includes($any(perm.id))}">
+            <div class="flex-shrink-0 mt-0.5">
+              <input type="checkbox" 
+                     [checked]="selectedPermissionIds().includes($any(perm.id))"
+                     (change)="togglePermission($any(perm.id))"
+                     class="w-4 h-4 text-purple-600 rounded cursor-pointer">
+            </div>
+            <div class="ml-3">
+              <p class="text-sm font-bold text-gray-900">{{ perm.name }}</p>
+              <p class="text-xs text-gray-500 font-mono mt-0.5">{{ perm.code }}</p>
+            </div>
+          </label>
+        </div>
+      </div>
+      
+    </div>
+
+    <div class="flex justify-between items-center pt-5 mt-5 border-t border-gray-100 shrink-0">
+      <div class="text-sm font-medium text-gray-600">
+        Đang chọn: <span class="text-purple-600 font-bold text-lg">{{ selectedPermissionIds().length }}</span> quyền
+      </div>
+      <div class="flex space-x-3.5">
+        <button (click)="closePermissionModal()" class="px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50">Hủy</button>
+        <button (click)="savePermissions()" [disabled]="isAssigning()" class="px-6 py-2.5 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 shadow-md flex items-center">
+          <svg *ngIf="isAssigning()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          Lưu Phân Quyền
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

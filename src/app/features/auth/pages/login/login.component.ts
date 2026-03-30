@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core'; 
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -19,6 +19,9 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
+  
+  // State quản lý việc ẩn/hiện mật khẩu
+  showPassword = signal(false); 
 
   ngOnInit(): void {
     this.initializeForm();
@@ -29,6 +32,11 @@ export class LoginComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]]
     });
+  }
+
+  // Hàm chuyển đổi trạng thái mật khẩu
+  togglePasswordVisibility(): void {
+    this.showPassword.update(v => !v);
   }
 
   onSubmit(): void {
@@ -64,8 +72,12 @@ export class LoginComponent implements OnInit {
     
     if (hasRole('ADMIN') || hasRole('SYSTEM_ADMIN')) {
       this.router.navigate(['/admin']);
-    } else if (hasRole('TEACHER')) {
+    } else if (hasRole('HOMEROOM_TEACHER')) {
+      this.router.navigate(['/teacher/homeroom']);
+    } else if (hasRole('SUBJECT_TEACHER')) {
       this.router.navigate(['/teacher']);
+    } else if (hasRole('TEACHER_HEAD_DEPARTMENT')) {
+      this.router.navigate(['/teacher/department-member']);
     } else if (hasRole('STUDENT')) {
       this.router.navigate(['/student']);
     } else {

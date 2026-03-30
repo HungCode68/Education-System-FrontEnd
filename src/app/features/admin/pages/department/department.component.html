@@ -1,0 +1,285 @@
+<div class="space-y-6">
+  <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Cơ cấu Tổ chức</h1>
+      <p class="text-sm text-gray-500 mt-1">Quản lý các Tổ chuyên môn và Phòng ban hành chính</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+      <select [formControl]="typeFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium">
+        <option value="">Tất cả loại hình</option>
+        <option value="academic">Tổ chuyên môn</option>
+        <option value="office">Phòng hành chính</option>
+      </select>
+
+      <select [formControl]="statusFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium">
+        <option value="">Tất cả trạng thái</option>
+        <option value="true">Đang hoạt động</option>
+        <option value="false">Ngừng hoạt động</option>
+      </select>
+
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" [formControl]="searchControl" placeholder="Tìm tên bộ phận..." class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-48 xl:w-64 pl-10 p-2.5 outline-none transition shadow-sm">
+      </div>
+
+      <button (click)="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Thêm Bộ phận
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+          <tr>
+            <th scope="col" class="px-6 py-4">Tên Bộ phận</th>
+            <th scope="col" class="px-6 py-4">Mô tả chi tiết</th>
+            <th scope="col" class="px-6 py-4">Loại hình</th>
+            <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngIf="isLoading() && departments().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+              <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Đang tải dữ liệu...
+            </td>
+          </tr>
+          <tr *ngIf="!isLoading() && departments().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">Chưa có dữ liệu phòng ban nào.</td>
+          </tr>
+          
+          <tr *ngFor="let dept of departments()" class="bg-white hover:bg-blue-50/50 transition duration-200">
+            <td class="px-6 py-4">
+              <div class="font-bold text-gray-900 text-base">{{ dept.name }}</div>
+            </td>
+            <td class="px-6 py-4 text-gray-600 max-w-xs truncate" [title]="dept.description || ''">
+              {{ dept.description || '---' }}
+            </td>
+            <td class="px-6 py-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-md border"
+                    [ngClass]="dept.type === 'academic' ? 'bg-purple-50 text-purple-700 border-purple-200' : 'bg-blue-50 text-blue-700 border-blue-200'">
+                {{ dept.type === 'academic' ? 'Tổ chuyên môn' : 'Phòng hành chính' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                    [ngClass]="dept.isActive ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-600 border-gray-200'">
+                <span class="inline-block w-1.5 h-1.5 rounded-full mr-1" [ngClass]="dept.isActive ? 'bg-green-500' : 'bg-gray-400'"></span>
+                {{ dept.isActive ? 'Đang hoạt động' : 'Ngừng hoạt động' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right space-x-3">
+              <button (click)="openTeacherListModal(dept)" class="font-medium text-emerald-600 hover:text-emerald-800 transition">DS Giáo viên</button>
+              
+              <button (click)="openModal(dept)" class="font-medium text-blue-600 hover:text-blue-800 transition">Sửa</button>
+              <button (click)="onDelete(dept.id)" class="font-medium text-red-600 hover:text-red-800 transition">Xóa</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl">
+      <div class="text-sm text-gray-500">
+        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> 
+        trong số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> kết quả
+      </div>
+      <div class="flex space-x-2">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">
+          Trước
+        </button>
+        <div class="flex items-center justify-center px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+          Trang {{ currentPage() }} / {{ totalPages() === 0 ? 1 : totalPages() }}
+        </div>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">
+          Sau
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl p-8 border border-gray-100">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">{{ isEditing() ? 'Cập nhật Bộ phận' : 'Thêm Bộ phận Mới' }}</h3>
+      <button (click)="closeModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <form [formGroup]="departmentForm" (ngSubmit)="onSubmit()" class="space-y-5">
+      
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Tên Bộ phận / Tổ chuyên môn *</label>
+        <input type="text" formControlName="name" placeholder="VD: Tổ Toán - Tin" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
+      </div>
+
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <label class="block mb-1.5 text-sm font-bold text-gray-700">Loại hình *</label>
+          <select formControlName="type" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
+            <option value="academic">Tổ chuyên môn (Giảng dạy)</option>
+            <option value="office">Phòng ban (Hành chính)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block mb-1.5 text-sm font-bold text-gray-700">Trạng thái hoạt động</label>
+          <select formControlName="isActive" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
+            <option [ngValue]="true">Đang hoạt động</option>
+            <option [ngValue]="false">Ngừng hoạt động</option>
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Mô tả chi tiết</label>
+        <textarea formControlName="description" rows="3" placeholder="Nhập ghi chú hoặc mô tả..." class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none resize-none"></textarea>
+      </div>
+
+      <div class="flex justify-end space-x-3.5 pt-4">
+        <button type="button" (click)="closeModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy bỏ</button>
+        <button type="submit" [disabled]="departmentForm.invalid || isLoading()" class="px-5 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 shadow-md">
+          {{ isEditing() ? 'Lưu cập nhật' : 'Tạo bộ phận' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="isDeleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeDeleteModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6 border-4 border-white shadow-lg">
+      <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    </div>
+    <h3 class="text-2xl font-extrabold text-gray-900">Xóa Phòng ban / Tổ bộ môn?</h3>
+    <div class="p-3 bg-red-50 text-red-800 text-sm rounded-lg mt-3 text-left">
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Nếu <strong>không có</strong> Giáo viên trực thuộc: Hệ thống sẽ xóa sạch dữ liệu.</li>
+        <li>Nếu <strong>có</strong> Giáo viên trực thuộc: Hệ thống sẽ tự động <strong>Ngừng hoạt động</strong> thay vì xóa để bảo toàn dữ liệu.</li>
+      </ul>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeDeleteModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy</button>
+      <button (click)="confirmDelete()" class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md">Đồng ý xử lý</button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isTeacherListModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeTeacherListModal()"></div>
+  
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-8 border border-gray-100 flex flex-col max-h-[90vh]">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4 shrink-0">
+      <div>
+        <h3 class="text-2xl font-extrabold text-gray-900">Danh sách Giáo viên</h3>
+        <p class="text-sm text-gray-500 mt-1">Trực thuộc: <strong class="text-blue-600">{{ selectedDepartmentName() }}</strong></p>
+      </div>
+      <button (click)="closeTeacherListModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+
+    <div class="mb-5 flex flex-col sm:flex-row items-end gap-3 bg-blue-50/60 p-4 rounded-xl border border-blue-100 shrink-0">
+      <div class="flex-1 w-full relative">
+        <label class="block mb-1.5 text-sm font-bold text-blue-900">Gõ Mã GV hoặc Chọn từ danh sách *</label>
+        
+        <input type="text" [formControl]="selectedTeacherToAssign" list="available-teachers-list" placeholder="VD: GV26001 (Bấm mũi tên để xem danh sách)"
+               class="bg-white border border-blue-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-400 block w-full p-2.5 outline-none font-medium shadow-sm transition">
+        
+        <datalist id="available-teachers-list">
+          <option *ngFor="let t of availableTeachers()" [value]="t.teacherCode">
+            Họ tên: {{ t.fullName }} | Môn: {{ t.major || 'Chưa rõ' }}
+          </option>
+        </datalist>
+      </div>
+      
+      <button (click)="assignTeacher()" [disabled]="!selectedTeacherToAssign.value || isAssigning() || isLoadingTeachers()" 
+              class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl transition shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none flex items-center justify-center shrink-0">
+         <svg *ngIf="isAssigning()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+         <svg *ngIf="!isAssigning()" class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+         Thêm vào tổ
+      </button>
+    </div>
+
+    <div class="overflow-y-auto flex-1 pr-2 scrollbar-thin border border-gray-100 rounded-xl relative">
+      <div *ngIf="isAssigning()" class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-20 flex items-center justify-center"></div>
+
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50 sticky top-0 z-10 shadow-sm border-b border-gray-100">
+          <tr>
+            <th scope="col" class="px-6 py-4">Mã GV</th>
+            <th scope="col" class="px-6 py-4">Họ và Tên</th>
+            <th scope="col" class="px-6 py-4">Chức vụ</th>
+            <th scope="col" class="px-6 py-4">Trạng thái</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngIf="isLoadingTeachers() && departmentTeachers().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+              <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Đang tải danh sách...
+            </td>
+          </tr>
+          <tr *ngIf="!isLoadingTeachers() && departmentTeachers().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500 bg-gray-50/50">Chưa có giáo viên nào trực thuộc tổ này.</td>
+          </tr>
+          
+          <tr *ngFor="let gv of departmentTeachers()" class="hover:bg-blue-50/50 transition">
+            <td class="px-6 py-4 font-mono text-gray-600">{{ gv.teacherCode }}</td>
+            <td class="px-6 py-4 font-bold text-gray-900">{{ gv.fullName }}</td>
+            <td class="px-6 py-4 text-gray-700">{{ gv.position }}</td>
+            <td class="px-6 py-4">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                    [ngClass]="{
+                      'bg-green-50 text-green-700 border-green-200': gv.status === 'working',
+                      'bg-amber-50 text-amber-700 border-amber-200': gv.status === 'on_leave',
+                      'bg-blue-50 text-blue-700 border-blue-200': gv.status === 'retired',
+                      'bg-red-50 text-red-700 border-red-200': gv.status === 'quit'
+                    }">
+                {{ gv.status === 'working' ? 'Đang công tác' : gv.status === 'on_leave' ? 'Nghỉ phép' : gv.status === 'retired' ? 'Nghỉ hưu' : 'Nghỉ việc' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <button (click)="openUnassignModal(gv)" [disabled]="isAssigning()" class="text-red-600 hover:text-red-800 font-semibold text-xs bg-red-50 hover:bg-red-100 px-3 py-2 rounded-lg transition disabled:opacity-50">
+                Gỡ khỏi tổ
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isUnassignModalOpen()" class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeUnassignModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6 border-4 border-white shadow-lg">
+      <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6"></path></svg>
+    </div>
+    <h3 class="text-2xl font-extrabold text-gray-900">Gỡ khỏi tổ chuyên môn?</h3>
+    <p class="text-gray-600 mt-3 text-sm leading-relaxed">
+      Bạn có chắc chắn muốn gỡ giáo viên <strong class="text-red-600">{{ teacherToUnassign()?.fullName }}</strong> khỏi tổ này? Giáo viên sẽ trở về trạng thái tự do.
+    </p>
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeUnassignModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">Hủy bỏ</button>
+      <button (click)="confirmUnassignTeacher()" [disabled]="isAssigning()" class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:bg-red-300 transition shadow-md flex items-center justify-center">
+        <svg *ngIf="isAssigning()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Đồng ý gỡ
+      </button>
+    </div>
+  </div>
+</div>

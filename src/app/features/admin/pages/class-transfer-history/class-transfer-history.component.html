@@ -1,0 +1,82 @@
+<div class="space-y-6">
+  <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Lịch sử Chuyển Lớp (Audit Logs)</h1>
+      <p class="text-sm text-gray-500 mt-1">Theo dõi quá trình điều chuyển lớp của học sinh</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+      <input type="date" [formControl]="startDateControl" title="Từ ngày" class="bg-white border border-gray-200 text-sm rounded-xl p-2.5 outline-none shadow-sm">
+      <span class="text-gray-400">-</span>
+      <input type="date" [formControl]="endDateControl" title="Đến ngày" class="bg-white border border-gray-200 text-sm rounded-xl p-2.5 outline-none shadow-sm">
+
+      <select [formControl]="classFilterControl" class="bg-white border border-gray-200 text-sm rounded-xl p-2.5 outline-none shadow-sm w-40">
+        <option value="">Tất cả các lớp</option>
+        <option *ngFor="let cls of classes()" [value]="cls.id">{{ cls.name }}</option>
+      </select>
+
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" [formControl]="searchControl" placeholder="Tìm mã/tên HS..." class="bg-white border border-gray-200 text-sm rounded-xl pl-10 p-2.5 outline-none shadow-sm w-56">
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="px-6 py-4">Thời gian</th>
+            <th class="px-6 py-4">Học sinh</th>
+            <th class="px-6 py-4 text-center">Tiến trình chuyển</th>
+            <th class="px-6 py-4">Lý do</th>
+            <th class="px-6 py-4 text-right">Người thực hiện</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngIf="isLoading() && historyLogs().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">Đang tải dữ liệu...</td>
+          </tr>
+          <tr *ngIf="!isLoading() && historyLogs().length === 0">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">Không có dữ liệu chuyển lớp nào.</td>
+          </tr>
+          
+          <tr *ngFor="let log of historyLogs()" class="hover:bg-gray-50/50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="font-bold text-gray-900">{{ log.transferDate | date:'dd/MM/yyyy' }}</div>
+              <div class="text-xs text-gray-500 mt-1">{{ log.createdAt | date:'HH:mm:ss' }}</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="font-bold text-blue-700">{{ log.studentName }}</div>
+              <div class="text-xs font-mono text-gray-500 mt-0.5">{{ log.studentCode }}</div>
+            </td>
+            <td class="px-6 py-4 text-center flex items-center justify-center space-x-3">
+              <span class="bg-red-50 text-red-700 font-bold px-3 py-1 rounded-lg border border-red-100">{{ log.fromClassName }}</span>
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+              <span class="bg-green-50 text-green-700 font-bold px-3 py-1 rounded-lg border border-green-100">{{ log.toClassName }}</span>
+            </td>
+            <td class="px-6 py-4 text-gray-600 max-w-xs truncate" [title]="log.reason || ''">
+              {{ log.reason || '---' }}
+            </td>
+            <td class="px-6 py-4 text-right">
+              <span class="bg-gray-100 text-gray-700 px-2.5 py-1 rounded text-xs font-medium border border-gray-200">
+                {{ log.createdByName }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-100">
+      <div class="text-sm text-gray-500">Trang <span class="font-bold text-gray-900">{{ pageData().pageNo }}</span> / {{ pageData().totalPages }}</div>
+      <div class="flex space-x-2">
+        <button (click)="changePage(pageData().pageNo - 1)" [disabled]="pageData().pageNo === 1" class="px-3 py-1.5 bg-white border rounded hover:bg-gray-50 disabled:opacity-50 text-sm">Trước</button>
+        <button (click)="changePage(pageData().pageNo + 1)" [disabled]="pageData().last" class="px-3 py-1.5 bg-white border rounded hover:bg-gray-50 disabled:opacity-50 text-sm">Sau</button>
+      </div>
+    </div>
+  </div>
+</div>
