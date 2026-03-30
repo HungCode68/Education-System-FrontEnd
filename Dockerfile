@@ -1,24 +1,13 @@
-# ... (Stage 1 Build Angular giữ nguyên) ...
-FROM node:22-alpine as build-stage
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-# Lưu ý: check lại folder output trong angular.json, thường là dist/my-app/browser hoặc dist/my-app
-RUN npm run build -- --configuration production
+FROM nginx:alpine
 
-# ... (Stage 2 Nginx) ...
-FROM nginx:alpine as production-stage
-
-# [THAY ĐỔI QUAN TRỌNG]
 # Xóa file config mặc định cũ
-RUN rm /etc/nginx/conf.d/default.conf
+RUN rm -rf /etc/nginx/conf.d/*
 
-# Copy file nginx.conf mới của mình đè vào file cấu hình gốc
+# Copy file nginx.conf của dự án đè vào hệ thống
 COPY nginx.conf /etc/nginx/nginx.conf
 
-# Copy source code đã build
-COPY --from=build-stage /app/dist/my-app/browser /usr/share/nginx/html
+# COPY TRỰC TIẾP thư mục dist đã được build sẵn từ GitHub vào Nginx
+COPY dist/my-app/browser /usr/share/nginx/html
 
 EXPOSE 80
 
