@@ -39,6 +39,16 @@ export const studentRoutes: Routes = [
                 path: 'notifications',
                 loadComponent: () => import('./pages/notification/notification-bell.component').then(m => m.NotificationBellComponent),
                 canActivate: [roleGuard(['STUDENT'])],
+            },
+            {
+                path: 'homeroom-stream/:id',
+                loadComponent: () => import('./pages/announcement/student-homeroom-stream.component').then(m => m.StudentHomeroomStreamComponent),
+                canActivate: [roleGuard(['STUDENT'])],
+            },
+            {
+                path: 'profile',
+                loadComponent: () => import('./pages/student-profile/student-profile.component').then(m => m.StudentProfileComponent),
+                canActivate: [roleGuard(['STUDENT'])],
             }
 
 

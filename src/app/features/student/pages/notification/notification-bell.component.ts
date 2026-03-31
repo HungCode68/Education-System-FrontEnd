@@ -91,6 +91,8 @@ export class NotificationBellComponent implements OnInit {
     switch (type) {
       case 'assignment': return { bg: 'bg-blue-100', text: 'text-blue-600', path: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' };
       case 'grade': return { bg: 'bg-emerald-100', text: 'text-emerald-600', path: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' };
+      case 'system': 
+        return { bg: 'bg-amber-100', text: 'text-amber-600', path: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' };
       default: return { bg: 'bg-gray-100', text: 'text-gray-600', path: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' };
     }
   }
