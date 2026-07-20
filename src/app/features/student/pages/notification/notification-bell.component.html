@@ -1,0 +1,63 @@
+<div class="relative inline-block text-left">
+  
+  <button (click)="toggleDropdown()" class="relative p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors focus:outline-none">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+    
+    <span *ngIf="unreadCount() > 0" class="absolute top-1 right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 border-2 border-white rounded-full shadow-sm animate-bounce">
+      {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+    </span>
+  </button>
+
+  <div *ngIf="isOpen()" class="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden animate-[fadeIn_0.2s_ease-out] transform origin-top-right">
+    
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+      <h3 class="text-sm font-extrabold text-gray-900 tracking-tight">Thông báo</h3>
+      
+      <button *ngIf="unreadCount() > 0" (click)="markAllRead()" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition">Đánh dấu đã đọc</button>
+    </div>
+
+    <div *ngIf="isLoading()" class="py-12 flex justify-center">
+      <svg class="animate-spin h-6 w-6 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    </div>
+
+    <div *ngIf="!isLoading()" class="max-h-[400px] overflow-y-auto custom-scrollbar">
+      
+      <div *ngIf="notifications().length === 0" class="text-center py-10">
+        <div class="mx-auto w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+          <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+        </div>
+        <p class="text-sm text-gray-500 font-medium">Bạn không có thông báo nào mới.</p>
+      </div>
+
+      <div *ngFor="let notif of notifications()" 
+           (click)="handleNotificationClick(notif)"
+           class="p-4 border-b border-gray-50 flex gap-4 cursor-pointer transition-colors relative hover:bg-gray-50 group"
+           [ngClass]="notif.isRead ? 'bg-white opacity-70' : 'bg-indigo-50/30'">
+        
+        <div *ngIf="!notif.isRead" class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></div>
+
+        <div class="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center mt-1" [ngClass]="getIconByType(notif.type).bg">
+           <svg class="w-5 h-5" [ngClass]="getIconByType(notif.type).text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getIconByType(notif.type).path"></path>
+           </svg>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-bold text-gray-900 truncate" [ngClass]="!notif.isRead ? 'text-indigo-900' : 'text-gray-800'">{{ notif.title }}</p>
+          <p class="text-xs text-gray-600 mt-1 line-clamp-2">{{ notif.message }}</p>
+          <div class="flex items-center gap-2 mt-2 text-[10px] font-bold text-gray-400">
+            <span>{{ notif.senderName || 'Hệ thống' }}</span>
+            <span>•</span>
+            <span>{{ notif.createdAt | date:'HH:mm dd/MM/yyyy' }}</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="p-3 border-t border-gray-100 bg-gray-50 text-center">
+      <button class="text-xs font-bold text-gray-500 hover:text-indigo-600 transition">Xem tất cả thông báo</button>
+    </div>
+
+  </div>
+</div>

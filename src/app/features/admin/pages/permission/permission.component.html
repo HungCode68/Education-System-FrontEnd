@@ -1,0 +1,153 @@
+<div class="space-y-6">
+  <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Quản lý Quyền (Permissions)</h1>
+      <p class="text-sm text-gray-500 mt-1">Định nghĩa các quyền hạn cụ thể trong hệ thống</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <select [formControl]="scopeFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block p-2.5 outline-none transition shadow-sm font-medium">
+        <option value="">Tất cả Nhóm (Scope)</option>
+        <option *ngFor="let s of scopes" [value]="s">{{ s }}</option>
+      </select>
+      
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" [formControl]="searchControl" placeholder="Tìm tên/mã quyền..." class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-48 xl:w-64 pl-10 p-2.5 outline-none transition shadow-sm">
+      </div>
+
+      <button (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        Tạo Quyền
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+          <tr>
+            <th scope="col" class="px-6 py-4">Mã Quyền (Code)</th>
+            <th scope="col" class="px-6 py-4">Tên hiển thị</th>
+            <th scope="col" class="px-6 py-4 text-center">Nhóm (Scope)</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngIf="isLoading() && permissions().length === 0">
+            <td colspan="4" class="px-6 py-12 text-center text-gray-500">
+              <svg class="animate-spin mx-auto h-8 w-8 text-indigo-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Đang tải dữ liệu...
+            </td>
+          </tr>
+          <tr *ngIf="!isLoading() && permissions().length === 0">
+            <td colspan="4" class="px-6 py-12 text-center text-gray-500">Không tìm thấy quyền nào.</td>
+          </tr>
+          
+          <tr *ngFor="let p of permissions()" class="bg-white hover:bg-indigo-50/50 transition duration-200">
+            <td class="px-6 py-4">
+              <span class="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">{{ p.code }}</span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="font-bold text-gray-900 text-base">{{ p.name }}</div>
+              <div class="text-xs text-gray-500 mt-0.5 truncate max-w-xs" [title]="p.description || ''">{{ p.description || 'Chưa có mô tả' }}</div>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="bg-gray-100 text-gray-700 border border-gray-200 px-2.5 py-1 rounded-md text-xs font-bold">{{ p.scope }}</span>
+            </td>
+            <td class="px-6 py-4 text-right space-x-4">
+              <button (click)="openModal(p)" class="font-semibold text-blue-600 hover:text-blue-800 transition">Sửa</button>
+              <button (click)="onDelete(p.id)" class="font-semibold text-red-600 hover:text-red-800 transition">Xóa</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl">
+      <div class="text-sm text-gray-500">
+        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> 
+        trong số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> kết quả
+      </div>
+      <div class="flex space-x-2">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">
+          Trước
+        </button>
+        <div class="flex items-center justify-center px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+          Trang {{ currentPage() }} / {{ totalPages() === 0 ? 1 : totalPages() }}
+        </div>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">
+          Sau
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg p-8 border border-gray-100">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">{{ isEditing() ? 'Cập nhật Quyền' : 'Tạo Quyền mới' }}</h3>
+      <button (click)="closeModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <form [formGroup]="permForm" (ngSubmit)="onSubmit()" class="space-y-5">
+      
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Mã Quyền (Code) *</label>
+        <input type="text" formControlName="code" placeholder="VD: USER_CREATE" class="bg-gray-50 border border-gray-200 text-gray-900 font-mono text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block w-full p-3 outline-none uppercase transition">
+        <p class="text-xs text-gray-500 mt-1.5">Mã viết liền không dấu, in hoa.</p>
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Tên hiển thị *</label>
+        <input type="text" formControlName="name" placeholder="VD: Thêm mới người dùng" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block w-full p-3 outline-none transition">
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Thuộc Nhóm (Scope) *</label>
+        <select formControlName="scope" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block w-full p-3 outline-none">
+          <option *ngFor="let s of scopes" [value]="s">{{ s }}</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block mb-1.5 text-sm font-bold text-gray-700">Mô tả chi tiết</label>
+        <textarea formControlName="description" rows="3" placeholder="Nhập mô tả chi tiết chức năng..." class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-500 block w-full p-3 outline-none resize-none"></textarea>
+      </div>
+
+      <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100">
+        <button type="button" (click)="closeModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy bỏ</button>
+        <button type="submit" [disabled]="permForm.invalid || isLoading()" class="px-5 py-3 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-indigo-300 shadow-md">
+          {{ isEditing() ? 'Lưu cập nhật' : 'Tạo quyền' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div *ngIf="isDeleteModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeDeleteModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-6 border-4 border-white shadow-lg">
+      <svg class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+    </div>
+    <h3 class="text-2xl font-extrabold text-gray-900">Xóa Quyền (Permission)?</h3>
+    <div class="p-3 bg-red-50 text-red-800 text-sm rounded-lg mt-3 text-left">
+      <ul class="list-disc pl-5 space-y-1">
+        <li>Chỉ có thể xóa quyền khi quyền này <strong>chưa được gán</strong> cho bất kỳ Vai trò (Role) nào.</li>
+        <li>Nếu quyền đang được sử dụng, hệ thống sẽ <strong>chặn thao tác xóa</strong> và báo lỗi để bảo vệ dữ liệu.</li>
+      </ul>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+      <button (click)="closeDeleteModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy</button>
+      <button (click)="confirmDelete()" [disabled]="isLoading()" class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 shadow-md">Đồng ý xóa</button>
+    </div>
+  </div>
+</div>

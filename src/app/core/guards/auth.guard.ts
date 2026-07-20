@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router, CanActivateFn, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { ToastService } from '../services/toast.service';
 
 export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   const authService = inject(AuthService);
@@ -18,14 +19,18 @@ export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
   return (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
     const authService = inject(AuthService);
     const router = inject(Router);
+    const toastService = inject(ToastService);
+    
 
     if (!authService.isAuthenticated()) {
       router.navigate(['/login']);
       return false;
     }
 
+    const userRoles = authService.authState().roles || [];
+
     if (allowedRoles.some(allowedRole => 
-      authService.authState().roles.some(userRole => 
+      userRoles.some((userRole: string) => 
         userRole === allowedRole || 
         userRole === `ROLE_${allowedRole}` ||
         userRole.endsWith(`_${allowedRole}`)
@@ -37,6 +42,7 @@ export const roleGuard = (allowedRoles: string[]): CanActivateFn => {
     router.navigate(['/unauthorized']);
     return false;
   };
+
 };
 
 export const publicGuard: CanActivateFn = () => {

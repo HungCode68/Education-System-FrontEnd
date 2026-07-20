@@ -1,6 +1,5 @@
 import { Routes } from '@angular/router';
 import { LoginComponent } from './features/auth/pages/login/login.component';
-import { StudentComponent } from './features/student/student.component';
 import { UnauthorizedComponent } from './features/unauthorized/unauthorized.component';
 import { MainLayoutComponent } from './core/layout/main-layout.component';
 import { authGuard, publicGuard, roleGuard } from './core/guards/auth.guard';
@@ -24,8 +23,7 @@ export const routes: Routes = [
   },
   {
     path: 'teacher',
-    component: MainLayoutComponent,
-    canActivate: [authGuard, roleGuard(['TEACHER'])],
+    canActivate: [authGuard, roleGuard(['SUBJECT_TEACHER', 'HOMEROOM_TEACHER', 'TEACHER_HEAD_DEPARTMENT'])],
     children: [
       {
         path: '',
@@ -35,8 +33,13 @@ export const routes: Routes = [
   },
   {
     path: 'student',
-    component: StudentComponent,
-    canActivate: [authGuard, roleGuard(['STUDENT'])]
+    canActivate: [authGuard, roleGuard(['STUDENT'])],
+    children: [
+      {
+        path: '',
+        loadChildren: () => import('./features/student/student.routes').then(m => m.studentRoutes)
+      }
+    ]
   },
   {
     path: 'unauthorized',

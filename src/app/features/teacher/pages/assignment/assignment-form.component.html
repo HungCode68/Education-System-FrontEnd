@@ -1,0 +1,149 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  
+  <div class="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+    <a (click)="router.navigate(['/teacher/classes', classId()])" class="cursor-pointer hover:text-indigo-600 transition flex items-center">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      Quay lại lớp học
+    </a>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
+        {{ isEditMode() ? 'Chỉnh sửa Bài tập' : 'Tạo Bài tập / Kiểm tra mới' }}
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">Cấu hình chi tiết nội dung, thời gian và điểm số cho bài tập</p>
+    </div>
+  </div>
+
+  <form [formGroup]="assignmentForm" (ngSubmit)="onSubmit()" class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+    
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8 space-y-6">
+        
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Tiêu đề bài tập <span class="text-red-500">*</span></label>
+          <input formControlName="title" type="text" class="bg-gray-50 border border-gray-200 text-gray-900 text-base rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3.5 outline-none transition" placeholder="VD: Bài Kiểm tra 15 phút - Chương 1">
+          <p *ngIf="assignmentForm.get('title')?.invalid && assignmentForm.get('title')?.touched" class="text-xs text-red-500 mt-1.5">Vui lòng nhập tiêu đề bài tập</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Mô tả / Hướng dẫn làm bài</label>
+          <textarea formControlName="description" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3.5 outline-none transition resize-none" rows="5" placeholder="Nhập hướng dẫn chi tiết cho học sinh (VD: Học sinh làm bài ra giấy, chụp ảnh nộp lại...)"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Tệp đính kèm (Đề bài dạng file)</label>
+          <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-2xl hover:border-indigo-500 hover:bg-indigo-50/30 transition-colors relative group" [ngClass]="{'border-indigo-500 bg-indigo-50/50': selectedFile()}">
+            <div class="space-y-2 text-center">
+              <svg *ngIf="!selectedFile()" class="mx-auto h-12 w-12 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+              
+              <div class="flex text-sm text-gray-600 justify-center items-center">
+                <label for="file-upload" class="relative cursor-pointer rounded-md font-bold text-indigo-600 hover:text-indigo-700">
+                  <span *ngIf="!selectedFile()">Nhấn để đính kèm tệp</span>
+                  <input id="file-upload" type="file" class="sr-only" (change)="onFileSelected($event)">
+                </label>
+              </div>
+              <p class="text-xs text-gray-500" *ngIf="!selectedFile()">Hỗ trợ PDF, DOCX, ZIP...</p>
+              
+              <div *ngIf="selectedFile() || existingFileName()" class="mt-3 inline-flex items-center px-4 py-2 rounded-xl bg-white border border-gray-200 shadow-sm">
+                <svg class="w-5 h-5 text-indigo-500 mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                
+                <span class="text-sm font-bold text-gray-900 truncate max-w-[200px]">
+                  {{ selectedFile() ? selectedFile()?.name : existingFileName() }}
+                </span>
+                
+                <button type="button" (click)="removeFile()" class="ml-3 text-red-400 hover:text-red-600 transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-1 space-y-6">
+      
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+        <h3 class="text-sm font-extrabold uppercase text-gray-400 tracking-wider mb-2">Cài đặt chung</h3>
+        
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Loại bài tập <span class="text-red-500">*</span></label>
+          <select formControlName="assignmentType" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none transition font-medium">
+            <option value="multiple_choice">Trắc nghiệm</option>
+            <option value="essay">Tự luận</option>
+            <option value="file_upload">Nộp File (Tiểu luận, Đồ án)</option>
+            <option value="mixed">Hỗn hợp</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2">Điểm tối đa <span class="text-red-500">*</span></label>
+            <input formControlName="maxScore" type="number" step="0.5" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none font-bold text-center">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-2" title="Chỉ áp dụng cho thi trắc nghiệm">Lần thử tối đa</label>
+            <input formControlName="maxAttempts" type="number" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none font-bold text-center" placeholder="Không giới hạn">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Trạng thái bài tập</label>
+          <select formControlName="status" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none transition font-medium" [ngClass]="assignmentForm.get('status')?.value === 'published' ? 'text-green-700 bg-green-50/50' : 'text-gray-600'">
+            <option value="draft">Lưu nháp (Chưa cấu hình xong)</option>
+            <option value="unpublished">Chưa giao (Đang ẩn với HS)</option>
+            <option value="published">Giao bài (Xuất bản ngay)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+        <h3 class="text-sm font-extrabold uppercase text-gray-400 tracking-wider mb-2">Thời gian</h3>
+        
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Thời gian Mở đề</label>
+          <input formControlName="startTime" type="datetime-local" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Hạn chót nộp bài (Deadline)</label>
+          <input formControlName="dueTime" type="datetime-local" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none">
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Thời gian làm bài (Phút)</label>
+          <input formControlName="durationMinutes" type="number" placeholder="VD: 45" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-full p-3 outline-none">
+          <p class="text-[11px] text-gray-500 mt-1.5">Để trống nếu không đếm ngược thời gian.</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
+        <h3 class="text-sm font-extrabold uppercase text-gray-400 tracking-wider mb-3">Tùy chọn nâng cao</h3>
+        
+        <label class="flex items-start cursor-pointer group">
+          <input formControlName="allowLateSubmission" type="checkbox" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded mt-0.5 focus:ring-indigo-500">
+          <span class="ml-3 text-sm text-gray-700 group-hover:text-indigo-700 transition">Cho phép nộp bài muộn <br><span class="text-xs text-gray-500 font-normal">(Đánh dấu nộp muộn)</span></span>
+        </label>
+
+        <label class="flex items-start cursor-pointer group">
+          <input formControlName="shuffleQuestions" type="checkbox" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded mt-0.5 focus:ring-indigo-500">
+          <span class="ml-3 text-sm text-gray-700 group-hover:text-indigo-700 transition">Đảo ngẫu nhiên thứ tự câu hỏi</span>
+        </label>
+
+        <label class="flex items-start cursor-pointer group">
+          <input formControlName="viewAnswers" type="checkbox" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded mt-0.5 focus:ring-indigo-500">
+          <span class="ml-3 text-sm text-gray-700 group-hover:text-indigo-700 transition">Học sinh được xem đáp án sau khi nộp</span>
+        </label>
+      </div>
+
+    </div>
+
+    <div class="lg:col-span-3 bg-white border-t border-gray-200 p-4 -mx-6 sm:mx-0 sm:rounded-2xl flex justify-end space-x-4 shadow-lg sticky bottom-4 z-10">
+      <button type="button" (click)="router.navigate(['/teacher/classes', classId()])" class="px-6 py-3 text-sm font-bold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Hủy bỏ</button>
+      <button type="submit" [disabled]="assignmentForm.invalid || isSubmitting() || isLoadingData()" class="px-8 py-3 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 disabled:bg-indigo-300 shadow-md transition flex items-center">
+        <svg *ngIf="isSubmitting() || isLoadingData()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        {{ isSubmitting() ? 'Đang xử lý...' : (isEditMode() ? 'Cập nhật Bài tập' : 'Tạo Bài tập') }}
+      </button>
+    </div>
+  </form>
+</div>

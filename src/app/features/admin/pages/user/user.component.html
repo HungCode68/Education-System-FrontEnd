@@ -1,0 +1,218 @@
+<div class="space-y-6">
+  <div class="flex flex-col xl:flex-row xl:justify-between xl:items-end pb-4 border-b border-gray-100 gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Quản lý Tài khoản (Users)</h1>
+      <p class="text-sm text-gray-500 mt-1">Giám sát trạng thái hoạt động và phân quyền truy cập hệ thống</p>
+    </div>
+    
+    <div class="flex flex-wrap items-center gap-3">
+      <select [formControl]="roleFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium w-48">
+        <option value="">Tất cả Vai trò</option>
+        <option *ngFor="let role of roles()" [value]="role.code">{{ role.name }}</option>
+      </select>
+
+      <select [formControl]="statusFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium w-40">
+        <option value="">Tất cả trạng thái</option>
+        <option value="active">Đang hoạt động</option>
+        <option value="inactive">Chưa kích hoạt</option>
+        <option value="suspended">Đang bị khóa</option>
+      </select>
+
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+        <input type="text" [formControl]="searchControl" placeholder="Tìm email tài khoản..." class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-56 xl:w-72 pl-10 p-2.5 outline-none transition shadow-sm">
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500 min-w-[1000px]">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+          <tr>
+            <th scope="col" class="px-6 py-4">Tài khoản (Email)</th>
+            <th scope="col" class="px-6 py-4">Vai trò (Role)</th>
+            <th scope="col" class="px-6 py-4 text-center">Thời gian tạo</th>
+            <th scope="col" class="px-6 py-4 text-center">Đăng nhập cuối</th>
+            <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <tr *ngIf="isLoading() && users().length === 0">
+            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+              <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Đang tải danh sách tài khoản...
+            </td>
+          </tr>
+          <tr *ngIf="!isLoading() && users().length === 0">
+            <td colspan="6" class="px-6 py-12 text-center text-gray-500">Không tìm thấy tài khoản nào.</td>
+          </tr>
+          
+          <tr *ngFor="let user of users()" class="bg-white hover:bg-slate-50/50 transition duration-200">
+            <td class="px-6 py-4">
+              <div class="font-bold text-slate-800 text-base flex items-center">
+                <svg class="w-4 h-4 mr-2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                {{ user.email }}
+              </div>
+              <div class="text-xs text-gray-400 font-mono mt-0.5 ml-6">ID: {{ user.id | slice:0:8 }}...</div>
+            </td>
+            <td class="px-6 py-4">
+              <div class="font-semibold text-gray-900">{{ user.roleName || '---' }}</div>
+              <div class="text-xs text-blue-600 font-mono mt-0.5">{{ user.roleCode }}</div>
+            </td>
+            <td class="px-6 py-4 text-center text-gray-500">
+              {{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span *ngIf="user.lastLogin" class="text-slate-600">{{ user.lastLogin | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span *ngIf="!user.lastLogin" class="text-gray-400 italic text-xs">Chưa đăng nhập</span>
+            </td>
+            <td class="px-6 py-4 text-center">
+              <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                    [ngClass]="{
+                      'bg-green-50 text-green-700 border-green-200': user.status === 'active',
+                      'bg-gray-100 text-gray-600 border-gray-300': user.status === 'inactive',
+                      'bg-red-50 text-red-700 border-red-200': user.status === 'suspended'
+                    }">
+                <span class="inline-block w-1.5 h-1.5 rounded-full mr-1" 
+                      [ngClass]="user.status === 'active' ? 'bg-green-500' : (user.status === 'inactive' ? 'bg-gray-400' : 'bg-red-500')"></span>
+                {{ user.status === 'active' ? 'Hoạt động' : user.status === 'inactive' ? 'Chưa Kích hoạt' : 'Bị Khóa' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-right space-x-3">
+              <button (click)="openResetModal(user)" 
+                      title="Khôi phục mật khẩu mặc định"
+                      class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m-2 2a2 2 0 01-2-2m2 2l.3.3m0 0l3 3m0 0l-3 3m3-3H9m3 3v-3.3M9 19H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v2"></path></svg>
+              </button>
+              
+              <button (click)="openRoleModal(user)" class="font-semibold text-purple-600 hover:text-purple-800 transition bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200">Đổi Vai trò</button>
+              <button (click)="openStatusModal(user)" class="font-semibold text-slate-600 hover:text-slate-800 transition bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-200">Trạng thái</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl">
+      <div class="text-sm text-gray-500">
+        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> 
+        trong số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> tài khoản
+      </div>
+      <div class="flex space-x-2">
+        <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">Trước</button>
+        <div class="flex items-center justify-center px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+          Trang {{ currentPage() }} / {{ totalPages() === 0 ? 1 : totalPages() }}
+        </div>
+        <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">Sau</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isRoleModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeRoleModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
+    
+    <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+      <h3 class="text-2xl font-extrabold text-gray-900">Thay Đổi Vai Trò</h3>
+      <button (click)="closeRoleModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+    </div>
+
+    <div class="space-y-5">
+      <div class="p-4 bg-purple-50 rounded-xl border border-purple-100">
+        <p class="text-sm text-purple-800">Tài khoản: <strong class="font-bold text-purple-900">{{ selectedUserForRole()?.email }}</strong></p>
+        <p class="text-sm text-purple-800 mt-1">Vai trò hiện tại: <strong class="font-bold text-purple-900">{{ selectedUserForRole()?.roleName || 'Chưa có' }}</strong></p>
+      </div>
+
+      <div>
+        <label class="block mb-2 text-sm font-bold text-gray-700">Chọn Vai trò mới *</label>
+        <select [formControl]="selectedRoleCode" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-purple-500 block w-full p-3 outline-none transition shadow-sm cursor-pointer font-medium">
+          <option value="" disabled>-- Hãy chọn vai trò --</option>
+          <option *ngFor="let role of roles()" [value]="role.code">
+            {{ role.name }} ({{ role.code }})
+          </option>
+        </select>
+        <p class="text-xs text-gray-500 mt-2 text-justify">Cảnh báo: Việc thay đổi vai trò sẽ lập tức ảnh hưởng đến quyền truy cập của người dùng vào hệ thống.</p>
+      </div>
+
+      <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100 mt-6">
+        <button type="button" (click)="closeRoleModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm transition">Hủy bỏ</button>
+        <button type="button" (click)="submitRoleChange()" [disabled]="selectedRoleCode.invalid || isProcessing()" class="px-5 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 disabled:bg-purple-300 shadow-md flex items-center transition">
+          <svg *ngIf="isProcessing()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+          Lưu Vai Trò
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isStatusModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeStatusModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+    
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full mb-6 border-4 border-white shadow-lg"
+         [ngClass]="selectedStatus.value === 'suspended' ? 'bg-red-100' : 'bg-slate-100'">
+      <svg *ngIf="selectedStatus.value !== 'suspended'" class="h-10 w-10 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+      <svg *ngIf="selectedStatus.value === 'suspended'" class="h-10 w-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+    </div>
+    
+    <h3 class="text-2xl font-extrabold text-gray-900 mb-2">Thay đổi Trạng thái</h3>
+    <p class="text-gray-600 text-sm mb-6">Tài khoản: <strong class="text-gray-900">{{ selectedUserForStatus()?.email }}</strong></p>
+
+    <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
+      <label class="block mb-2 text-sm font-bold text-gray-700">Trạng thái tài khoản *</label>
+      <select [formControl]="selectedStatus" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-slate-500 block w-full p-3 outline-none font-medium shadow-sm transition">
+        <option value="active">🟢 Đang hoạt động (Mở khóa)</option>
+        <option value="inactive">⚪ Chưa kích hoạt (Inactive)</option>
+        <option value="suspended">🔴 Bị Khóa / Đình chỉ (Suspended)</option>
+      </select>
+      <p *ngIf="selectedStatus.value === 'suspended'" class="text-xs text-red-600 mt-2 font-medium">Tài khoản bị khóa sẽ không thể đăng nhập vào hệ thống.</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
+      <button (click)="closeStatusModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm transition">Hủy bỏ</button>
+      <button (click)="submitStatusChange()" [disabled]="isProcessing()" class="px-5 py-3.5 text-sm font-semibold text-white bg-slate-800 rounded-xl hover:bg-slate-900 disabled:bg-slate-400 shadow-md flex items-center justify-center transition">
+        <svg *ngIf="isProcessing()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+        Xác nhận
+      </button>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isResetModalOpen()" class="fixed inset-0 z-[60] flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeResetModal()"></div>
+  <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
+      
+      <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-amber-100 mb-6 border-4 border-white shadow-lg">
+          <svg class="h-10 w-10 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m-2 2a2 2 0 01-2-2m2 2l.3.3m0 0l3 3m0 0l-3 3m3-3H9m3 3v-3.3M9 19H7a2 2 0 01-2-2V7a2 2 0 012-2h10a2 2 0 012 2v2"></path></svg>
+      </div>
+      
+      <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Khôi phục mật khẩu?</h3>
+      
+      <p class="text-gray-600 mt-3 text-sm leading-relaxed">
+          Bạn đang yêu cầu đặt lại mật khẩu cho tài khoản <strong class="text-gray-900">{{ userToReset()?.email }}</strong>.
+      </p>
+      
+      <div class="mt-4 p-4 bg-blue-50/80 rounded-xl border border-blue-100 text-sm text-blue-800 text-left leading-relaxed">
+          <strong class="font-bold">💡 Hệ thống tự động:</strong> Mật khẩu mới sẽ được thiết lập về <strong>Mã Học sinh</strong> hoặc <strong>Mã Giáo viên</strong> tương ứng với hồ sơ của người này.
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+          <button type="button" (click)="closeResetModal()"
+              class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">
+              Hủy bỏ
+          </button>
+          <button type="button" (click)="confirmResetPassword()" [disabled]="isProcessing()"
+              class="px-5 py-3.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 disabled:bg-amber-300 transition shadow-md flex items-center justify-center">
+              <svg *ngIf="isProcessing()" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              Đồng ý Reset
+          </button>
+      </div>
+  </div>
+</div>

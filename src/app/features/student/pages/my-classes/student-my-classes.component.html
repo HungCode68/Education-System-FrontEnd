@@ -1,0 +1,66 @@
+<div class="max-w-7xl mx-auto space-y-6">
+  
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-4 border-b border-gray-100">
+    <div>
+      <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Lớp học của tôi</h1>
+      <p class="text-sm text-gray-500 mt-1">Danh sách các môn học bạn đang tham gia trong học kỳ này</p>
+    </div>
+
+    <div class="w-full md:w-80 relative">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      </div>
+      <input [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)" type="text" placeholder="Tìm môn học, giáo viên, lớp gốc..." class="w-full pl-10 pr-4 py-3 text-sm bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition shadow-sm">
+    </div>
+  </div>
+
+  <div *ngIf="isLoading()" class="py-20 flex flex-col items-center justify-center">
+    <svg class="animate-spin h-10 w-10 text-indigo-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    <p class="text-gray-500 font-medium">Đang tải không gian học tập...</p>
+  </div>
+
+  <div *ngIf="!isLoading() && filteredClasses().length === 0" class="text-center bg-white rounded-3xl shadow-sm border border-gray-100 p-16 flex flex-col items-center">
+    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-5 border border-gray-100">
+      <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+    </div>
+    <h3 class="text-xl font-bold text-gray-900 mb-2">Chưa có lớp học nào</h3>
+    <p class="text-gray-500 max-w-sm">Hiện tại bạn chưa được xếp vào lớp học trực tuyến nào. Vui lòng liên hệ với Giáo viên chủ nhiệm để biết thêm chi tiết.</p>
+  </div>
+
+  <div *ngIf="!isLoading() && filteredClasses().length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    
+    <div *ngFor="let item of filteredClasses(); let i = index" class="w-full">
+      
+      <div 
+        [ngClass]="getPalette(i).cardBg + ' ' + getPalette(i).border"
+        class="rounded-3xl p-6 h-full flex flex-col transition-all duration-300 ease-in-out border shadow-sm hover:shadow-xl hover:-translate-y-2 hover:border-indigo-200">
+        
+        <div class="flex-grow space-y-4">
+          <h3 [ngClass]="getPalette(i).textPrimary" class="text-xl font-extrabold tracking-tight line-clamp-2 min-h-[56px]" [title]="item.subjectName">
+            {{ item.onlineClassName || item.subjectName }}
+          </h3>
+
+          <div [ngClass]="getPalette(i).badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition duration-300">
+            Lớp: {{ item.physicalClassName }}
+          </div>
+
+          <div class="flex items-center text-sm font-medium mt-2 transition duration-300" [ngClass]="getPalette(i).textSecondary">
+            <svg class="w-4 h-4 mr-2 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            GV: {{ item.teacherName }}
+          </div>
+        </div>
+
+        <div class="mt-6 pt-5 border-t border-black/5 transition duration-300">
+          <a routerLink="/student/class/{{item.onlineClassId}}" 
+             [ngClass]="getPalette(i).button"
+             class="w-full flex items-center justify-center px-5 py-3 rounded-xl text-sm font-bold shadow transition duration-300 hover:scale-[1.03]">
+            Vào lớp học
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
