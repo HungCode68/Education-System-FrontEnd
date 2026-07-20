@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private apiUrl = `${environment.apiUrl}/api/auth`;
+  private apiUrl = `${environment.apiUrl}/api/v1/auth`;
 
   currentUser = signal<any | null>(null);
 
@@ -47,7 +47,7 @@ export class AuthService {
 
   login(email: string, password: string): Observable<LoginResponse> {
     const request: LoginRequest = { email, password };
-    return this.http.post<LoginResponse>(`${this.apiUrl}/signin`, request).pipe(
+    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, request).pipe(
       tap(response => this.setAuthState(response)),
       catchError(error => {
         throw error;
