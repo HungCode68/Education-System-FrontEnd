@@ -19,7 +19,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       // Nếu Server báo lỗi 401 (Token hết hạn hoặc không hợp lệ) và không phải đang gọi API Login
-      if (error.status === 401 && !req.url.includes('/api/auth/signin')) {
+      if (error.status === 401 && !req.url.includes('/api/v1/auth/login')) {
         
         // Kích hoạt cơ chế tự động lấy Token mới (Refresh Token)
         return authService.refreshToken().pipe(
