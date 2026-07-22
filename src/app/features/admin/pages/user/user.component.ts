@@ -1,68 +1,71 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { UserService } from '../../services/user.service';
-import { RoleService } from '../../services/role.service'; 
+import { RoleService } from '../../services/role.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { User, UserStatus } from '../../models/user.model';
 import { Role } from '../../models/role.model';
 
 @Component({
   selector: 'app-user',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './user.component.html'
+  templateUrl: './user.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserComponent implements OnInit {
   private userService = inject(UserService);
   private roleService = inject(RoleService);
   private toastService = inject(ToastService);
+  private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
 
-  // --- STATE DANH SÁCH ---
   users = signal<User[]>([]);
-  roles = signal<Role[]>([]); 
-  
+  roles = signal<Role[]>([]);
+
   totalElements = signal(0);
-  currentPage = signal(1); 
+  currentPage = signal(1);
   pageSize = signal(10);
   isLoading = signal(false);
-  isProcessing = signal(false); // Trạng thái khi đang call API đổi Role/Status
+  isProcessing = signal(false);
 
   totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()));
   startIndex = computed(() => this.totalElements() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
   endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
 
-  // --- STATE BỘ LỌC ---
   searchControl = new FormControl('');
   statusFilterControl = new FormControl('');
   roleFilterControl = new FormControl('');
 
-  // --- STATE MODAL ĐỔI VAI TRÒ ---
+  isEditModalOpen = signal(false);
+  selectedUserForEdit = signal<User | null>(null);
+  editForm!: FormGroup;
+
   isRoleModalOpen = signal(false);
   selectedUserForRole = signal<User | null>(null);
-  selectedRoleCode = new FormControl('', Validators.required);
+  selectedRoleNames = signal<string[]>([]);
 
-  // --- STATE MODAL ĐỔI TRẠNG THÁI ---
   isStatusModalOpen = signal(false);
   selectedUserForStatus = signal<User | null>(null);
-  selectedStatus = new FormControl('', Validators.required);
+  selectedStatus = new FormControl<UserStatus | ''>('', Validators.required);
 
-  // --- STATE MODAL RESET PASSWORD ---
   isResetModalOpen = signal(false);
   userToReset = signal<User | null>(null);
 
   ngOnInit() {
+    this.editForm = this.fb.group({
+      fullName: ['', [Validators.maxLength(100)]],
+      phone: ['', [Validators.maxLength(20)]]
+    });
     this.loadRoles();
     this.setupFilters();
     this.loadData();
   }
 
   private loadRoles() {
-    // Lấy tất cả các Role đang active để đổ vào Dropdown
-    this.roleService.getAll(undefined, 'active', 0, 100).subscribe({
+    this.roleService.getAll(undefined, 0, 100).subscribe({
       next: (res) => this.roles.set(res.content || [])
     });
   }
@@ -82,9 +85,9 @@ export class UserComponent implements OnInit {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
     const status = this.statusFilterControl.value || undefined;
-    const roleCode = this.roleFilterControl.value || undefined;
+    const role = this.roleFilterControl.value || undefined;
 
-    this.userService.getAll(keyword, status, roleCode, this.currentPage() - 1, this.pageSize()).subscribe({
+    this.userService.getAll(keyword, status, role, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
         this.users.set(res.content);
         this.totalElements.set(res.totalElements);
@@ -101,10 +104,47 @@ export class UserComponent implements OnInit {
     }
   }
 
-  // --- LOGIC MODAL ĐỔI VAI TRÒ ---
+  formatRoles(roles?: string[]): string {
+    if (!roles || roles.length === 0) return '---';
+    return roles.join(', ');
+  }
+
+  openEditModal(user: User) {
+    this.selectedUserForEdit.set(user);
+    this.editForm.patchValue({
+      fullName: user.fullName || '',
+      phone: user.phone || ''
+    });
+    this.isEditModalOpen.set(true);
+  }
+
+  closeEditModal() {
+    this.isEditModalOpen.set(false);
+    this.selectedUserForEdit.set(null);
+  }
+
+  submitEdit() {
+    const user = this.selectedUserForEdit();
+    if (!user || this.editForm.invalid) return;
+
+    this.isProcessing.set(true);
+    this.userService.update(user.id, this.editForm.value).subscribe({
+      next: () => {
+        this.toastService.success('Thành công', 'Đã cập nhật thông tin tài khoản!');
+        this.isProcessing.set(false);
+        this.closeEditModal();
+        this.loadData();
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        this.toastService.error('Lỗi', err.error?.message || 'Không thể cập nhật!');
+      }
+    });
+  }
+
   openRoleModal(user: User) {
     this.selectedUserForRole.set(user);
-    this.selectedRoleCode.setValue(user.roleCode || '');
+    this.selectedRoleNames.set([...(user.roles || [])]);
     this.isRoleModalOpen.set(true);
   }
 
@@ -113,20 +153,36 @@ export class UserComponent implements OnInit {
     this.selectedUserForRole.set(null);
   }
 
+  toggleRole(roleName: string) {
+    const current = this.selectedRoleNames();
+    if (current.includes(roleName)) {
+      this.selectedRoleNames.set(current.filter(r => r !== roleName));
+    } else {
+      this.selectedRoleNames.set([...current, roleName]);
+    }
+  }
+
+  isRoleSelected(roleName: string): boolean {
+    return this.selectedRoleNames().includes(roleName);
+  }
+
   submitRoleChange() {
     const user = this.selectedUserForRole();
-    const newRoleCode = this.selectedRoleCode.value;
-    if (!user || !newRoleCode || this.selectedRoleCode.invalid) return;
+    if (!user) return;
 
-    if (user.roleCode === newRoleCode) {
-      this.toastService.warning('Cảnh báo', 'Vai trò mới giống hệt vai trò hiện tại.');
+    const newRoles = this.selectedRoleNames();
+    const oldRoles = [...(user.roles || [])].sort().join(',');
+    const nextRoles = [...newRoles].sort().join(',');
+
+    if (oldRoles === nextRoles) {
+      this.toastService.warning('Cảnh báo', 'Danh sách vai trò không thay đổi.');
       return;
     }
 
     this.isProcessing.set(true);
-    this.userService.changeRole(user.id, newRoleCode).subscribe({
+    this.userService.updateRoles(user.id, newRoles).subscribe({
       next: () => {
-        this.toastService.success('Thành công', `Đã cập nhật vai trò cho tài khoản ${user.email}`);
+        this.toastService.success('Thành công', `Đã cập nhật vai trò cho ${user.email}`);
         this.isProcessing.set(false);
         this.closeRoleModal();
         this.loadData();
@@ -138,7 +194,6 @@ export class UserComponent implements OnInit {
     });
   }
 
-  // --- LOGIC MODAL ĐỔI TRẠNG THÁI ---
   openStatusModal(user: User) {
     this.selectedUserForStatus.set(user);
     this.selectedStatus.setValue(user.status);
@@ -163,7 +218,7 @@ export class UserComponent implements OnInit {
     this.isProcessing.set(true);
     this.userService.updateStatus(user.id, newStatus).subscribe({
       next: () => {
-        this.toastService.success('Thành công', `Tài khoản ${user.email} đã chuyển sang trạng thái: ${newStatus}`);
+        this.toastService.success('Thành công', `Tài khoản ${user.email} đã chuyển sang: ${newStatus}`);
         this.isProcessing.set(false);
         this.closeStatusModal();
         this.loadData();
@@ -175,7 +230,6 @@ export class UserComponent implements OnInit {
     });
   }
 
-  // --- LOGIC MODAL RESET PASSWORD ---
   openResetModal(user: User) {
     this.userToReset.set(user);
     this.isResetModalOpen.set(true);
@@ -191,18 +245,27 @@ export class UserComponent implements OnInit {
     if (!user) return;
 
     this.isProcessing.set(true);
-    // Gọi hàm resetPassword từ UserService
     this.userService.resetPassword(user.id).subscribe({
-      next: (res: any) => {
-        this.toastService.success('Thành công', res.message || 'Đã đặt lại mật khẩu về mã mặc định!');
+      next: (res: unknown) => {
+        const message = (res as { message?: string })?.message || 'Đã đặt lại mật khẩu về mã mặc định!';
+        this.toastService.success('Thành công', message);
         this.isProcessing.set(false);
         this.closeResetModal();
       },
-      error: (err: any) => {
+      error: (err: { error?: { message?: string } }) => {
         this.isProcessing.set(false);
         this.closeResetModal();
         this.toastService.error('Lỗi', err.error?.message || 'Không thể reset mật khẩu!');
       }
     });
+  }
+
+  statusLabel(status: UserStatus): string {
+    switch (status) {
+      case 'ACTIVE': return 'Hoạt động';
+      case 'INACTIVE': return 'Ngừng hoạt động';
+      case 'LOCKED': return 'Bị khóa';
+      default: return status;
+    }
   }
 }

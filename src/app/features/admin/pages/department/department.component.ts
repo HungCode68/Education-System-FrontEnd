@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -11,9 +11,9 @@ import { Teacher } from '../../models/teacher.model';
 
 @Component({
   selector: 'app-department',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './department.component.html'
+  templateUrl: './department.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DepartmentComponent implements OnInit {
   private departmentService = inject(DepartmentService);
@@ -22,10 +22,9 @@ export class DepartmentComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private teacherService = inject(TeacherService);
 
-  // --- STATE DANH SÁCH ---
   departments = signal<Department[]>([]);
   totalElements = signal(0);
-  currentPage = signal(1); 
+  currentPage = signal(1);
   pageSize = signal(10);
   isLoading = signal(false);
 
@@ -33,33 +32,26 @@ export class DepartmentComponent implements OnInit {
   startIndex = computed(() => this.totalElements() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
   endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
 
-  // --- STATE BỘ LỌC ---
   searchControl = new FormControl('');
-  typeFilterControl = new FormControl('');
-  statusFilterControl = new FormControl(''); // Chuỗi 'true', 'false', hoặc ''
 
-  // --- STATE MODAL ---
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<string | null>(null);
+  currentId = signal<string | number | null>(null);
   departmentForm!: FormGroup;
 
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<string | null>(null);
+  idToDelete = signal<string | number | null>(null);
 
-  // --- STATE MODAL DANH SÁCH GIÁO VIÊN ---
   isTeacherListModalOpen = signal(false);
   departmentTeachers = signal<Teacher[]>([]);
   selectedDepartmentName = signal('');
   isLoadingTeachers = signal(false);
 
-  // --- STATE CHUYÊN SÂU CHO MODAL DANH SÁCH GIÁO VIÊN ---
-  currentDepartmentId = signal<string | null>(null);
+  currentDepartmentId = signal<string | number | null>(null);
   availableTeachers = signal<Teacher[]>([]);
   selectedTeacherToAssign = new FormControl('');
-  isAssigning = signal(false); 
+  isAssigning = signal(false);
 
-  // MODAL GỠ GIÁO VIÊN
   isUnassignModalOpen = signal(false);
   teacherToUnassign = signal<Teacher | null>(null);
 
@@ -71,36 +63,22 @@ export class DepartmentComponent implements OnInit {
 
   private initForm() {
     this.departmentForm = this.fb.group({
+      code: ['', [Validators.required, Validators.maxLength(50)]],
       name: ['', [Validators.required, Validators.maxLength(100)]],
-      description: [''],
-      type: ['academic', Validators.required],
-      isActive: [true]
+      description: ['']
     });
   }
 
   private setupFilters() {
     this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-
-    this.typeFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-
-    this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
   }
 
   loadData() {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
-    const type = this.typeFilterControl.value || undefined;
-    
-    // Parse status filter an toàn
-    const statusVal = this.statusFilterControl.value;
-    let isActive: boolean | undefined = undefined;
-    if (statusVal === 'true') isActive = true;
-    if (statusVal === 'false') isActive = false;
 
-    this.departmentService.getAll(keyword, type, isActive, this.currentPage() - 1, this.pageSize()).subscribe({
+    this.departmentService.getAll(keyword, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
         this.departments.set(res.content);
         this.totalElements.set(res.totalElements);
@@ -117,21 +95,19 @@ export class DepartmentComponent implements OnInit {
     }
   }
 
-  // --- XỬ LÝ FORM CHÍNH ---
   openModal(dept?: Department) {
     if (dept) {
       this.isEditing.set(true);
       this.currentId.set(dept.id);
       this.departmentForm.patchValue({
+        code: dept.code,
         name: dept.name,
-        description: dept.description,
-        type: dept.type,
-        isActive: dept.isActive
+        description: dept.description
       });
     } else {
       this.isEditing.set(false);
       this.currentId.set(null);
-      this.departmentForm.reset({ type: 'academic', isActive: true });
+      this.departmentForm.reset();
     }
     this.isModalOpen.set(true);
   }
@@ -145,30 +121,30 @@ export class DepartmentComponent implements OnInit {
     if (this.departmentForm.invalid) return;
     this.isLoading.set(true);
     const data = this.departmentForm.value;
+    data.code = (data.code as string).toUpperCase().trim();
 
-    if (this.isEditing() && this.currentId()) {
+    if (this.isEditing() && this.currentId() != null) {
       this.departmentService.update(this.currentId()!, data).subscribe({
-        next: () => { 
+        next: () => {
           this.loadData(); this.closeModal(); this.toastService.success('Thành công', 'Đã cập nhật phòng ban!');
         },
-        error: (err) => { 
+        error: (err) => {
           this.isLoading.set(false); this.toastService.error('Lỗi', err.error?.message || 'Cập nhật thất bại');
         }
       });
     } else {
       this.departmentService.create(data).subscribe({
-        next: () => { 
+        next: () => {
           this.loadData(); this.closeModal(); this.toastService.success('Thành công', 'Đã thêm phòng ban mới!');
         },
-        error: (err) => { 
+        error: (err) => {
           this.isLoading.set(false); this.toastService.error('Lỗi', err.error?.message || 'Thêm thất bại');
         }
       });
     }
   }
 
-  // --- XỬ LÝ XÓA ---
-  onDelete(id: string) {
+  onDelete(id: string | number) {
     this.idToDelete.set(id);
     this.isDeleteModalOpen.set(true);
   }
@@ -180,24 +156,23 @@ export class DepartmentComponent implements OnInit {
 
   confirmDelete() {
     const id = this.idToDelete();
-    if (id) {
+    if (id != null) {
       this.isLoading.set(true);
       this.departmentService.delete(id).subscribe({
-        next: () => { 
-          this.loadData(); 
-          this.closeDeleteModal(); 
-          this.toastService.success('Thành công', 'Đã xử lý xóa bộ phận!');
+        next: () => {
+          this.loadData();
+          this.closeDeleteModal();
+          this.toastService.success('Thành công', 'Đã xóa phòng ban!');
         },
-        error: (err) => { 
-          this.isLoading.set(false); 
-          this.closeDeleteModal(); 
+        error: (err) => {
+          this.isLoading.set(false);
+          this.closeDeleteModal();
           this.toastService.error('Lỗi', err.error?.message || 'Không thể xóa phòng ban này!');
         }
       });
     }
   }
 
-  // --- XỬ LÝ XEM, GÁN & GỠ GIÁO VIÊN ---
   openTeacherListModal(dept: Department) {
     this.selectedDepartmentName.set(dept.name);
     this.currentDepartmentId.set(dept.id);
@@ -205,24 +180,20 @@ export class DepartmentComponent implements OnInit {
     this.loadModalData();
   }
 
-  // Tách hàm load riêng để dễ gọi lại sau khi gán/gỡ thành công
   loadModalData() {
     const deptId = this.currentDepartmentId();
-    if (!deptId) return;
+    if (deptId == null) return;
 
     this.isLoadingTeachers.set(true);
     this.selectedTeacherToAssign.reset('');
 
-    // Bước 1: Lấy danh sách GV đang có trong tổ
-    this.teacherService.getAll(undefined, undefined, deptId, 0, 100).subscribe({
+    this.teacherService.getAll(undefined, undefined, String(deptId), 0, 100).subscribe({
       next: (resAssigned) => {
         this.departmentTeachers.set(resAssigned.content || []);
-        
-        // Bước 2: Lấy tất cả GV đang công tác để làm Dropdown thêm mới
+
         this.teacherService.getAll(undefined, 'working', undefined, 0, 1000).subscribe({
           next: (resAll) => {
             const assignedIds = resAssigned.content.map(t => t.id);
-            // Lọc ra những giáo viên CHƯA có trong tổ này
             const available = resAll.content.filter(t => !assignedIds.includes(t.id));
             this.availableTeachers.set(available);
             this.isLoadingTeachers.set(false);
@@ -243,13 +214,11 @@ export class DepartmentComponent implements OnInit {
   }
 
   assignTeacher() {
-    // Lấy giá trị gõ vào (Có thể là Mã GV hoặc ID)
     const inputValue = this.selectedTeacherToAssign.value?.trim().toLowerCase();
     const deptId = this.currentDepartmentId();
-    if (!inputValue || !deptId) return;
+    if (!inputValue || deptId == null) return;
 
-    // Tìm giáo viên theo Mã GV (teacherCode) hoặc ID
-    const teacher = this.availableTeachers().find(t => 
+    const teacher = this.availableTeachers().find(t =>
       t.teacherCode.toLowerCase() === inputValue || t.id === inputValue
     );
 
@@ -259,14 +228,14 @@ export class DepartmentComponent implements OnInit {
     }
 
     this.isAssigning.set(true);
-    const updatedData = { ...teacher, departmentId: deptId };
+    const updatedData = { ...teacher, departmentId: String(deptId) };
 
     this.teacherService.update(teacher.id, updatedData).subscribe({
       next: () => {
         this.toastService.success('Thành công', `Đã thêm ${teacher.fullName} vào tổ!`);
         this.isAssigning.set(false);
-        this.selectedTeacherToAssign.reset(''); // Reset ô nhập liệu
-        this.loadModalData(); // Cập nhật lại danh sách
+        this.selectedTeacherToAssign.reset('');
+        this.loadModalData();
       },
       error: (err) => {
         this.isAssigning.set(false);
@@ -275,7 +244,6 @@ export class DepartmentComponent implements OnInit {
     });
   }
 
-  // --- LOGIC MODAL GỠ GIÁO VIÊN ---
   openUnassignModal(teacher: Teacher) {
     this.teacherToUnassign.set(teacher);
     this.isUnassignModalOpen.set(true);
@@ -291,7 +259,6 @@ export class DepartmentComponent implements OnInit {
     if (!teacher) return;
 
     this.isAssigning.set(true);
-    // Gửi undefined/null để backend xóa liên kết phòng ban
     const updatedData = { ...teacher, departmentId: undefined };
 
     this.teacherService.update(teacher.id, updatedData).subscribe({
@@ -299,7 +266,7 @@ export class DepartmentComponent implements OnInit {
         this.toastService.success('Đã gỡ', `Giáo viên ${teacher.fullName} đã rời tổ.`);
         this.isAssigning.set(false);
         this.closeUnassignModal();
-        this.loadModalData(); // Cập nhật lại danh sách
+        this.loadModalData();
       },
       error: (err) => {
         this.isAssigning.set(false);

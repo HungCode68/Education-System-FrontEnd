@@ -17,7 +17,7 @@ import { UserComponent } from './pages/user/user.component';
 import { ClassTransferHistoryComponent } from './pages/class-transfer-history/class-transfer-history.component';
 import { OnlineClassComponent } from './pages/online-class/online-class.component';
 import { OnlineClassStudentComponent } from './pages/online-class-student/online-class-student.component';
-import { ActivityLogComponent } from './pages/activity-log/activity-log.component';
+// ActivityLogComponent tạm ẩn — backend ActivityLogController đang COMMENTED
 
 export const adminRoutes: Routes = [
   {
@@ -105,11 +105,7 @@ export const adminRoutes: Routes = [
     component: UserComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
-  {
-    path: 'activity-logs',
-    component: ActivityLogComponent,
-    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
-  },
+  // activity-logs: tạm ẩn đến khi backend bật lại ActivityLogController
   {
     path: '',
     redirectTo: 'dashboard',

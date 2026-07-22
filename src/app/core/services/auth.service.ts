@@ -105,18 +105,16 @@ export class AuthService {
   }
 
   hasRole(expectedRole: string): boolean {
-    const user = this.currentUser();
-    if (!user) return false;
-    
-    // So sánh roleCode từ Backend trả về
-    return user.roleCode === expectedRole;
+    const roles = this.authState().roles || [];
+    return roles.some(r =>
+      r === expectedRole ||
+      r === `ROLE_${expectedRole}` ||
+      r.endsWith(`_${expectedRole}`)
+    );
   }
 
-  // Hàm kiểm tra nhiều role 
   hasAnyRole(expectedRoles: string[]): boolean {
-    const user = this.currentUser();
-    if (!user) return false;
-    return expectedRoles.includes(user.roleCode);
+    return expectedRoles.some(role => this.hasRole(role));
   }
 
   hasPermission(permission: string): boolean {

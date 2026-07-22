@@ -1,17 +1,17 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PermissionService } from '../../services/permission.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Permission, PermissionScope } from '../../models/permission.model';
+import { Permission } from '../../models/permission.model';
 
 @Component({
   selector: 'app-permission',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './permission.component.html'
+  templateUrl: './permission.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PermissionComponent implements OnInit {
   private permissionService = inject(PermissionService);
@@ -19,12 +19,9 @@ export class PermissionComponent implements OnInit {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
 
-  // Danh sách các Scope để hiển thị dropdown
-  readonly scopes: PermissionScope[] = ['SYSTEM', 'ACADEMIC_YEAR', 'GRADE', 'CLASS', 'USER', 'SUBJECT', 'ASSIGNMENT', 'MATERIAL', 'GRADEBOOK', 'REPORT', 'DEPARTMENT'];
-
   permissions = signal<Permission[]>([]);
   totalElements = signal(0);
-  currentPage = signal(1); 
+  currentPage = signal(1);
   pageSize = signal(10);
   isLoading = signal(false);
 
@@ -33,7 +30,6 @@ export class PermissionComponent implements OnInit {
   endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
 
   searchControl = new FormControl('');
-  scopeFilterControl = new FormControl('');
 
   isModalOpen = signal(false);
   isEditing = signal(false);
@@ -51,9 +47,7 @@ export class PermissionComponent implements OnInit {
 
   private initForm() {
     this.permForm = this.fb.group({
-      code: ['', [Validators.required, Validators.maxLength(120)]],
-      scope: ['SYSTEM', Validators.required],
-      name: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100)]],
       description: ['']
     });
   }
@@ -61,16 +55,13 @@ export class PermissionComponent implements OnInit {
   private setupFilters() {
     this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-    this.scopeFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
   }
 
   loadData() {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
-    const scope = this.scopeFilterControl.value || undefined;
 
-    this.permissionService.getAll(keyword, scope, this.currentPage() - 1, this.pageSize()).subscribe({
+    this.permissionService.getAll(keyword, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
         this.permissions.set(res.content);
         this.totalElements.set(res.totalElements);
@@ -88,11 +79,14 @@ export class PermissionComponent implements OnInit {
     if (perm) {
       this.isEditing.set(true);
       this.currentId.set(perm.id);
-      this.permForm.patchValue(perm);
+      this.permForm.patchValue({
+        name: perm.name,
+        description: perm.description
+      });
     } else {
       this.isEditing.set(false);
       this.currentId.set(null);
-      this.permForm.reset({ scope: 'SYSTEM' });
+      this.permForm.reset();
     }
     this.isModalOpen.set(true);
   }
@@ -102,8 +96,8 @@ export class PermissionComponent implements OnInit {
   onSubmit() {
     if (this.permForm.invalid) return;
     this.isLoading.set(true);
-    const data = this.permForm.value;
-    data.code = data.code.toUpperCase();
+    const data = { ...this.permForm.value };
+    data.name = (data.name as string).toUpperCase().trim();
 
     if (this.isEditing() && this.currentId()) {
       this.permissionService.update(this.currentId()!, data).subscribe({
