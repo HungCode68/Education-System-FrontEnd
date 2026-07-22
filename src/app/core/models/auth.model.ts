@@ -8,6 +8,7 @@ export interface LoginResponse {
   fullName: string;
   roles: string[];
   permissions: string[];
+  accessToken?: string;
 }
 
 export interface AuthState {

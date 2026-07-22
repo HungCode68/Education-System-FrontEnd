@@ -10,10 +10,21 @@ import { AuthState, LoginRequest, LoginResponse } from '../models/auth.model';
 })
 export class AuthService {
   private readonly apiUrl = environment.apiUrl;
+  // Lưu token trên RAM (Private Variable) -> Tuyệt đối chống XSS ăn cắp
+  private accessToken: string | null = null;
+
   isAuthenticated(): boolean {
     return this.authState().isAuthenticated;
   } 
   readonly authState = signal<AuthState>(this.loadInitialState());
+
+  setAccessToken(token: string) {
+    this.accessToken = token;
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
 
   constructor(
     private http: HttpClient,
@@ -25,6 +36,9 @@ export class AuthService {
     withCredentials: true
   }).pipe(
     tap((res) => {
+      if (res.accessToken) {
+        this.setAccessToken(res.accessToken);
+      }
       const newState: AuthState = {
         fullName: res.fullName,
         email: credentials.email, // Lưu email từ request
@@ -48,6 +62,7 @@ export class AuthService {
   clearState(): void {
     localStorage.removeItem('user_info');
     localStorage.removeItem('accessToken'); // Xóa key cũ nếu còn tồn tại
+    this.accessToken = null;
     this.authState.set({
       fullName: null,
       roles: [],

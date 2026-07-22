@@ -1,21 +1,27 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injector } from '@angular/core';
+import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
   const router = inject(Router);
-  const injector = inject(Injector); // Tránh circular dependency bằng Injector
 
-  const authReq = req.clone({
+  let authReq = req.clone({
     withCredentials: true
   });
+
+  const token = authService.getAccessToken();
+  if (token) {
+    authReq = authReq.clone({
+      setHeaders: { Authorization: `Bearer ${token}` }
+    });
+  }
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       if (error.status === 401) {
-        const authService = injector.get(AuthService);
         authService.clearState();
         router.navigate(['/login']);
       }
