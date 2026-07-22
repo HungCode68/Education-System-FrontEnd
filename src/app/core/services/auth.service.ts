@@ -10,7 +10,9 @@ import { AuthState, LoginRequest, LoginResponse } from '../models/auth.model';
 })
 export class AuthService {
   private readonly apiUrl = environment.apiUrl;
-
+  isAuthenticated(): boolean {
+    return this.authState().isAuthenticated;
+  } 
   readonly authState = signal<AuthState>(this.loadInitialState());
 
   constructor(
@@ -19,24 +21,25 @@ export class AuthService {
   ) {}
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/api/auth/login`, credentials, {
-      withCredentials: true
-    }).pipe(
-      tap((res) => {
-        const newState: AuthState = {
-          fullName: res.fullName,
-          roles: res.roles || [],
-          permissions: res.permissions || [],
-          isAuthenticated: true
-        };
-        this.authState.set(newState);
-        localStorage.setItem('user_info', JSON.stringify(newState));
-      })
-    );
-  }
+  return this.http.post<LoginResponse>(`${this.apiUrl}/api/v1/auth/login`, credentials, {
+    withCredentials: true
+  }).pipe(
+    tap((res) => {
+      const newState: AuthState = {
+        fullName: res.fullName,
+        email: credentials.email, // Lưu email từ request
+        roles: res.roles || [],
+        permissions: res.permissions || [],
+        isAuthenticated: true
+      };
+      this.authState.set(newState);
+      localStorage.setItem('user_info', JSON.stringify(newState));
+    })
+  );
+}
 
   logout(): void {
-    this.http.post(`${this.apiUrl}/api/auth/logout`, {}, { withCredentials: true }).subscribe({
+    this.http.post(`${this.apiUrl}/api/v1/auth/logout`, {}, { withCredentials: true }).subscribe({
       next: () => this.clearStateAndRedirect(),
       error: () => this.clearStateAndRedirect()
     });
@@ -59,19 +62,21 @@ export class AuthService {
   }
 
   private loadInitialState(): AuthState {
+  try {
     const saved = localStorage.getItem('user_info');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // Fallback nếu parse lỗi
-      }
+    if (saved && saved !== 'undefined' && saved !== 'null') {
+      return JSON.parse(saved);
     }
-    return {
-      fullName: null,
-      roles: [],
-      permissions: [],
-      isAuthenticated: false
-    };
+  } catch (e) {
+    console.error('Lỗi parse user_info từ localStorage:', e);
   }
+  
+  return {
+    fullName: null,
+    email: null,
+    roles: [],
+    permissions: [],
+    isAuthenticated: false
+  };
+}
 }

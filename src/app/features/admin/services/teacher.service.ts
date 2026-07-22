@@ -9,7 +9,7 @@ import { Teacher, SpringPage } from '../models/teacher.model';
 })
 export class TeacherService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/teachers`;
+  private apiUrl = `${environment.apiUrl}/api/v1/teachers`;
 
   getAll(keyword?: string, status?: string, departmentId?: string, page: number = 0, size: number = 10): Observable<SpringPage<Teacher>> {
     let params = new HttpParams()

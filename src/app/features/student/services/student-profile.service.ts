@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class StudentProfileService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/students`;
+  private apiUrl = `${environment.apiUrl}/api/v1/students`;
 
   // Thay vì truyền ID, ta gọi thẳng endpoint /me
   getMyProfile(): Observable<any> {

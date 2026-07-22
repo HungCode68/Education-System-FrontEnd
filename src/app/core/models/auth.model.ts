@@ -12,6 +12,7 @@ export interface LoginResponse {
 
 export interface AuthState {
   fullName: string | null;
+  email?: string | null; // Thêm trường email optional để tránh lỗi build
   roles: string[];
   permissions: string[];
   isAuthenticated: boolean;
