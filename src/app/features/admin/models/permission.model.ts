@@ -1,16 +1,13 @@
-export type PermissionScope = 'SYSTEM' | 'ACADEMIC_YEAR' | 'GRADE' | 'CLASS' | 'USER' | 'SUBJECT' | 'ASSIGNMENT' | 'MATERIAL' | 'GRADEBOOK' | 'REPORT' | 'DEPARTMENT';
-
 export interface Permission {
-  id: number; 
-  code: string;
-  scope: PermissionScope;
+  id: number;
   name: string;
   description?: string;
+  createdAt?: string;
 }
 
 export interface SpringPage<T> {
   content: T[];
-  pageable: any;
+  pageable: unknown;
   last: boolean;
   totalElements: number;
   totalPages: number;

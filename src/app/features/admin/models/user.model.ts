@@ -1,19 +1,21 @@
-export type UserStatus = 'active' | 'inactive' | 'suspended';
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'LOCKED';
 
 export interface User {
-  id: string;
+  id: number | string;
   email: string;
+  fullName?: string;
+  phone?: string;
   status: UserStatus;
-  roleId?: string;
-  roleCode?: string;
-  roleName?: string;
+  /** Tập tên role, VD: ["ROLE_ADMIN", "ROLE_TEACHER"] */
+  roles?: string[];
+  expiryDate?: string;
   createdAt?: string;
-  lastLogin?: string;
+  updatedAt?: string;
 }
 
 export interface SpringPage<T> {
   content: T[];
-  pageable: any;
+  pageable: unknown;
   last: boolean;
   totalElements: number;
   totalPages: number;

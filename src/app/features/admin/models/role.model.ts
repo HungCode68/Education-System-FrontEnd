@@ -1,27 +1,21 @@
-export type RoleStatus = 'active' | 'inactive';
-
-// Định nghĩa sẵn Permission dựa trên DTO của Backend
 export interface Permission {
-  id: string | number; 
-  code: string;
+  id: number | string;
   name: string;
-  scope: string;
   description?: string;
+  createdAt?: string;
 }
 
 export interface Role {
-  id: string;
-  code: string;       // VD: ROLE_ADMIN
-  name: string;       // VD: Quản trị hệ thống
-  status: RoleStatus;
+  id: number | string;
+  name: string;
+  description?: string;
   createdAt?: string;
-  updatedAt?: string;
   permissions?: Permission[];
 }
 
 export interface SpringPage<T> {
   content: T[];
-  pageable: any;
+  pageable: unknown;
   last: boolean;
   totalElements: number;
   totalPages: number;

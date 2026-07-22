@@ -1,19 +1,18 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RoleService } from '../../services/role.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Role } from '../../models/role.model';
+import { Role, Permission } from '../../models/role.model';
 import { PermissionService } from '../../services/permission.service';
-import { Permission } from '../../models/role.model';
 
 @Component({
   selector: 'app-role',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './role.component.html'
+  templateUrl: './role.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoleComponent implements OnInit {
   private roleService = inject(RoleService);
@@ -22,10 +21,9 @@ export class RoleComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private permissionService = inject(PermissionService);
 
-  // --- STATE DANH SÁCH ---
   roles = signal<Role[]>([]);
   totalElements = signal(0);
-  currentPage = signal(1); 
+  currentPage = signal(1);
   pageSize = signal(10);
   isLoading = signal(false);
 
@@ -33,28 +31,19 @@ export class RoleComponent implements OnInit {
   startIndex = computed(() => this.totalElements() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
   endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
 
-  // --- STATE BỘ LỌC ---
   searchControl = new FormControl('');
-  statusFilterControl = new FormControl('');
 
-  // --- STATE MODAL THÊM/SỬA ---
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<string | null>(null);
+  currentId = signal<string | number | null>(null);
   roleForm!: FormGroup;
 
-  // --- STATE MODAL XÓA (VÔ HIỆU HÓA) ---
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<string | null>(null);
+  idToDelete = signal<string | number | null>(null);
 
-  // --- STATE MODAL PHÂN QUYỀN ---
   isPermissionModalOpen = signal(false);
   selectedRoleForPermission = signal<Role | null>(null);
-
-  // --- STATE CHUYÊN SÂU CHO PHÂN QUYỀN ---
-  // Lưu danh sách quyền được group theo Scope: { scope: 'SYSTEM', permissions: [...] }
-  groupedPermissions = signal<{ scope: string, permissions: Permission[] }[]>([]);
-  // Mảng chứa ID (số nguyên) của các quyền được tick
+  allPermissions = signal<Permission[]>([]);
   selectedPermissionIds = signal<number[]>([]);
   isAssigning = signal(false);
 
@@ -66,26 +55,21 @@ export class RoleComponent implements OnInit {
 
   private initForm() {
     this.roleForm = this.fb.group({
-      code: ['', [Validators.required, Validators.maxLength(50)]],
-      name: ['', [Validators.required, Validators.maxLength(100)]],
-      status: ['active']
+      name: ['', [Validators.required, Validators.maxLength(50)]],
+      description: ['', [Validators.maxLength(255)]]
     });
   }
 
   private setupFilters() {
     this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-
-    this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
   }
 
   loadData() {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
-    const status = this.statusFilterControl.value || undefined;
 
-    this.roleService.getAll(keyword, status, this.currentPage() - 1, this.pageSize()).subscribe({
+    this.roleService.getAll(keyword, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
         this.roles.set(res.content);
         this.totalElements.set(res.totalElements);
@@ -102,20 +86,18 @@ export class RoleComponent implements OnInit {
     }
   }
 
-  // --- LOGIC MODAL THÊM/SỬA ---
   openModal(role?: Role) {
     if (role) {
       this.isEditing.set(true);
       this.currentId.set(role.id);
       this.roleForm.patchValue({
-        code: role.code,
         name: role.name,
-        status: role.status
+        description: role.description
       });
     } else {
       this.isEditing.set(false);
       this.currentId.set(null);
-      this.roleForm.reset({ status: 'active' });
+      this.roleForm.reset();
     }
     this.isModalOpen.set(true);
   }
@@ -128,32 +110,31 @@ export class RoleComponent implements OnInit {
   onSubmit() {
     if (this.roleForm.invalid) return;
     this.isLoading.set(true);
-    const data = this.roleForm.value;
-    data.code = data.code.toUpperCase(); 
+    const data = { ...this.roleForm.value };
+    data.name = (data.name as string).toUpperCase().trim();
 
-    if (this.isEditing() && this.currentId()) {
+    if (this.isEditing() && this.currentId() != null) {
       this.roleService.update(this.currentId()!, data).subscribe({
-        next: () => { 
+        next: () => {
           this.loadData(); this.closeModal(); this.toastService.success('Thành công', 'Đã cập nhật Vai trò!');
         },
-        error: (err) => { 
+        error: (err) => {
           this.isLoading.set(false); this.toastService.error('Lỗi', err.error?.message || 'Cập nhật thất bại');
         }
       });
     } else {
       this.roleService.create(data).subscribe({
-        next: () => { 
+        next: () => {
           this.loadData(); this.closeModal(); this.toastService.success('Thành công', 'Đã tạo Vai trò mới!');
         },
-        error: (err) => { 
+        error: (err) => {
           this.isLoading.set(false); this.toastService.error('Lỗi', err.error?.message || 'Thêm thất bại');
         }
       });
     }
   }
 
-  // --- LOGIC MODAL XÓA (VÔ HIỆU HÓA) ---
-  onDelete(id: string) {
+  onDelete(id: string | number) {
     this.idToDelete.set(id);
     this.isDeleteModalOpen.set(true);
   }
@@ -165,51 +146,34 @@ export class RoleComponent implements OnInit {
 
   confirmDelete() {
     const id = this.idToDelete();
-    if (id) {
+    if (id != null) {
       this.isLoading.set(true);
       this.roleService.delete(id).subscribe({
-        next: () => { 
-          this.loadData(); 
-          this.closeDeleteModal(); 
-          this.toastService.success('Hoàn tất', 'Đã xử lý xóa hoặc vô hiệu hóa vai trò.');
+        next: () => {
+          this.loadData();
+          this.closeDeleteModal();
+          this.toastService.success('Hoàn tất', 'Đã xóa vai trò.');
         },
-        error: (err) => { 
-          this.isLoading.set(false); 
-          this.closeDeleteModal(); 
+        error: (err) => {
+          this.isLoading.set(false);
+          this.closeDeleteModal();
           this.toastService.error('Lỗi', err.error?.message || 'Không thể xử lý!');
         }
       });
     }
   }
 
-  // --- LOGIC GIAO DIỆN PHÂN QUYỀN ---
   openPermissionModal(role: Role) {
     this.selectedRoleForPermission.set(role);
     this.isPermissionModalOpen.set(true);
     this.isLoading.set(true);
 
-    // Lấy trước các quyền mà Role này đang có (từ data bảng)
     const currentPerms = role.permissions || [];
     this.selectedPermissionIds.set(currentPerms.map(p => Number(p.id)));
 
-    // Gọi API lấy toàn bộ Permission trong hệ thống (lấy page 0, size 1000 cho chắc)
-    this.permissionService.getAll(undefined, undefined, 0, 1000).subscribe({
+    this.permissionService.getAll(undefined, 0, 1000).subscribe({
       next: (res) => {
-        const allPerms = res.content;
-        // Gom nhóm (Group by Scope)
-        const groups: { [key: string]: Permission[] } = {};
-        allPerms.forEach(p => {
-          if (!groups[p.scope]) groups[p.scope] = [];
-          groups[p.scope].push(p);
-        });
-
-        // Chuyển object thành mảng để Angular dễ duyệt bằng *ngFor
-        const groupedArray = Object.keys(groups).map(scope => ({
-          scope,
-          permissions: groups[scope]
-        }));
-        
-        this.groupedPermissions.set(groupedArray);
+        this.allPermissions.set(res.content);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
@@ -221,7 +185,6 @@ export class RoleComponent implements OnInit {
     this.selectedRoleForPermission.set(null);
   }
 
-  // Checkbox tick lẻ từng quyền
   togglePermission(permId: number) {
     const current = this.selectedPermissionIds();
     if (current.includes(permId)) {
@@ -231,35 +194,25 @@ export class RoleComponent implements OnInit {
     }
   }
 
-  // Checkbox "Chọn tất cả" theo từng nhóm
-  toggleScopeGroup(scopePerms: Permission[], event: any) {
-    const isChecked = event.target.checked;
-    const idsInGroup = scopePerms.map(p => Number(p.id));
-    let current = [...this.selectedPermissionIds()];
-
+  toggleAllPermissions(event: Event) {
+    const isChecked = (event.target as HTMLInputElement).checked;
     if (isChecked) {
-      // Thêm những ID chưa có vào danh sách chọn
-      idsInGroup.forEach(id => {
-        if (!current.includes(id)) current.push(id);
-      });
+      this.selectedPermissionIds.set(this.allPermissions().map(p => Number(p.id)));
     } else {
-      // Xóa những ID của nhóm này khỏi danh sách chọn
-      current = current.filter(id => !idsInGroup.includes(id));
+      this.selectedPermissionIds.set([]);
     }
-    this.selectedPermissionIds.set(current);
   }
 
-  // Kiểm tra xem 1 nhóm đã được chọn full chưa (để check cái checkbox tổng)
-  isScopeGroupFullySelected(scopePerms: Permission[]): boolean {
-    if (scopePerms.length === 0) return false;
+  isAllSelected(): boolean {
+    const all = this.allPermissions();
+    if (all.length === 0) return false;
     const current = this.selectedPermissionIds();
-    return scopePerms.every(p => current.includes(Number(p.id)));
+    return all.every(p => current.includes(Number(p.id)));
   }
 
-  // Bấm nút Lưu phân quyền
   savePermissions() {
     const roleId = this.selectedRoleForPermission()?.id;
-    if (!roleId) return;
+    if (roleId == null) return;
 
     this.isAssigning.set(true);
     this.roleService.assignPermissions(roleId, this.selectedPermissionIds()).subscribe({
@@ -267,7 +220,7 @@ export class RoleComponent implements OnInit {
         this.isAssigning.set(false);
         this.closePermissionModal();
         this.toastService.success('Thành công', 'Đã cập nhật phân quyền!');
-        this.loadData(); // Load lại bảng Role để cập nhật cột số lượng quyền
+        this.loadData();
       },
       error: (err) => {
         this.isAssigning.set(false);

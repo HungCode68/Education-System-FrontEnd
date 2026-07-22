@@ -1,18 +1,14 @@
-export type DepartmentType = 'academic' | 'office';
-
 export interface Department {
-  id: string;
+  id: number | string;
+  code: string;
   name: string;
   description?: string;
-  type: DepartmentType;
-  isActive: boolean;
   createdAt?: string;
-  updatedAt?: string;
 }
 
 export interface SpringPage<T> {
   content: T[];
-  pageable: any;
+  pageable: unknown;
   last: boolean;
   totalElements: number;
   totalPages: number;
