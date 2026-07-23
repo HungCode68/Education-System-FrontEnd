@@ -9,7 +9,7 @@ import { Student, SpringPage } from '../models/student.model';
 })
 export class StudentService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/students`;
+  private apiUrl = `${environment.apiUrl}/api/v1/students`;
 
   // Spring Data Pageable mặc định bắt đầu từ 0
   getAll(keyword?: string, status?: string, admissionYear?: number, page: number = 0, size: number = 10): Observable<SpringPage<Student>> {

@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class DepartmentManagementService {
   private http = inject(HttpClient);
-  private teacherApiUrl = `${environment.apiUrl}/api/teachers`;
+  private teacherApiUrl = `${environment.apiUrl}/api/v1/teachers`;
 
   //  Lấy thông tin cá nhân của Tổ trưởng (để biết họ đang quản lý Tổ nào)
   // (Tái sử dụng API my-profile chúng ta đã làm)
@@ -47,7 +47,7 @@ export class DepartmentManagementService {
 
   getDepartmentDetail(departmentId: string): Observable<any> {
     // Gọi API lấy chi tiết phòng ban/tổ bộ môn
-    return this.http.get<any>(`${environment.apiUrl}/api/departments/${departmentId}`);
+    return this.http.get<any>(`${environment.apiUrl}/api/v1/departments/${departmentId}`);
   }
 
 }
