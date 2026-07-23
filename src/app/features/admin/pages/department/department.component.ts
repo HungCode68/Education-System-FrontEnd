@@ -6,8 +6,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DepartmentService } from '../../services/department.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Department } from '../../models/department.model';
-import { TeacherService } from '../../services/teacher.service';
-import { Teacher } from '../../models/teacher.model';
+import { StaffService } from '../../services/staff.service';
+import { Staff } from '../../models/staff.model';
 
 @Component({
   selector: 'app-department',
@@ -20,7 +20,7 @@ export class DepartmentComponent implements OnInit {
   private toastService = inject(ToastService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
-  private teacherService = inject(TeacherService);
+  private staffService = inject(StaffService);
 
   departments = signal<Department[]>([]);
   totalElements = signal(0);
@@ -43,17 +43,17 @@ export class DepartmentComponent implements OnInit {
   idToDelete = signal<string | number | null>(null);
 
   isTeacherListModalOpen = signal(false);
-  departmentTeachers = signal<Teacher[]>([]);
+  departmentTeachers = signal<Staff[]>([]);
   selectedDepartmentName = signal('');
   isLoadingTeachers = signal(false);
 
   currentDepartmentId = signal<string | number | null>(null);
-  availableTeachers = signal<Teacher[]>([]);
+  availableTeachers = signal<Staff[]>([]);
   selectedTeacherToAssign = new FormControl('');
   isAssigning = signal(false);
 
   isUnassignModalOpen = signal(false);
-  teacherToUnassign = signal<Teacher | null>(null);
+  teacherToUnassign = signal<Staff | null>(null);
 
   ngOnInit() {
     this.initForm();
@@ -187,11 +187,13 @@ export class DepartmentComponent implements OnInit {
     this.isLoadingTeachers.set(true);
     this.selectedTeacherToAssign.reset('');
 
-    this.teacherService.getAll(undefined, undefined, String(deptId), 0, 100).subscribe({
+    // Route đúng: GET /api/v1/staffs/department/{departmentId} — trả nhân sự đã thuộc phòng ban này
+    this.staffService.getByDepartment(deptId, 0, 100).subscribe({
       next: (resAssigned) => {
         this.departmentTeachers.set(resAssigned.content || []);
 
-        this.teacherService.getAll(undefined, 'working', undefined, 0, 1000).subscribe({
+        // Lấy toàn bộ nhân sự để tính ra danh sách "chưa thuộc phòng ban nào có thể thêm vào"
+        this.staffService.getAll(undefined, 0, 1000).subscribe({
           next: (resAll) => {
             const assignedIds = resAssigned.content.map(t => t.id);
             const available = resAll.content.filter(t => !assignedIds.includes(t.id));
@@ -203,7 +205,7 @@ export class DepartmentComponent implements OnInit {
       },
       error: () => {
         this.isLoadingTeachers.set(false);
-        this.toastService.error('Lỗi', 'Không thể tải danh sách giáo viên!');
+        this.toastService.error('Lỗi', 'Không thể tải danh sách nhân sự!');
       }
     });
   }
@@ -219,32 +221,32 @@ export class DepartmentComponent implements OnInit {
     if (!inputValue || deptId == null) return;
 
     const teacher = this.availableTeachers().find(t =>
-      t.teacherCode.toLowerCase() === inputValue || t.id === inputValue
+      (t.staffCode || '').toLowerCase() === inputValue || String(t.id) === inputValue
     );
 
     if (!teacher) {
-      this.toastService.warning('Không tìm thấy', 'Mã giáo viên không chính xác hoặc giáo viên này đã thuộc tổ khác!');
+      this.toastService.warning('Không tìm thấy', 'Mã nhân sự không chính xác hoặc nhân sự này đã thuộc phòng ban khác!');
       return;
     }
 
     this.isAssigning.set(true);
-    const updatedData = { ...teacher, departmentId: String(deptId) };
+    const updatedData = { ...teacher, departmentId: Number(deptId) };
 
-    this.teacherService.update(teacher.id, updatedData).subscribe({
+    this.staffService.update(teacher.id, updatedData).subscribe({
       next: () => {
-        this.toastService.success('Thành công', `Đã thêm ${teacher.fullName} vào tổ!`);
+        this.toastService.success('Thành công', `Đã thêm ${teacher.fullName} vào phòng ban!`);
         this.isAssigning.set(false);
         this.selectedTeacherToAssign.reset('');
         this.loadModalData();
       },
       error: (err) => {
         this.isAssigning.set(false);
-        this.toastService.error('Lỗi', err.error?.message || 'Không thể thêm giáo viên!');
+        this.toastService.error('Lỗi', err.error?.message || 'Không thể thêm nhân sự!');
       }
     });
   }
 
-  openUnassignModal(teacher: Teacher) {
+  openUnassignModal(teacher: Staff) {
     this.teacherToUnassign.set(teacher);
     this.isUnassignModalOpen.set(true);
   }
@@ -261,16 +263,16 @@ export class DepartmentComponent implements OnInit {
     this.isAssigning.set(true);
     const updatedData = { ...teacher, departmentId: undefined };
 
-    this.teacherService.update(teacher.id, updatedData).subscribe({
+    this.staffService.update(teacher.id, updatedData).subscribe({
       next: () => {
-        this.toastService.success('Đã gỡ', `Giáo viên ${teacher.fullName} đã rời tổ.`);
+        this.toastService.success('Đã gỡ', `Nhân sự ${teacher.fullName} đã rời phòng ban.`);
         this.isAssigning.set(false);
         this.closeUnassignModal();
         this.loadModalData();
       },
       error: (err) => {
         this.isAssigning.set(false);
-        this.toastService.error('Lỗi', err.error?.message || 'Không thể gỡ giáo viên!');
+        this.toastService.error('Lỗi', err.error?.message || 'Không thể gỡ nhân sự!');
       }
     });
   }
