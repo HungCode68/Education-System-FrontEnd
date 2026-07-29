@@ -1,23 +1,22 @@
 import { Routes } from '@angular/router';
 import { authGuard, roleGuard } from '../../core/guards/auth.guard';
-import { MainLayoutComponent } from '../../core/layout/main-layout.component';
 import { AdminDashboardComponent } from './pages/dashboard/admin-dashboard.component';
-import { SchoolYearComponent } from './pages/school-year/school-year.component';
-import { SubjectComponent } from './pages/subject/subject.component';
-import { GradeComponent } from './pages/grade/grade.component';
-import { GradeSubjectComponent } from './pages/grade-subject/grade-subject.component';
-import { PhysicalClassComponent } from './pages/physical-class/physical-class.component'
-import { ClassStudentComponent } from './pages/class-student/class-student.component';
+import { TermComponent } from './pages/term/term.component';
+import { CourseComponent } from './pages/course/course.component';
+import { ClassComponent } from './pages/class/class.component';
+import { RoomComponent } from './pages/room/room.component';
+import { ClassScheduleComponent } from './pages/class-schedule/class-schedule.component';
 import { StudentComponent } from './pages/student/student.component';
-import { TeacherComponent } from './pages/teacher/teacher.component';
+import { StaffComponent } from './pages/staff/staff.component';
 import { DepartmentComponent } from './pages/department/department.component';
 import { RoleComponent } from './pages/role/role.component';
 import { PermissionComponent } from './pages/permission/permission.component';
 import { UserComponent } from './pages/user/user.component';
-import { ClassTransferHistoryComponent } from './pages/class-transfer-history/class-transfer-history.component';
-import { OnlineClassComponent } from './pages/online-class/online-class.component';
-import { OnlineClassStudentComponent } from './pages/online-class-student/online-class-student.component';
-// ActivityLogComponent tạm ẩn — backend ActivityLogController đang COMMENTED
+import { TeachingAssignmentComponent } from './pages/teaching-assignment/teaching-assignment.component';
+import { TeachingSubstitutionComponent } from './pages/teaching-substitution/teaching-substitution.component';
+import { ScheduleAssignmentComponent } from './pages/schedule-assignment/schedule-assignment.component';
+import { EnrollmentComponent } from './pages/enrollment/enrollment.component';
+import { LessonComponent } from './pages/lesson/lesson.component';
 
 export const adminRoutes: Routes = [
   {
@@ -26,53 +25,43 @@ export const adminRoutes: Routes = [
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'school-years',
-    component: SchoolYearComponent,
+    path: 'terms',
+    component: TermComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'subjects',
-    component: SubjectComponent,
+    path: 'courses',
+    component: CourseComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'grades',
-    component: GradeComponent,
+    path: 'classes',
+    component: ClassComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'grade-subjects',
-    component: GradeSubjectComponent,
+    path: 'classes/:id/schedules',
+    component: ClassScheduleComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'physical-classes',
-    component: PhysicalClassComponent,
+    path: 'classes/:id/enrollments',
+    component: EnrollmentComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'physical-classes/:id/students',
-    component: ClassStudentComponent,
+    path: 'classes/:id/lessons',
+    component: LessonComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'class-students',
-    component: ClassStudentComponent,
+    path: 'rooms',
+    component: RoomComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'class-transfer-history',
-    component: ClassTransferHistoryComponent,
-    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
-  },
-  {
-    path: 'online-classes',
-    component: OnlineClassComponent,
-    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
-  },
-  {
-    path: 'online-classes/:id/students',
-    component: OnlineClassStudentComponent,
+    path: 'class-schedules',
+    component: ClassScheduleComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
@@ -81,8 +70,33 @@ export const adminRoutes: Routes = [
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
-    path: 'teachers',
-    component: TeacherComponent,
+    path: 'staffs',
+    component: StaffComponent,
+    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'teaching-assignments',
+    component: TeachingAssignmentComponent,
+    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'teaching-substitutions',
+    component: TeachingSubstitutionComponent,
+    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'schedule-assignments',
+    component: ScheduleAssignmentComponent,
+    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'enrollments',
+    component: EnrollmentComponent,
+    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'lessons',
+    component: LessonComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
@@ -105,7 +119,6 @@ export const adminRoutes: Routes = [
     component: UserComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
-  // activity-logs: tạm ẩn đến khi backend bật lại ActivityLogController
   {
     path: '',
     redirectTo: 'dashboard',
