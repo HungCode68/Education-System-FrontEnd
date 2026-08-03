@@ -17,6 +17,7 @@ import { TeachingSubstitutionComponent } from './pages/teaching-substitution/tea
 import { ScheduleAssignmentComponent } from './pages/schedule-assignment/schedule-assignment.component';
 import { EnrollmentComponent } from './pages/enrollment/enrollment.component';
 import { LessonComponent } from './pages/lesson/lesson.component';
+import { ActivityLogComponent } from './pages/activity-log/activity-log.component';
 
 export const adminRoutes: Routes = [
   {
@@ -117,6 +118,11 @@ export const adminRoutes: Routes = [
   {
     path: 'users',
     component: UserComponent,
+    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'activity-logs',
+    component: ActivityLogComponent,
     canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
   },
   {
