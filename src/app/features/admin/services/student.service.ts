@@ -11,41 +11,39 @@ export class StudentService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/v1/students`;
 
-  // Spring Data Pageable mặc định bắt đầu từ 0
-  getAll(keyword?: string, status?: string, admissionYear?: number, page: number = 0, size: number = 10): Observable<SpringPage<Student>> {
+  getAll(keyword?: string, status?: string, page: number = 0, size: number = 10): Observable<SpringPage<Student>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
 
     if (keyword) params = params.set('keyword', keyword);
     if (status) params = params.set('status', status);
-    if (admissionYear) params = params.set('admissionYear', admissionYear.toString());
 
     return this.http.get<SpringPage<Student>>(this.apiUrl, { params });
   }
 
-  getById(id: string): Observable<Student> {
+  getById(id: number | string): Observable<Student> {
     return this.http.get<Student>(`${this.apiUrl}/${id}`);
   }
 
-  create(data: Partial<Student>): Observable<Student> {
-    return this.http.post<Student>(this.apiUrl, data);
+  create(data: Partial<Student>): Observable<any> {
+    return this.http.post<any>(this.apiUrl, data);
   }
 
-  update(id: string, data: Partial<Student>): Observable<Student> {
-    return this.http.put<Student>(`${this.apiUrl}/${id}`, data);
+  update(id: number | string, data: Partial<Student>): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/${id}`, data);
   }
 
-  delete(id: string): Observable<void> {
+  delete(id: number | string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
-  createAccount(id: string, email?: string): Observable<any> {
-    const body = email ? { email } : {}; // Gửi email hoặc rỗng để BE tự tạo
+  createAccount(id: number | string, email?: string): Observable<any> {
+    const body = email ? { email } : {};
     return this.http.post(`${this.apiUrl}/${id}/create-account`, body);
   }
 
-  createAccountsBatch(studentIds: string[]): Observable<any> {
+  createAccountsBatch(studentIds: (number | string)[]): Observable<any> {
     return this.http.post(`${this.apiUrl}/create-accounts-batch`, { studentIds });
   }
 }

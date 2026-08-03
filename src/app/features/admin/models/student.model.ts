@@ -1,31 +1,26 @@
-export type Gender = 'male' | 'female' | 'other';
-export type StudentStatus = 'studying' | 'graduated' | 'transferred' | 'dropped_out' | 'reserved';
+export type StudentStatus = 'STUDYING' | 'RESERVED' | 'GRADUATED' | 'DROPPED';
 
 export interface Student {
-  id: string;
+  id: number | string;
+  userId?: number | string;
+  userEmail?: string;
   studentCode: string;
   fullName: string;
-  dateOfBirth: string; // Định dạng yyyy-MM-dd
-  gender: Gender;
-  currentClassId?: string;
-  address: string;
-  parentPhone: string;
-  parentName: string;
-  admissionYear: number;
+  parentName?: string;
+  parentPhone?: string;
+  targetScore?: string; // VD: IELTS 7.0, TOEIC 800
   status: StudentStatus;
-  email?: string;
-  userId?: string; // Dùng để kiểm tra xem đã có tài khoản hay chưa
+  createdAt?: string;
 }
 
-// Spring Data Page chuẩn
 export interface SpringPage<T> {
   content: T[];
-  pageable: any;
+  pageable: unknown;
   last: boolean;
   totalElements: number;
   totalPages: number;
   size: number;
-  number: number; // Spring Data page bắt đầu từ 0
+  number: number;
   first: boolean;
   numberOfElements: number;
   empty: boolean;
