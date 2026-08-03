@@ -1,0 +1,471 @@
+<div class="space-y-6">
+
+  <!-- PAGE HEADER & ACTION CONTROLS -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center">
+        <svg class="w-7 h-7 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+        Báo cáo & Thống kê Đào tạo
+      </h1>
+      <p class="text-sm text-gray-500 mt-1">Theo dõi hiệu suất lớp học, tỷ lệ điểm danh, điểm trung bình và chỉ số tổng quan hệ thống</p>
+    </div>
+
+    <!-- Header Action Controls -->
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Toggle Range Summary Button -->
+      <button 
+        (click)="toggleRangeSection()"
+        class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-semibold py-2.5 px-4 rounded-xl flex items-center transition shadow-sm text-sm"
+      >
+        <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        {{ isRangeSectionOpen() ? 'Ẩn bộ lọc khoảng thời gian' : 'Xem biến động theo thời gian' }}
+        <svg class="w-4 h-4 ml-1.5 transition-transform duration-200" [class.rotate-180]="isRangeSectionOpen()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+        </svg>
+      </button>
+
+      <!-- Select Report Date (Clickable Trigger -> showPicker) -->
+      <div 
+        (click)="reportDateInput.showPicker()"
+        class="relative flex items-center bg-white px-3.5 py-2.5 rounded-xl border border-gray-200 shadow-sm space-x-2.5 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition"
+        title="Bấm để chọn ngày báo cáo"
+      >
+        <span class="text-xs font-semibold text-gray-500">Ngày:</span>
+        <span class="text-sm font-bold text-indigo-900 font-mono tracking-tight">{{ selectedDateFormatted() }}</span>
+        <svg class="w-4 h-4 text-indigo-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <input 
+          #reportDateInput
+          type="date" 
+          [value]="selectedDate()"
+          (change)="onDateChange($event)"
+          class="sr-only"
+        >
+      </div>
+
+      <!-- Sync Center Button -->
+      <button 
+        (click)="syncCenterStatistics()"
+        [disabled]="isSyncingCenter()"
+        class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold py-2.5 px-4 rounded-xl flex items-center transition shadow-sm text-sm disabled:opacity-50"
+      >
+        <svg class="w-4 h-4 mr-2" [class.animate-spin]="isSyncingCenter()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+        {{ isSyncingCenter() ? 'Đang đồng bộ...' : 'Đồng bộ dữ liệu Trung tâm' }}
+      </button>
+
+      <!-- Sync All Class Metrics Button -->
+      <button 
+        (click)="syncAllClasses()"
+        [disabled]="isSyncingAllClasses()"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center transition shadow-md text-sm disabled:opacity-50"
+      >
+        <svg class="w-4 h-4 mr-2" [class.animate-spin]="isSyncingAllClasses()" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+        </svg>
+        {{ isSyncingAllClasses() ? 'Đang đồng bộ...' : 'Đồng bộ Tất cả Hiệu suất Lớp' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 1: CENTER OVERVIEW CARDS -->
+  @if (isLoadingDashboard() && !overview()) {
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm animate-pulse space-y-3">
+          <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div class="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div class="h-3 bg-gray-100 rounded w-3/4"></div>
+        </div>
+      }
+    </div>
+  } @else {
+    @let ov = overview();
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      
+      <!-- CARD 1: HỌC VIÊN -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-blue-50/60 rounded-full group-hover:scale-110 transition duration-300 pointer-events-none"></div>
+        
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+            Học viên đang học
+          </span>
+          <div class="p-2.5 bg-blue-100/80 rounded-xl text-blue-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-3xl font-black text-gray-900 tracking-tight">
+            {{ (ov?.totalActiveStudents || 0) | number }}
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-500 mt-2 pt-2 border-t border-gray-50">
+            <span class="text-emerald-600 font-bold inline-flex items-center">
+              +{{ ov?.newStudentsToday || 0 }} mới hôm nay
+            </span>
+            <span class="text-rose-500 font-medium">
+              -{{ ov?.droppedStudentsToday || 0 }} nghỉ
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 2: GIẢNG VIÊN -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-purple-50/60 rounded-full group-hover:scale-110 transition duration-300 pointer-events-none"></div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-purple-600 bg-purple-50 px-2.5 py-1 rounded-lg">
+            Đội ngũ Giảng viên
+          </span>
+          <div class="p-2.5 bg-purple-100/80 rounded-xl text-purple-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-3xl font-black text-gray-900 tracking-tight">
+            {{ (ov?.totalTeachers || 0) | number }}
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-500 mt-2 pt-2 border-t border-gray-50">
+            <span class="text-purple-700 font-bold">
+              +{{ ov?.newTeachersToday || 0 }} GV mới
+            </span>
+            <span class="text-gray-400 font-medium">
+              -{{ ov?.resignedTeachersToday || 0 }} nghỉ
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 3: KHÓA HỌC -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-amber-50/60 rounded-full group-hover:scale-110 transition duration-300 pointer-events-none"></div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
+            Chương trình / Khóa học
+          </span>
+          <div class="p-2.5 bg-amber-100/80 rounded-xl text-amber-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-3xl font-black text-gray-900 tracking-tight">
+            {{ (ov?.totalCourses || 0) | number }}
+          </div>
+          <div class="text-xs text-amber-700 font-semibold mt-2 pt-2 border-t border-gray-50">
+            Đang hoạt động trong chương trình
+          </div>
+        </div>
+      </div>
+
+      <!-- CARD 4: LỚP HỌC -->
+      <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition duration-200 relative overflow-hidden group">
+        <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-emerald-50/60 rounded-full group-hover:scale-110 transition duration-300 pointer-events-none"></div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+            Lớp học đang mở
+          </span>
+          <div class="p-2.5 bg-emerald-100/80 rounded-xl text-emerald-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            </svg>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="text-3xl font-black text-gray-900 tracking-tight">
+            {{ (ov?.totalActiveClasses || 0) | number }}
+          </div>
+          <div class="flex items-center justify-between text-xs text-gray-500 mt-2 pt-2 border-t border-gray-50">
+            <span class="text-emerald-700 font-bold">
+              +{{ ov?.newClassesOpened || 0 }} mở mới
+            </span>
+            <span class="text-gray-400 font-medium">
+              -{{ ov?.classesClosedToday || 0 }} đã đóng
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- COLLAPSIBLE SECTION 2: CUSTOM RANGE SUMMARY -->
+  @if (isRangeSectionOpen()) {
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4 transition-all duration-300 animate-fadeIn">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+        <div>
+          <h2 class="text-base font-extrabold text-gray-900 tracking-tight flex items-center">
+            <svg class="w-5 h-5 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            Biến động Thống kê theo Khoảng thời gian
+          </h2>
+          <p class="text-xs text-gray-500">Xem cộng dồn biến động học viên, giáo viên và lớp học trong giai đoạn tùy chọn</p>
+        </div>
+
+        <!-- Range Filter Inputs (Clickable Triggers -> showPicker) -->
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Từ ngày -->
+          <div 
+            (click)="startDateInput.showPicker()"
+            class="flex items-center bg-gray-50 hover:bg-indigo-50/40 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-indigo-300 transition cursor-pointer space-x-2"
+            title="Bấm để chọn Từ ngày"
+          >
+            <span class="text-xs font-semibold text-gray-500">Từ:</span>
+            <span class="text-xs font-bold text-indigo-900 font-mono tracking-tight">{{ rangeStartDateFormatted() }}</span>
+            <svg class="w-3.5 h-3.5 text-indigo-500 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <input 
+              #startDateInput
+              type="date" 
+              [value]="rangeStartDate()"
+              (change)="onRangeStartChange($event)"
+              class="sr-only"
+            >
+          </div>
+
+          <!-- Đến ngày -->
+          <div 
+            (click)="endDateInput.showPicker()"
+            class="flex items-center bg-gray-50 hover:bg-indigo-50/40 px-3.5 py-2 rounded-xl border border-gray-200 hover:border-indigo-300 transition cursor-pointer space-x-2"
+            title="Bấm để chọn Đến ngày"
+          >
+            <span class="text-xs font-semibold text-gray-500">Đến:</span>
+            <span class="text-xs font-bold text-indigo-900 font-mono tracking-tight">{{ rangeEndDateFormatted() }}</span>
+            <svg class="w-3.5 h-3.5 text-indigo-500 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            <input 
+              #endDateInput
+              type="date" 
+              [value]="rangeEndDate()"
+              (change)="onRangeEndChange($event)"
+              class="sr-only"
+            >
+          </div>
+        </div>
+      </div>
+
+      @if (isLoadingSummary()) {
+        <div class="py-6 text-center text-gray-400 text-sm">Đang tải dữ liệu tổng hợp khoảng thời gian...</div>
+      } @else if (summary()) {
+        @let sum = summary()!;
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 text-center">
+          
+          <div class="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+            <div class="text-xs text-blue-600 font-semibold mb-1">HV Mới Cộng Dồn</div>
+            <div class="text-xl font-extrabold text-blue-900">+{{ sum.totalNewStudentsInRange }}</div>
+          </div>
+
+          <div class="bg-rose-50/50 p-3 rounded-xl border border-rose-100">
+            <div class="text-xs text-rose-600 font-semibold mb-1">HV Nghỉ Cộng Dồn</div>
+            <div class="text-xl font-extrabold text-rose-900">-{{ sum.totalDroppedStudentsInRange }}</div>
+          </div>
+
+          <div class="bg-purple-50/50 p-3 rounded-xl border border-purple-100">
+            <div class="text-xs text-purple-600 font-semibold mb-1">GV Mới Thêm</div>
+            <div class="text-xl font-extrabold text-purple-900">+{{ sum.totalNewTeachersInRange }}</div>
+          </div>
+
+          <div class="bg-amber-50/50 p-3 rounded-xl border border-amber-100">
+            <div class="text-xs text-amber-600 font-semibold mb-1">GV Nghỉ Việc</div>
+            <div class="text-xl font-extrabold text-amber-900">-{{ sum.totalResignedTeachersInRange }}</div>
+          </div>
+
+          <div class="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
+            <div class="text-xs text-emerald-600 font-semibold mb-1">Lớp Mở Mới</div>
+            <div class="text-xl font-extrabold text-emerald-900">+{{ sum.totalNewClassesOpenedInRange }}</div>
+          </div>
+
+          <div class="bg-gray-50 p-3 rounded-xl border border-gray-200">
+            <div class="text-xs text-gray-500 font-semibold mb-1">Số Ngày Báo Cáo</div>
+            <div class="text-xl font-extrabold text-gray-800">{{ sum.totalDaysReported }} ngày</div>
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+  <!-- SECTION 3: CLASS PERFORMANCE TABLE -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden space-y-4">
+    
+    <!-- Table Header Toolbar -->
+    <div class="p-6 pb-2 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 tracking-tight flex items-center">
+          Bảng Hiệu suất Lớp học
+          <span class="ml-3 px-2.5 py-0.5 text-xs font-bold bg-blue-50 text-blue-700 rounded-full border border-blue-200">
+            {{ filteredClassMetrics().length }} lớp
+          </span>
+        </h2>
+        <p class="text-xs text-gray-500 mt-0.5">Tỷ lệ điểm danh trung bình, điểm số bài tập và chỉ số nghỉ học của từng lớp</p>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- Quick Averages Summary Pills -->
+        <div class="hidden lg:flex items-center space-x-2 text-xs">
+          <div class="px-3 py-1.5 bg-emerald-50 text-emerald-800 rounded-xl font-bold border border-emerald-200">
+            TB Điểm danh: {{ overallAvgAttendance() }}%
+          </div>
+          <div class="px-3 py-1.5 bg-indigo-50 text-indigo-800 rounded-xl font-bold border border-indigo-200">
+            TB Điểm bài tập: {{ overallAvgScore() }}/10
+          </div>
+        </div>
+
+        <!-- Search Input -->
+        <div class="relative w-64">
+          <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            [formControl]="searchControl" 
+            placeholder="Tìm theo mã/tên lớp..." 
+            class="bg-gray-50/80 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-full pl-10 p-2.5 outline-none transition"
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Container -->
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+          <tr>
+            <th scope="col" class="px-6 py-4">STT</th>
+            <th scope="col" class="px-6 py-4">Mã & Tên Lớp học</th>
+            <th scope="col" class="px-6 py-4 text-center">Sĩ số</th>
+            <th scope="col" class="px-6 py-4">Tỷ lệ Điểm danh TB</th>
+            <th scope="col" class="px-6 py-4">Điểm Bài tập TB</th>
+            <th scope="col" class="px-6 py-4 text-center">HV Nghỉ/Bỏ</th>
+            <th scope="col" class="px-6 py-4">Lần cập nhật cuối</th>
+            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          @if (isLoadingDashboard() && classMetrics().length === 0) {
+            <tr>
+              <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Đang tải hiệu suất các lớp học...
+              </td>
+            </tr>
+          } @else if (filteredClassMetrics().length === 0) {
+            <tr>
+              <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                Không tìm thấy thông tin hiệu suất lớp học nào.
+              </td>
+            </tr>
+          } @else {
+            @for (m of filteredClassMetrics(); track m.classId; let idx = $index) {
+              <tr class="bg-white hover:bg-blue-50/40 transition duration-200">
+                
+                <!-- STT -->
+                <td class="px-6 py-4 font-semibold text-gray-400">
+                  #{{ idx + 1 }}
+                </td>
+
+                <!-- Class Code & Name -->
+                <td class="px-6 py-4">
+                  <div class="font-bold text-gray-900 text-sm">{{ m.className }}</div>
+                  <div class="font-mono text-xs text-indigo-600 font-semibold">{{ m.classCode }}</div>
+                </td>
+
+                <!-- Total Students -->
+                <td class="px-6 py-4 text-center">
+                  <span class="px-3 py-1 bg-gray-100 text-gray-800 font-bold rounded-lg text-xs">
+                    {{ m.totalStudents || 0 }} HV
+                  </span>
+                </td>
+
+                <!-- Attendance Rate + Progress Bar -->
+                <td class="px-6 py-4 max-w-xs">
+                  @let attRate = m.averageAttendanceRate || 0;
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="px-2 py-0.5 text-xs font-bold rounded border" [class]="getAttendanceBadgeClass(attRate)">
+                      {{ attRate }}%
+                    </span>
+                  </div>
+                  <!-- Visual Progress Bar -->
+                  <div class="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                    <div 
+                      class="h-2 rounded-full transition-all duration-500" 
+                      [class]="getAttendanceBg(attRate)" 
+                      [style.width.%]="attRate"
+                    ></div>
+                  </div>
+                </td>
+
+                <!-- Assignment Average Score -->
+                <td class="px-6 py-4">
+                  @let score = m.averageAssignmentScore || 0;
+                  <span class="px-3 py-1 text-xs font-extrabold rounded-lg border inline-flex items-center" [class]="getScoreBadgeClass(score)">
+                    ⭐ {{ score }} / 10
+                  </span>
+                </td>
+
+                <!-- Dropped Students -->
+                <td class="px-6 py-4 text-center">
+                  @if (m.droppedStudents > 0) {
+                    <span class="px-2.5 py-1 bg-rose-50 text-rose-700 font-bold rounded-lg text-xs border border-rose-200">
+                      {{ m.droppedStudents }} HV
+                    </span>
+                  } @else {
+                    <span class="text-xs text-gray-400 font-medium">0</span>
+                  }
+                </td>
+
+                <!-- Last Calculated At -->
+                <td class="px-6 py-4 text-xs font-mono text-gray-400">
+                  {{ m.lastCalculatedAt || '---' }}
+                </td>
+
+                <!-- Actions -->
+                <td class="px-6 py-4 text-right">
+                  <button 
+                    (click)="syncSingleClass(m.classId)" 
+                    [disabled]="syncingClassId() === m.classId"
+                    class="font-semibold text-blue-600 hover:text-blue-800 transition text-xs inline-flex items-center bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 disabled:opacity-50"
+                  >
+                    <svg class="w-3.5 h-3.5 mr-1" [class.animate-spin]="syncingClassId() === m.classId" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Tính lại hiệu suất
+                  </button>
+                </td>
+
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>

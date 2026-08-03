@@ -6,10 +6,6 @@
     </div>
     
     <div class="flex flex-wrap items-center gap-3">
-      <select [formControl]="departmentFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium">
-        <option value="">Tất cả Tổ bộ môn</option>
-        <option *ngFor="let dept of departments()" [value]="dept.id">{{ dept.name }}</option>
-      </select>
 
       <select [formControl]="statusFilterControl" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block p-2.5 outline-none transition shadow-sm font-medium">
         <option value="">Tất cả trạng thái</option>
@@ -71,11 +67,11 @@
             </td>
             <td class="px-6 py-4">
               <div class="font-bold text-blue-700 text-base">{{ gv.fullName }}</div>
-              <div class="text-xs text-gray-500 font-mono mt-0.5"><span class="font-semibold">Mã GV:</span> {{ gv.teacherCode }}</div>
+              <div class="text-xs text-gray-500 font-mono mt-0.5"><span class="font-semibold">Mã NS/GV:</span> {{ gv.staffCode || gv.teacherCode || ('NS#' + gv.id) }}</div>
             </td>
             <td class="px-6 py-4">
-              <div class="font-medium text-gray-900">{{ gv.position }}</div>
-              <div class="text-xs text-gray-500">{{ gv.degree }} <span *ngIf="gv.major">- {{ gv.major }}</span></div>
+              <div class="font-medium text-gray-900">{{ gv.departmentName || gv.position || gv.staffType || 'Giáo viên' }}</div>
+              <div class="text-xs text-gray-500">{{ gv.contractType || gv.degree || 'Chính thức' }} <span *ngIf="gv.major">- {{ gv.major }}</span></div>
             </td>
             <td class="px-6 py-4">
               <div class="text-gray-900 font-medium flex items-center mb-0.5">
@@ -84,18 +80,18 @@
               </div>
               <div class="text-xs text-gray-500 flex items-center">
                 <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                {{ gv.emailContact || '---' }}
+                {{ gv.userEmail || gv.emailContact || '---' }}
               </div>
             </td>
             <td class="px-6 py-4 text-center">
               <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
                     [ngClass]="{
-                      'bg-green-50 text-green-700 border-green-200': gv.status === 'working',
-                      'bg-amber-50 text-amber-700 border-amber-200': gv.status === 'on_leave',
-                      'bg-blue-50 text-blue-700 border-blue-200': gv.status === 'retired',
-                      'bg-red-50 text-red-700 border-red-200': gv.status === 'quit'
+                      'bg-green-50 text-green-700 border-green-200': isWorking(gv.status),
+                      'bg-amber-50 text-amber-700 border-amber-200': isOnLeave(gv.status),
+                      'bg-blue-50 text-blue-700 border-blue-200': isRetired(gv.status),
+                      'bg-red-50 text-red-700 border-red-200': isQuit(gv.status)
                     }">
-                {{ gv.status === 'working' ? 'Đang công tác' : gv.status === 'on_leave' ? 'Nghỉ phép' : gv.status === 'retired' ? 'Nghỉ hưu' : 'Nghỉ việc' }}
+                {{ getStatusText(gv.status) }}
               </span>
             </td>
             <td class="px-6 py-4 text-center">

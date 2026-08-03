@@ -1,22 +1,27 @@
-export type TeacherGender = 'male' | 'female' | 'other';
-export type TeacherStatus = 'working' | 'on_leave' | 'retired' | 'quit';
+export type TeacherGender = 'male' | 'female' | 'other' | string;
+export type TeacherStatus = 'working' | 'on_leave' | 'retired' | 'quit' | 'WORKING' | 'ON_LEAVE' | 'RESIGNED' | 'RETIRED' | 'ACTIVE' | string;
 
 export interface Teacher {
-  id: string;
-  userId?: string;
-  teacherCode: string;
+  id: any;
+  userId?: any;
+  userEmail?: string;
+  teacherCode?: string;
+  staffCode?: string;
   fullName: string;
   dateOfBirth?: string;
-  gender: TeacherGender;
+  gender?: TeacherGender;
   phone?: string;
   emailContact?: string;
-  address: string;
-  departmentId?: string;
-  position: string; // Tổ trưởng, Giáo viên...
-  degree: string;   // Cử nhân, Thạc sĩ...
-  major?: string;   // Chuyên môn
+  address?: string;
+  departmentId?: any;
+  departmentName?: string;
+  position?: string;
+  staffType?: string;
+  contractType?: string;
+  degree?: string;
+  major?: string;
   startDate?: string;
-  status: TeacherStatus;
+  status?: TeacherStatus;
 }
 
 export interface SpringPage<T> {

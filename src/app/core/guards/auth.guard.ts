@@ -55,6 +55,8 @@ export const publicGuard: CanActivateFn = () => {
     
     if (hasRole('ADMIN') || hasRole('SYSTEM_ADMIN')) {
       router.navigate(['/admin']);
+    } else if (hasRole('ACADEMIC') || hasRole('TRAINING')) {
+      router.navigate(['/academic']);
     } else if (hasRole('TEACHER')) {
       router.navigate(['/teacher']);
     } else if (hasRole('STUDENT')) {

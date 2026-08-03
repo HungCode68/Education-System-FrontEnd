@@ -1,0 +1,459 @@
+<div class="space-y-6">
+
+  <!-- PAGE HEADER -->
+  <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-gray-100">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Quản lý Tài liệu Khóa học</h1>
+      <p class="text-sm text-gray-500 mt-1">Quản lý kho tài liệu chính thống cấp Khóa học, phân quyền trợ lý RAG AI</p>
+    </div>
+    
+    <!-- Header Right Actions -->
+    <div class="flex flex-wrap items-center gap-3">
+      <!-- Course Filter Select -->
+      <div class="w-56">
+        <select 
+          [value]="selectedCourseFilter() || ''"
+          (change)="onCourseFilterChange($event)"
+          class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-full p-2.5 outline-none transition shadow-sm font-medium"
+        >
+          <option value="">-- Tất cả khóa học --</option>
+          @for (c of availableCourses(); track c.id) {
+            <option [value]="c.id">{{ c.code }} - {{ c.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Search Input -->
+      <div class="relative">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          [formControl]="searchControl" 
+          placeholder="Tìm tiêu đề tài liệu..." 
+          class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-56 pl-10 p-2.5 outline-none transition shadow-sm"
+        >
+      </div>
+
+      <!-- Add Button -->
+      <button 
+        (click)="openModal()" 
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm"
+      >
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Thêm tài liệu mới
+      </button>
+    </div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-sm text-left text-gray-500">
+      <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+        <tr>
+          <th scope="col" class="px-6 py-4">STT / Thứ tự</th>
+          <th scope="col" class="px-6 py-4">Tiêu đề & Loại tài liệu</th>
+          <th scope="col" class="px-6 py-4">Khóa học</th>
+          <th scope="col" class="px-6 py-4">Nguồn & Dung lượng</th>
+          <th scope="col" class="px-6 py-4">Duyệt chính thống</th>
+          <th scope="col" class="px-6 py-4">AI RAG</th>
+          <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        @if (isLoading() && materials().length === 0) {
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+              <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Đang tải danh sách tài liệu...
+            </td>
+          </tr>
+        } @else if (displayMaterials().length === 0) {
+          <tr>
+            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+              Không tìm thấy tài liệu khóa học nào.
+            </td>
+          </tr>
+        } @else {
+          @for (m of displayMaterials(); track m.id; let idx = $index) {
+            <tr class="bg-white hover:bg-blue-50/40 transition duration-200">
+              
+              <!-- STT / Order -->
+              <td class="px-6 py-4 font-semibold text-gray-400">
+                #{{ startIndex() + idx }}
+                <span class="text-xs text-gray-400 block font-normal mt-0.5">Thứ tự: {{ m.displayOrder || 0 }}</span>
+              </td>
+
+              <!-- Title & Type -->
+              <td class="px-6 py-4 max-w-xs">
+                @let typeBadge = getTypeBadge(m.materialType);
+                <div class="font-bold text-gray-900 text-sm leading-snug line-clamp-2" [title]="m.title">
+                  {{ m.title }}
+                </div>
+                <div class="mt-1 flex items-center space-x-2">
+                  <span class="px-2 py-0.5 text-[11px] font-semibold rounded-md" [class]="typeBadge.bgClass + ' ' + typeBadge.textClass">
+                    {{ typeBadge.label }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Khóa học -->
+              <td class="px-6 py-4">
+                <div class="font-bold text-indigo-900 text-xs">{{ m.courseName || '---' }}</div>
+                <div class="font-mono text-[11px] text-gray-400">{{ m.courseCode || 'Mã KH' }}</div>
+              </td>
+
+              <!-- Source & File Size -->
+              <td class="px-6 py-4 text-xs font-medium">
+                @if (m.sourceType === 'MINIO') {
+                  <span class="inline-flex items-center text-blue-700 font-semibold">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    MinIO File
+                  </span>
+                  <div class="text-gray-400 font-mono text-[11px] mt-0.5">{{ formatFileSize(m.fileSize) }}</div>
+                } @else {
+                  <span class="inline-flex items-center text-indigo-700 font-semibold">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                    </svg>
+                    Link ngoài
+                  </span>
+                }
+              </td>
+
+              <!-- Official Badge & Toggle Button -->
+              <td class="px-6 py-4">
+                <button 
+                  (click)="toggleOfficial(m)"
+                  class="px-3 py-1 text-xs font-bold rounded-full border transition inline-flex items-center"
+                  [class]="m.isOfficial ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'"
+                  [title]="m.isOfficial ? 'Bấm để hủy duyệt chính thống' : 'Bấm để duyệt chính thống'"
+                >
+                  <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                  {{ m.isOfficial ? 'Chính thống' : 'Chờ duyệt' }}
+                </button>
+              </td>
+
+              <!-- AI RAG Toggle & Indexing Status -->
+              <td class="px-6 py-4">
+                <div class="space-y-1">
+                  <button 
+                    (click)="toggleRag(m)"
+                    class="px-2.5 py-0.5 text-[11px] font-bold rounded-full border transition inline-flex items-center"
+                    [class]="m.isRagEnabled ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100' : 'bg-gray-50 text-gray-400 border-gray-200 hover:bg-gray-100'"
+                    [title]="m.isRagEnabled ? 'Bấm để tắt AI RAG' : 'Bấm để kích hoạt AI RAG'"
+                  >
+                    ✨ {{ m.isRagEnabled ? 'AI RAG Bật' : 'AI RAG Tắt' }}
+                  </button>
+
+                  @if (m.isRagEnabled) {
+                    @let idxBadge = getIndexingBadge(m.indexingStatus);
+                    <div class="text-[10px] font-semibold text-gray-500">
+                      <span class="px-2 py-0.5 rounded border inline-block" [class]="idxBadge.bgClass + ' ' + idxBadge.textClass + ' ' + idxBadge.borderClass">
+                        {{ idxBadge.label }}
+                      </span>
+                    </div>
+                  }
+                </div>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-6 py-4 text-right space-x-2">
+                @if (m.downloadUrl) {
+                  <a 
+                    [href]="m.downloadUrl" 
+                    target="_blank" 
+                    class="font-semibold text-emerald-600 hover:text-emerald-800 transition text-xs inline-flex items-center"
+                  >
+                    Tải/Xem
+                  </a>
+                }
+                <button 
+                  (click)="openModal(m)" 
+                  class="font-medium text-blue-600 hover:text-blue-800 transition text-xs"
+                >
+                  Sửa
+                </button>
+                <button 
+                  (click)="onDelete(m.id!)" 
+                  class="font-medium text-red-600 hover:text-red-800 transition text-xs"
+                >
+                  Xóa
+                </button>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+
+    <!-- PAGINATION FOOTER -->
+    <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl gap-3">
+      <div class="text-sm text-gray-500">
+        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> 
+        - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> 
+        trong tổng số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> tài liệu
+      </div>
+      
+      <div class="flex space-x-2">
+        <button 
+          (click)="changePage(currentPage() - 1)" 
+          [disabled]="currentPage() === 1"
+          class="px-3.5 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex items-center"
+        >
+          <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+          </svg>
+          Trước
+        </button>
+
+        <span class="px-3.5 py-1.5 text-sm font-semibold text-gray-800 bg-gray-100 rounded-lg flex items-center">
+          {{ currentPage() }} / {{ totalPages() }}
+        </span>
+
+        <button 
+          (click)="changePage(currentPage() + 1)" 
+          [disabled]="currentPage() >= totalPages()"
+          class="px-3.5 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm flex items-center"
+        >
+          Sau
+          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL THÊM / CẬP NHẬT TÀI LIỆU -->
+@if (isModalOpen()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" (click)="closeModal()"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl transition-all border border-gray-100">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100">
+          <h3 class="text-xl font-bold text-gray-900">
+            {{ isEditing() ? 'Cập nhật thông tin tài liệu' : 'Tải lên / Thêm tài liệu khóa học mới' }}
+          </h3>
+          <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <form [formGroup]="materialForm" (ngSubmit)="onSubmit()" class="mt-4 space-y-4">
+          
+          <!-- Course Select -->
+          <div>
+            <label class="block text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1">
+              Thuộc Khóa học <span class="text-red-500">*</span>
+            </label>
+            <select 
+              formControlName="courseId"
+              class="w-full px-3.5 py-2.5 border border-indigo-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 outline-none transition bg-indigo-50/20 font-semibold text-gray-900"
+              [class.border-red-400]="isFormSubmitted() && materialForm.get('courseId')?.invalid"
+            >
+              <option value="">-- Chọn Khóa học --</option>
+              @for (c of availableCourses(); track c.id) {
+                <option [value]="c.id">{{ c.code }} - {{ c.name }}</option>
+              }
+            </select>
+          </div>
+
+          <!-- 2. Source Type Selection (MinIO vs External) -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+              Nguồn lưu trữ tài liệu <span class="text-red-500">*</span>
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <label 
+                class="flex items-center p-2.5 rounded-xl border cursor-pointer transition text-xs font-semibold"
+                [class]="materialForm.get('sourceType')?.value === 'MINIO' ? 'border-blue-500 bg-blue-50/50 text-blue-900' : 'border-gray-200 text-gray-600'"
+              >
+                <input type="radio" formControlName="sourceType" value="MINIO" class="sr-only">
+                📁 Tải tệp tin vật lý (MinIO)
+              </label>
+
+              <label 
+                class="flex items-center p-2.5 rounded-xl border cursor-pointer transition text-xs font-semibold"
+                [class]="materialForm.get('sourceType')?.value === 'EXTERNAL' ? 'border-purple-500 bg-purple-50/50 text-purple-900' : 'border-gray-200 text-gray-600'"
+              >
+                <input type="radio" formControlName="sourceType" value="EXTERNAL" class="sr-only">
+                🔗 Liên kết ngoài (URL / Drive)
+              </label>
+            </div>
+          </div>
+
+          <!-- Input File OR Input URL -->
+          @if (materialForm.get('sourceType')?.value === 'MINIO') {
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Chọn tệp tin {{ isEditing() ? '(Để trống nếu không thay đổi)' : '*' }}
+              </label>
+              <input 
+                type="file" 
+                (change)="onFileSelected($event)"
+                class="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition bg-white text-gray-700"
+              >
+              @if (selectedFile()) {
+                <p class="mt-1 text-xs text-blue-600 font-semibold">Đã chọn: {{ selectedFile()?.name }} ({{ formatFileSize(selectedFile()?.size) }})</p>
+              }
+            </div>
+          } @else {
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Đường dẫn liên kết (URL) <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="url" 
+                formControlName="resourceUrl"
+                placeholder="https://drive.google.com/..."
+                class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-mono bg-white text-gray-900"
+                [class.border-red-400]="isFormSubmitted() && materialForm.get('resourceUrl')?.invalid"
+              >
+            </div>
+          }
+
+          <!-- Title & Material Type Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Title -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Tiêu đề tài liệu <span class="text-red-500">*</span>
+              </label>
+              <input 
+                type="text" 
+                formControlName="title"
+                placeholder="Nhập tiêu đề hiển thị..."
+                class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-semibold text-gray-900 bg-white"
+                [class.border-red-400]="isFormSubmitted() && materialForm.get('title')?.invalid"
+              >
+            </div>
+
+            <!-- Material Type -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+                Loại tài liệu <span class="text-red-500">*</span>
+              </label>
+              <select 
+                formControlName="materialType"
+                class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition bg-white font-semibold text-gray-900"
+              >
+                <option value="DOCUMENT">DOCUMENT - Tài liệu PDF/Word</option>
+                <option value="SLIDE">SLIDE - Bài giảng Slide</option>
+                <option value="VIDEO">VIDEO - Video bài giảng</option>
+                <option value="IMAGE">IMAGE - Hình ảnh / Sơ đồ</option>
+                <option value="EXTERNAL_LINK">EXTERNAL_LINK - Liên kết ngoài</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Display Order -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
+              Thứ tự sắp xếp
+            </label>
+            <input 
+              type="number" 
+              formControlName="displayOrder"
+              min="0"
+              class="w-full px-3.5 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 outline-none transition font-mono bg-white text-gray-900"
+            >
+          </div>
+
+          <!-- Checkbox Switches -->
+          <div class="pt-2 space-y-2 border-t border-gray-100">
+            <label class="flex items-center space-x-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                formControlName="isOfficial"
+                class="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+              >
+              <span class="text-xs font-bold text-emerald-800">Duyệt Tài liệu Chính thống trung tâm (isOfficial)</span>
+            </label>
+
+            <label class="flex items-center space-x-3 cursor-pointer">
+              <input 
+                type="checkbox" 
+                formControlName="isRagEnabled"
+                class="w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+              >
+              <span class="text-xs font-bold text-purple-800">Kích hoạt Trợ lý AI RAG tự động học nội dung tài liệu này (isRagEnabled)</span>
+            </label>
+          </div>
+
+          <!-- Modal Footer Actions -->
+          <div class="flex justify-end space-x-3 pt-4 border-t border-gray-100">
+            <button 
+              type="button" 
+              (click)="closeModal()"
+              class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+            >
+              Hủy bỏ
+            </button>
+            <button 
+              type="submit"
+              class="px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-md"
+            >
+              {{ isEditing() ? 'Cập nhật' : 'Thêm tài liệu' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL XÁC NHẬN XÓA -->
+@if (isDeleteModalOpen()) {
+  <div class="fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" (click)="closeDeleteModal()"></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl transition-all border border-gray-100">
+        <div class="flex items-center space-x-3 text-red-600 mb-4">
+          <div class="p-3 bg-red-50 rounded-full">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-bold text-gray-900">Xác nhận xóa tài liệu</h3>
+        </div>
+        <p class="text-sm text-gray-600 mb-6">
+          Bạn có chắc chắn muốn xóa tài liệu học tập này không? Hành động này sẽ xóa vĩnh viễn tệp tin khỏi hệ thống.
+        </p>
+        <div class="flex justify-end space-x-3">
+          <button 
+            (click)="closeDeleteModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition"
+          >
+            Hủy
+          </button>
+          <button 
+            (click)="confirmDelete()"
+            class="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-md"
+          >
+            Đồng ý Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

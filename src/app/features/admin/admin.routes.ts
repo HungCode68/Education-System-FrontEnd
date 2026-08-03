@@ -78,12 +78,17 @@ export const adminRoutes: Routes = [
   {
     path: 'students',
     component: StudentComponent,
-    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+    canActivate: [authGuard, roleGuard(['ACADEMIC', 'TRAINING', 'MANAGER', 'ADMIN', 'SYSTEM_ADMIN'])]
+  },
+  {
+    path: 'staffs',
+    component: TeacherComponent,
+    canActivate: [authGuard, roleGuard(['ACADEMIC', 'TRAINING', 'MANAGER', 'ADMIN', 'SYSTEM_ADMIN'])]
   },
   {
     path: 'teachers',
-    component: TeacherComponent,
-    canActivate: [authGuard, roleGuard(['SYSTEM_ADMIN'])]
+    redirectTo: 'staffs',
+    pathMatch: 'full'
   },
   {
     path: 'departments',

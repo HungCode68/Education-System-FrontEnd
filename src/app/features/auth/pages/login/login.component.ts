@@ -72,6 +72,8 @@ export class LoginComponent implements OnInit {
     
     if (hasRole('ADMIN') || hasRole('SYSTEM_ADMIN')) {
       this.router.navigate(['/admin']);
+    } else if (hasRole('ACADEMIC') || hasRole('TRAINING') || hasRole('MANAGER')) {
+      this.router.navigate(['/academic']);
     } else if (hasRole('HOMEROOM_TEACHER')) {
       this.router.navigate(['/teacher/homeroom']);
     } else if (hasRole('SUBJECT_TEACHER')) {

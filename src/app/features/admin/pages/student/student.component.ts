@@ -127,12 +127,18 @@ export class StudentComponent implements OnInit {
 
     this.studentService.getAll(keyword, status, year, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
-        this.students.set(res.content);
-        this.totalElements.set(res.totalElements);
+        const content = res?.content || (Array.isArray(res) ? res : []);
+        this.students.set(content);
+        this.totalElements.set(res?.totalElements !== undefined ? res.totalElements : content.length);
         this.selectedStudentIds.set([]); // Reset tick chọn khi chuyển trang/lọc
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: (err) => {
+        console.error('Lỗi tải danh sách học viên:', err);
+        this.students.set([]);
+        this.totalElements.set(0);
+        this.isLoading.set(false);
+      }
     });
   }
 
@@ -212,6 +218,46 @@ export class StudentComponent implements OnInit {
         this.toastService.error('Thất bại', err.error?.message || 'Có lỗi xảy ra khi phân lớp!');
       }
     });
+  }
+
+  // --- HELPERS TRẠNG THÁI & GIỚI TÍNH ---
+  getGenderText(gender?: string): string {
+    if (!gender) return 'Chưa cập nhật';
+    const g = gender.toLowerCase();
+    if (g === 'male') return 'Nam';
+    if (g === 'female') return 'Nữ';
+    return gender;
+  }
+
+  isStudying(status?: string): boolean {
+    if (!status) return true;
+    const s = status.toUpperCase();
+    return s === 'STUDYING' || s === 'ACTIVE';
+  }
+
+  isGraduated(status?: string): boolean {
+    if (!status) return false;
+    const s = status.toUpperCase();
+    return s === 'GRADUATED';
+  }
+
+  isReserved(status?: string): boolean {
+    if (!status) return false;
+    const s = status.toUpperCase();
+    return s === 'RESERVED' || s === 'TRANSFERRED';
+  }
+
+  isDropped(status?: string): boolean {
+    if (!status) return false;
+    const s = status.toUpperCase();
+    return s === 'DROPPED' || s === 'DROPPED_OUT';
+  }
+
+  getStatusText(status?: string): string {
+    if (this.isGraduated(status)) return 'Tốt nghiệp';
+    if (this.isReserved(status)) return 'Bảo lưu';
+    if (this.isDropped(status)) return 'Bỏ học';
+    return 'Đang học';
   }
 
   // --- XỬ LÝ FORM CHÍNH ---

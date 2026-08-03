@@ -33,6 +33,11 @@ export class StaffService {
     return this.http.get<SpringPage<Staff>>(`${this.apiUrl}/department/${departmentId}`, { params });
   }
 
+  /** GET /api/v1/staffs/teachers — danh sách toàn bộ nhân sự giảng dạy (staffType chứa TEACHER) */
+  getTeachers(): Observable<Staff[]> {
+    return this.http.get<Staff[]>(`${this.apiUrl}/teachers`);
+  }
+
   getById(id: number | string): Observable<Staff> {
     return this.http.get<Staff>(`${this.apiUrl}/${id}`);
   }

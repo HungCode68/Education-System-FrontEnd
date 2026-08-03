@@ -110,18 +110,49 @@ export class TeacherComponent implements OnInit {
 
   loadData() {
     this.isLoading.set(true);
-    const keyword = this.searchControl.value || undefined;
+    const keyword = (this.searchControl.value || '').trim().toLowerCase();
     const status = this.statusFilterControl.value || undefined;
     const deptId = this.departmentFilterControl.value || undefined;
 
-    this.teacherService.getAll(keyword, status, deptId, this.currentPage() - 1, this.pageSize()).subscribe({
-      next: (res) => {
-        this.teachers.set(res.content);
-        this.totalElements.set(res.totalElements);
-        this.selectedTeacherIds.set([]); // Reset tick chọn
+    this.teacherService.getTeachersOnly().subscribe({
+      next: (data) => {
+        let list: Teacher[] = Array.isArray(data) ? data : (data?.content || []);
+
+        if (keyword) {
+          list = list.filter(t => 
+            (t.fullName && t.fullName.toLowerCase().includes(keyword)) ||
+            (t.staffCode && t.staffCode.toLowerCase().includes(keyword)) ||
+            (t.teacherCode && t.teacherCode.toLowerCase().includes(keyword)) ||
+            (t.phone && t.phone.includes(keyword)) ||
+            (t.userEmail && t.userEmail.toLowerCase().includes(keyword))
+          );
+        }
+
+        if (status) {
+          list = list.filter(t => t.status === status || (t.status && t.status.toUpperCase() === status.toUpperCase()));
+        }
+
+        if (deptId) {
+          list = list.filter(t => t.departmentId?.toString() === deptId.toString());
+        }
+
+        this.totalElements.set(list.length);
+
+        // Paging client-side
+        const page = this.currentPage() - 1;
+        const size = this.pageSize();
+        const pagedList = list.slice(page * size, (page + 1) * size);
+
+        this.teachers.set(pagedList);
+        this.selectedTeacherIds.set([]);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: (err) => {
+        console.error('Lỗi tải danh sách giảng viên:', err);
+        this.teachers.set([]);
+        this.totalElements.set(0);
+        this.isLoading.set(false);
+      }
     });
   }
 
@@ -213,6 +244,38 @@ export class TeacherComponent implements OnInit {
         }
       });
     }
+  }
+
+  // --- HELPERS TRẠNG THÁI ---
+  isWorking(status?: string): boolean {
+    if (!status) return true;
+    const s = status.toUpperCase();
+    return s === 'WORKING' || s === 'ACTIVE';
+  }
+
+  isOnLeave(status?: string): boolean {
+    if (!status) return false;
+    const s = status.toUpperCase();
+    return s === 'ON_LEAVE' || s === 'ONLEAVE';
+  }
+
+  isRetired(status?: string): boolean {
+    if (!status) return false;
+    const s = status.toUpperCase();
+    return s === 'RETIRED';
+  }
+
+  isQuit(status?: string): boolean {
+    if (!status) return false;
+    const s = status.toUpperCase();
+    return s === 'QUIT' || s === 'RESIGNED';
+  }
+
+  getStatusText(status?: string): string {
+    if (this.isOnLeave(status)) return 'Nghỉ phép';
+    if (this.isRetired(status)) return 'Nghỉ hưu';
+    if (this.isQuit(status)) return 'Nghỉ việc';
+    return 'Đang công tác';
   }
 
   // --- XỬ LÝ CẤP TÀI KHOẢN ĐƠN LẺ ---

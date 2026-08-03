@@ -22,6 +22,17 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'academic',
+    component: MainLayoutComponent,
+    canActivate: [authGuard, roleGuard(['ACADEMIC', 'TRAINING', 'MANAGER', 'ADMIN', 'SYSTEM_ADMIN'])],
+    children: [
+      {
+        path: '',
+        loadChildren: () => import('./features/academic/academic.routes').then(m => m.academicRoutes)
+      }
+    ]
+  },
+  {
     path: 'teacher',
     canActivate: [authGuard, roleGuard(['SUBJECT_TEACHER', 'HOMEROOM_TEACHER', 'TEACHER_HEAD_DEPARTMENT'])],
     children: [
