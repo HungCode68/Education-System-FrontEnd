@@ -431,7 +431,7 @@
 
                 <!-- Dropped Students -->
                 <td class="px-6 py-4 text-center">
-                  @if (m.droppedStudents > 0) {
+                  @if ((m.droppedStudents ?? 0) > 0) {
                     <span class="px-2.5 py-1 bg-rose-50 text-rose-700 font-bold rounded-lg text-xs border border-rose-200">
                       {{ m.droppedStudents }} HV
                     </span>

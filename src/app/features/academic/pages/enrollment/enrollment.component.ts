@@ -1,14 +1,15 @@
 import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ClassesService } from '../../services/classes.service';
-import { EnrollmentService } from '../../services/enrollment.service';
-import { StudentService } from '../../../admin/services/student.service';
-import { ClassEntity } from '../../models/class.model';
-import { Enrollment, BulkEnrollment, ENROLLMENT_STATUS_MAP, ENROLLMENT_STATUS_OPTIONS } from '../../models/enrollment.model';
-import { Student } from '../../../admin/models/student.model';
+import { ClassesService } from '../../../../modules/academic/services/class.service';
+import { EnrollmentService } from '../../../../modules/academic/services/enrollment.service';
+import { StudentService } from '../../../../modules/user/services/student.service';
+import { ClassEntity } from '../../../../modules/academic/models/class.model';
+import { Enrollment, BulkEnrollment, ENROLLMENT_STATUS_MAP, ENROLLMENT_STATUS_OPTIONS } from '../../../../modules/academic/models/enrollment.model';
+import { Student } from '../../../../modules/user/models/student.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -24,6 +25,7 @@ export class EnrollmentComponent implements OnInit {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute);
 
   // Constants
   statusOptions = ENROLLMENT_STATUS_OPTIONS;
@@ -62,7 +64,7 @@ export class EnrollmentComponent implements OnInit {
   // Single Add / Edit Modal
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   enrollmentForm!: FormGroup;
   isFormSubmitted = signal(false);
   enrollmentDateDisplay = signal<string>('');
@@ -70,6 +72,7 @@ export class EnrollmentComponent implements OnInit {
   // Bulk Enrollment Modal
   isBulkModalOpen = signal(false);
   bulkStudentSearch = new FormControl('');
+  bulkSearchTerm = signal<string>('');
   selectedStudentIds = signal<number[]>([]);
   bulkEnrollmentDateDisplay = signal<string>('');
   bulkForm!: FormGroup;
@@ -77,7 +80,7 @@ export class EnrollmentComponent implements OnInit {
 
   // Delete Modal
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals for Master View Pagination
   classTotalPages = computed(() => Math.max(1, Math.ceil(this.classTotalElements() / this.classPageSize())));
@@ -90,7 +93,7 @@ export class EnrollmentComponent implements OnInit {
 
   // Computed signal for Bulk Modal: Filtered Students based on search
   filteredStudentsForBulk = computed(() => {
-    const search = (this.bulkStudentSearch.value || '').toLowerCase().trim();
+    const search = this.bulkSearchTerm().toLowerCase().trim();
     const students = this.allStudents();
     const existingStudentIds = new Set(this.enrollments().map(e => e.studentId));
 
@@ -110,6 +113,17 @@ export class EnrollmentComponent implements OnInit {
     this.setupClassSearch();
     this.loadClasses();
     this.loadStudents();
+
+    const routeClassId = this.route.snapshot.paramMap.get('id') || this.route.snapshot.queryParamMap.get('classId');
+    if (routeClassId) {
+      this.classesService.getById(routeClassId).subscribe({
+        next: (cls) => {
+          if (cls) {
+            this.viewClassDetail(cls);
+          }
+        }
+      });
+    }
   }
 
   private initForms() {
@@ -136,6 +150,12 @@ export class EnrollmentComponent implements OnInit {
       this.classCurrentPage.set(1);
       this.loadClasses();
     });
+
+    this.bulkStudentSearch.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((val) => {
+      this.bulkSearchTerm.set(val || '');
+    });
   }
 
   loadClasses() {
@@ -158,11 +178,14 @@ export class EnrollmentComponent implements OnInit {
   }
 
   loadStudents() {
-    this.studentService.getAll('', '', undefined, 0, 500).subscribe({
+    this.studentService.getAll({ page: 1, size: 500 }).subscribe({
       next: (res) => {
-        this.allStudents.set(res.content || []);
+        const list = res?.content || (Array.isArray(res) ? res : []);
+        this.allStudents.set(list);
       },
-      error: () => {}
+      error: (err) => {
+        console.error('Lỗi tải danh sách học viên cho xếp lớp:', err);
+      }
     });
   }
 
@@ -178,7 +201,7 @@ export class EnrollmentComponent implements OnInit {
   viewClassDetail(cls: ClassEntity) {
     this.selectedClass.set(cls);
     this.viewMode.set('detail');
-    this.loadClassEnrollments(cls.id!);
+    if (cls.id != null) this.loadClassEnrollments(cls.id);
   }
 
   backToMaster() {
@@ -188,7 +211,7 @@ export class EnrollmentComponent implements OnInit {
     this.loadClasses(); // Refresh class capacity numbers
   }
 
-  loadClassEnrollments(classId: number) {
+  loadClassEnrollments(classId: number | string) {
     this.isDetailLoading.set(true);
     this.enrollmentService.getByClassId(classId).subscribe({
       next: (list) => {
@@ -205,6 +228,7 @@ export class EnrollmentComponent implements OnInit {
   // --- SINGLE ADD / EDIT MODAL ---
 
   openAddModal() {
+    this.loadStudents();
     this.isEditing.set(false);
     this.currentId.set(null);
     this.isFormSubmitted.set(false);
@@ -228,7 +252,7 @@ export class EnrollmentComponent implements OnInit {
 
   openEditModal(item: Enrollment) {
     this.isEditing.set(true);
-    this.currentId.set(item.id!);
+    this.currentId.set(item.id ?? null);
     this.isFormSubmitted.set(false);
 
     const isoDate = item.enrollmentDate ? item.enrollmentDate.split('T')[0] : this.getTodayIsoDate();
@@ -270,10 +294,10 @@ export class EnrollmentComponent implements OnInit {
 
     if (this.isEditing() && this.currentId()) {
       this.enrollmentService.update(this.currentId()!, dto).subscribe({
-        next: (res) => {
-          this.toastService.success('Thành công', res.message || 'Cập nhật đăng ký thành công!');
+        next: () => {
+          this.toastService.success('Thành công', 'Cập nhật đăng ký thành công!');
           this.closeModal();
-          this.loadClassEnrollments(currentClass.id!);
+          this.loadClassEnrollments(Number(currentClass.id));
         },
         error: (err) => {
           this.toastService.error('Lỗi', 'Cập nhật thất bại: ' + (err.error?.message || err.message));
@@ -281,10 +305,10 @@ export class EnrollmentComponent implements OnInit {
       });
     } else {
       this.enrollmentService.create(dto).subscribe({
-        next: (res) => {
-          this.toastService.success('Thành công', res.message || 'Thêm học viên vào lớp thành công!');
+        next: () => {
+          this.toastService.success('Thành công', 'Thêm học viên vào lớp thành công!');
           this.closeModal();
-          this.loadClassEnrollments(currentClass.id!);
+          this.loadClassEnrollments(Number(currentClass.id));
         },
         error: (err) => {
           this.toastService.error('Lỗi', 'Xếp lớp thất bại: ' + (err.error?.message || err.message));
@@ -296,10 +320,12 @@ export class EnrollmentComponent implements OnInit {
   // --- BULK ENROLLMENT MODAL ---
 
   openBulkModal() {
+    this.loadStudents();
     this.isBulkModalOpen.set(true);
     this.isBulkFormSubmitted.set(false);
     this.selectedStudentIds.set([]);
-    this.bulkStudentSearch.setValue('');
+    this.bulkStudentSearch.setValue('', { emitEvent: false });
+    this.bulkSearchTerm.set('');
 
     const todayIso = this.getTodayIsoDate();
     this.bulkEnrollmentDateDisplay.set(this.formatDateVN(todayIso));
@@ -374,9 +400,11 @@ export class EnrollmentComponent implements OnInit {
 
   // --- DELETE MODAL ---
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {
@@ -386,12 +414,12 @@ export class EnrollmentComponent implements OnInit {
     const currentClass = this.selectedClass();
 
     this.enrollmentService.delete(id).subscribe({
-      next: (res) => {
-        this.toastService.success('Thành công', res.message || 'Xóa học viên khỏi lớp thành công!');
+      next: () => {
+        this.toastService.success('Thành công', 'Xóa học viên khỏi lớp thành công!');
         this.isDeleteModalOpen.set(false);
         this.idToDelete.set(null);
         if (currentClass && currentClass.id) {
-          this.loadClassEnrollments(currentClass.id);
+          this.loadClassEnrollments(Number(currentClass.id));
         }
       },
       error: (err) => {
@@ -467,9 +495,18 @@ export class EnrollmentComponent implements OnInit {
     }
   }
 
-  getStatusBadge(statusKey?: string) {
-    if (!statusKey) return { label: 'Chờ xác nhận', bgClass: 'bg-amber-50', textClass: 'text-amber-700', borderClass: 'border-amber-200' };
-    return this.statusMap[statusKey] || { label: statusKey, bgClass: 'bg-gray-50', textClass: 'text-gray-700', borderClass: 'border-gray-200' };
+  getStatusBadge(statusKey?: string): { label: string; bgClass: string; textClass: string; borderClass: string } {
+    const label = statusKey ? (this.statusMap[statusKey] || statusKey) : 'Chờ xác nhận';
+    if (statusKey === 'ACTIVE' || statusKey === 'ENROLLED') {
+      return { label, bgClass: 'bg-emerald-50', textClass: 'text-emerald-700', borderClass: 'border-emerald-200' };
+    }
+    if (statusKey === 'COMPLETED') {
+      return { label, bgClass: 'bg-blue-50', textClass: 'text-blue-700', borderClass: 'border-blue-200' };
+    }
+    if (statusKey === 'DROPPED' || statusKey === 'INACTIVE') {
+      return { label, bgClass: 'bg-rose-50', textClass: 'text-rose-700', borderClass: 'border-rose-200' };
+    }
+    return { label, bgClass: 'bg-amber-50', textClass: 'text-amber-700', borderClass: 'border-amber-200' };
   }
 
   getClassStatusBadge(status?: string) {

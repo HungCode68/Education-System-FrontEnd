@@ -3,8 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { CourseService } from '../../services/course.service';
-import { Course } from '../../models/course.model';
+import { CourseService } from '../../../../modules/academic/services/course.service';
+import { Course } from '../../../../modules/academic/models/course.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -30,12 +30,12 @@ export class CourseComponent implements OnInit {
   // --- STATE MODAL THÊM / SỬA ---
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   courseForm!: FormGroup;
 
   // --- STATE MODAL XÓA ---
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
@@ -210,9 +210,11 @@ export class CourseComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {

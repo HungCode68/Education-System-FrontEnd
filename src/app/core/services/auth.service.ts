@@ -15,7 +15,7 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     return this.authState().isAuthenticated;
-  } 
+  }
   readonly authState = signal<AuthState>(this.loadInitialState());
 
   setAccessToken(token: string) {
@@ -32,25 +32,47 @@ export class AuthService {
   ) {}
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
-  return this.http.post<LoginResponse>(`${this.apiUrl}/api/v1/auth/login`, credentials, {
-    withCredentials: true
-  }).pipe(
-    tap((res) => {
-      if (res.accessToken) {
-        this.setAccessToken(res.accessToken);
-      }
-      const newState: AuthState = {
-        fullName: res.fullName,
-        email: credentials.email, // Lưu email từ request
-        roles: res.roles || [],
-        permissions: res.permissions || [],
-        isAuthenticated: true
-      };
-      this.authState.set(newState);
-      localStorage.setItem('user_info', JSON.stringify(newState));
-    })
-  );
-}
+    return this.http.post<LoginResponse>(`${this.apiUrl}/api/v1/auth/login`, credentials, {
+      withCredentials: true
+    }).pipe(
+      tap((res: any) => {
+        // Backend trả về accessToken trong body (có thể nằm trong res hoặc res.data)
+        const token = res?.accessToken || res?.data?.accessToken;
+        if (token) {
+          this.setAccessToken(token);
+        }
+        const data = res?.data || res;
+        const newState: AuthState = {
+          fullName: data?.fullName || null,
+          email: credentials.email,
+          roles: data?.roles || [],
+          permissions: data?.permissions || [],
+          isAuthenticated: true
+        };
+        this.authState.set(newState);
+        // Chỉ lưu thông tin profile user (không phải token) vào localStorage
+        localStorage.setItem('user_info', JSON.stringify(newState));
+      })
+    );
+  }
+
+  /**
+   * Gọi backend refresh-token endpoint.
+   * Backend đọc refreshToken từ HTTP-Only Cookie rồi trả về accessToken mới trong body.
+   * Frontend lưu accessToken mới vào RAM.
+   */
+  refreshToken(): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/api/v1/auth/refresh-token`, {}, {
+      withCredentials: true
+    }).pipe(
+      tap((res: any) => {
+        const token = res?.accessToken || res?.data?.accessToken;
+        if (token) {
+          this.setAccessToken(token);
+        }
+      })
+    );
+  }
 
   logout(): void {
     this.http.post(`${this.apiUrl}/api/v1/auth/logout`, {}, { withCredentials: true }).subscribe({
@@ -65,6 +87,7 @@ export class AuthService {
     this.accessToken = null;
     this.authState.set({
       fullName: null,
+      email: null,
       roles: [],
       permissions: [],
       isAuthenticated: false
@@ -77,21 +100,21 @@ export class AuthService {
   }
 
   private loadInitialState(): AuthState {
-  try {
-    const saved = localStorage.getItem('user_info');
-    if (saved && saved !== 'undefined' && saved !== 'null') {
-      return JSON.parse(saved);
+    try {
+      const saved = localStorage.getItem('user_info');
+      if (saved && saved !== 'undefined' && saved !== 'null') {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Lỗi parse user_info từ localStorage:', e);
     }
-  } catch (e) {
-    console.error('Lỗi parse user_info từ localStorage:', e);
+
+    return {
+      fullName: null,
+      email: null,
+      roles: [],
+      permissions: [],
+      isAuthenticated: false
+    };
   }
-  
-  return {
-    fullName: null,
-    email: null,
-    roles: [],
-    permissions: [],
-    isAuthenticated: false
-  };
-}
 }

@@ -2,8 +2,8 @@ import { Component, signal, ChangeDetectionStrategy, computed, inject, OnInit } 
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ActivityLogService } from '../../services/activity-log.service'; 
-import { ActivityLog } from '../../models/activity-log.model'; 
+import { ActivityLogService } from '../../../../modules/system/services/activity-log.service'; 
+import { ActivityLog } from '../../../../modules/system/models/activity-log.model'; 
 
 // Định nghĩa model cho một thao tác nhanh
 interface QuickAction {

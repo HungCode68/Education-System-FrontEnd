@@ -1,36 +1,35 @@
-import { Component, OnInit, inject, signal, computed, DestroyRef } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { StudentService } from '../../services/student.service';
-import { PhysicalClassService } from '../../services/physical-class.service';
-import { ClassStudentService } from '../../services/class-student.service'; // Chức năng Phân lớp
-import { SchoolYearService } from '../../services/school-year.service'; // Lấy DS Năm học
+import { StudentService } from '../../../../modules/user/services/student.service';
+import { ClassStudentService } from '../../../../modules/user/services/class-student.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Student } from '../../models/student.model';
-import { PhysicalClass } from '../../models/physical-class.model';
-import { SchoolYear } from '../../models/school-year.model';
+import { Student, StudentStatus } from '../../../../modules/user/models/student.model';
 
 @Component({
   selector: 'app-student',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './student.component.html'
+  templateUrl: './student.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StudentComponent implements OnInit {
   private studentService = inject(StudentService);
-  private classService = inject(PhysicalClassService);
   private classStudentService = inject(ClassStudentService);
-  private schoolYearService = inject(SchoolYearService);
   private toastService = inject(ToastService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private router = inject(Router);
 
-  // --- STATE DANH SÁCH ---
+  isReadOnly = signal(false);
+  isAcademic = signal(false);
+
+  canProvisionAccount = computed(() => !this.isAcademic());
+  canDelete = computed(() => !this.isAcademic());
+
   students = signal<Student[]>([]);
-  classes = signal<PhysicalClass[]>([]);
-  schoolYears = signal<SchoolYear[]>([]);
   totalElements = signal(0);
   currentPage = signal(1);
   pageSize = signal(10);
@@ -40,19 +39,14 @@ export class StudentComponent implements OnInit {
   startIndex = computed(() => this.totalElements() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
   endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
 
-  // --- STATE TÌM KIẾM & BỘ LỌC ---
   searchControl = new FormControl('');
   statusFilterControl = new FormControl('');
-  yearFilterControl = new FormControl('');
 
-  // --- STATE CHỌN NHIỀU (BATCH) ---
-  selectedStudentIds = signal<string[]>([]);
-  selectedClassIds = signal<string[]>([]); // Dùng cho phân lớp
+  selectedStudentIds = signal<(number | string)[]>([]);
 
-  // --- STATE MODAL ---
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<string | null>(null);
+  currentId = signal<number | string | null>(null);
   studentForm!: FormGroup;
 
   isAccountModalOpen = signal(false);
@@ -60,34 +54,30 @@ export class StudentComponent implements OnInit {
   selectedStudentForAccount = signal<Student | null>(null);
 
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<string | null>(null);
-
-  isDistributeModalOpen = signal(false);
-  distributeForm!: FormGroup;
+  idToDelete = signal<number | string | null>(null);
 
   isBatchAccountModalOpen = signal(false);
+  isDistributeModalOpen = signal(false);
+  selectedClassIds = signal<string[]>([]);
+  distributeForm!: FormGroup;
 
   ngOnInit() {
+    const isAcad = this.router.url.startsWith('/academic');
+    this.isAcademic.set(isAcad);
+    this.isReadOnly.set(isAcad);
     this.initForms();
-    this.loadDropdownData();
     this.setupFilters();
     this.loadData();
   }
 
   private initForms() {
-    const currentYear = new Date().getFullYear();
     this.studentForm = this.fb.group({
-      studentCode: [''], // Không cần required nữa vì lúc tạo mới bị ẩn
-      fullName: ['', Validators.required],
-      dateOfBirth: ['', Validators.required],
-      gender: ['male', Validators.required],
-      address: ['', Validators.required],
-      parentName: ['', Validators.required],
-      parentPhone: ['', Validators.required],
-      admissionYear: [currentYear, Validators.required],
-      status: ['studying'],
-      currentClassId: [''],
-      email: ['']
+      studentCode: [''],
+      fullName: ['', [Validators.required, Validators.maxLength(100)]],
+      parentName: [''],
+      parentPhone: [''],
+      targetScore: [''],
+      status: ['STUDYING' as StudentStatus, Validators.required]
     });
 
     this.accountForm = this.fb.group({
@@ -100,22 +90,20 @@ export class StudentComponent implements OnInit {
   }
 
   private setupFilters() {
-    this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-
-    this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-
-    this.yearFilterControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
-  }
-
-  private loadDropdownData() {
-    this.classService.search(1, 100).subscribe(res => {
-      this.classes.set(res.content || []);
+    this.searchControl.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged(),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.currentPage.set(1);
+      this.loadData();
     });
-    this.schoolYearService.getAll(1, 100).subscribe(res => {
-      this.schoolYears.set(res.content || (res as any).data || []);
+
+    this.statusFilterControl.valueChanges.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.currentPage.set(1);
+      this.loadData();
     });
   }
 
@@ -123,13 +111,15 @@ export class StudentComponent implements OnInit {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
     const status = this.statusFilterControl.value || undefined;
-    const year = this.yearFilterControl.value ? Number(this.yearFilterControl.value) : undefined;
 
-    this.studentService.getAll(keyword, status, year, this.currentPage() - 1, this.pageSize()).subscribe({
+    this.studentService.getAll(keyword, status, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
-        const content = res?.content || (Array.isArray(res) ? res : []);
+        let content: Student[] = res?.content || (Array.isArray(res) ? res : []);
+        if (status) {
+          content = content.filter(s => s.status === status);
+        }
         this.students.set(content);
-        this.totalElements.set(res?.totalElements !== undefined ? res.totalElements : content.length);
+        this.totalElements.set(status ? content.length : (res?.totalElements !== undefined ? res.totalElements : content.length));
         this.selectedStudentIds.set([]); // Reset tick chọn khi chuyển trang/lọc
         this.isLoading.set(false);
       },
@@ -149,8 +139,7 @@ export class StudentComponent implements OnInit {
     }
   }
 
-  // --- LOGIC TICK CHỌN ---
-  toggleStudent(id: string) {
+  toggleStudent(id: number | string) {
     const current = this.selectedStudentIds();
     if (current.includes(id)) {
       this.selectedStudentIds.set(current.filter(x => x !== id));
@@ -268,23 +257,23 @@ export class StudentComponent implements OnInit {
       this.studentForm.patchValue({
         studentCode: student.studentCode,
         fullName: student.fullName,
-        dateOfBirth: student.dateOfBirth,
-        gender: student.gender,
-        address: student.address,
-        parentName: student.parentName,
-        parentPhone: student.parentPhone,
-        admissionYear: student.admissionYear,
-        status: student.status,
-        currentClassId: student.currentClassId || '',
-        email: student.email || ''
+        parentName: student.parentName || '',
+        parentPhone: student.parentPhone || '',
+        targetScore: student.targetScore || '',
+        status: student.status
       });
-      this.studentForm.get('studentCode')?.disable(); // Khóa không cho sửa Mã
-      this.studentForm.get('email')?.disable(); 
+      this.studentForm.get('studentCode')?.disable();
     } else {
       this.isEditing.set(false);
       this.currentId.set(null);
-      this.studentForm.reset({ gender: 'male', status: 'studying', admissionYear: new Date().getFullYear(), currentClassId: '' });
-      this.studentForm.get('email')?.enable();
+      this.studentForm.reset({
+        studentCode: '',
+        fullName: '',
+        parentName: '',
+        parentPhone: '',
+        targetScore: '',
+        status: 'STUDYING'
+      });
       this.studentForm.get('studentCode')?.enable();
     }
     this.isModalOpen.set(true);
@@ -300,35 +289,37 @@ export class StudentComponent implements OnInit {
     this.isLoading.set(true);
     const data = this.studentForm.getRawValue();
 
-    if (!data.currentClassId) data.currentClassId = null;
-
-    if (this.isEditing() && this.currentId()) {
+    if (this.isEditing() && this.currentId() != null) {
       this.studentService.update(this.currentId()!, data).subscribe({
-        next: () => { 
-          this.loadData(); this.closeModal(); this.toastService.success('Thành công', 'Đã cập nhật hồ sơ!');
+        next: () => {
+          this.loadData();
+          this.closeModal();
+          this.toastService.success('Thành công', 'Đã cập nhật thông tin học viên!');
         },
-        error: (err) => { 
-          this.isLoading.set(false); this.toastService.error('Lỗi', err.error?.message || 'Cập nhật thất bại');
+        error: (err) => {
+          this.isLoading.set(false);
+          this.toastService.error('Thất bại', err.error?.message || 'Có lỗi xảy ra khi cập nhật!');
         }
       });
     } else {
-      delete data.studentCode; // Bỏ mã để BE tự sinh
-      
+      delete data.studentCode; // Bỏ mã để backend tự sinh
       this.studentService.create(data).subscribe({
-        next: () => { 
-          this.loadData(); this.closeModal(); this.toastService.success('Thành công', 'Đã thêm học sinh mới!');
+        next: () => {
+          this.loadData();
+          this.closeModal();
+          this.toastService.success('Thành công', 'Đã thêm học viên mới!');
         },
-        error: (err) => { 
-          this.isLoading.set(false); this.toastService.error('Lỗi', err.error?.message || 'Thêm thất bại');
+        error: (err) => {
+          this.isLoading.set(false);
+          this.toastService.error('Thất bại', err.error?.message || 'Có lỗi xảy ra khi thêm mới!');
         }
       });
     }
   }
 
-  // --- XỬ LÝ CẤP TÀI KHOẢN ĐƠN LẺ ---
   openAccountModal(student: Student) {
     this.selectedStudentForAccount.set(student);
-    this.accountForm.reset({ email: '' });
+    this.accountForm.reset({ email: student.userEmail || '' });
     this.isAccountModalOpen.set(true);
   }
 
@@ -357,7 +348,6 @@ export class StudentComponent implements OnInit {
     });
   }
 
-  // --- XỬ LÝ CẤP TÀI KHOẢN HÀNG LOẠT ---
   openBatchAccountModal() {
     if (this.selectedStudentIds().length === 0) return;
     this.isBatchAccountModalOpen.set(true);
@@ -375,25 +365,18 @@ export class StudentComponent implements OnInit {
     this.studentService.createAccountsBatch(ids).subscribe({
       next: (res) => {
         this.loadData();
-        this.closeBatchAccountModal(); // Đóng modal khi thành công
-        this.toastService.success(
-          'Hoàn tất xử lý', 
-          `Thành công: ${res.successCount} | Thất bại: ${res.failCount}`
-        );
-        if (res.failCount > 0) {
-          console.warn('Lỗi tạo tài khoản chi tiết:', res.failedDetails);
-        }
+        this.closeBatchAccountModal();
+        this.toastService.success('Hoàn tất', `Cấp tài khoản thành công: ${res.successCount || ids.length}`);
       },
       error: (err) => {
         this.isLoading.set(false);
-        this.closeBatchAccountModal(); // Đóng modal khi có lỗi
+        this.closeBatchAccountModal();
         this.toastService.error('Lỗi hệ thống', err.error?.message || 'Có lỗi xảy ra khi tạo hàng loạt!');
       }
     });
   }
 
-  // --- XỬ LÝ XÓA ---
-  onDelete(id: string) {
+  onDelete(id: number | string) {
     this.idToDelete.set(id);
     this.isDeleteModalOpen.set(true);
   }
@@ -405,14 +388,18 @@ export class StudentComponent implements OnInit {
 
   confirmDelete() {
     const id = this.idToDelete();
-    if (id) {
+    if (id !== null && id !== undefined) {
       this.isLoading.set(true);
       this.studentService.delete(id).subscribe({
-        next: () => { 
-          this.loadData(); this.closeDeleteModal(); this.toastService.success('Đã xóa', 'Hồ sơ học sinh đã bị xóa.');
+        next: () => {
+          this.loadData();
+          this.closeDeleteModal();
+          this.toastService.success('Đã xóa', 'Xóa hồ sơ học viên thành công!');
         },
-        error: (err) => { 
-          this.isLoading.set(false); this.closeDeleteModal(); this.toastService.error('Lỗi', err.error?.message || 'Không thể xóa!');
+        error: (err) => {
+          this.isLoading.set(false);
+          this.closeDeleteModal();
+          this.toastService.error('Lỗi xóa', err.error?.message || 'Không thể xóa học viên này!');
         }
       });
     }

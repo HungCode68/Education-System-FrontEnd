@@ -3,10 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { RoleService } from '../../services/role.service';
+import { RoleService } from '../../../../modules/user/services/role.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Role, Permission } from '../../models/role.model';
-import { PermissionService } from '../../services/permission.service';
+import { Role, Permission } from '../../../../modules/user/models/role.model';
+import { PermissionService } from '../../../../modules/user/services/permission.service';
 
 @Component({
   selector: 'app-role',

@@ -3,11 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { UserService } from '../../services/user.service';
-import { RoleService } from '../../services/role.service';
+import { forkJoin, of } from 'rxjs';
+import { UserService } from '../../../../modules/user/services/user.service';
+import { RoleService } from '../../../../modules/user/services/role.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { User, UserStatus } from '../../models/user.model';
-import { Role } from '../../models/role.model';
+import { User, UserStatus } from '../../../../modules/user/models/user.model';
+import { Role } from '../../../../modules/user/models/role.model';
 
 @Component({
   selector: 'app-user',
@@ -31,33 +32,50 @@ export class UserComponent implements OnInit {
   isLoading = signal(false);
   isProcessing = signal(false);
 
-  totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()));
-  startIndex = computed(() => this.totalElements() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
-  endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
-
   searchControl = new FormControl('');
   statusFilterControl = new FormControl('');
   roleFilterControl = new FormControl('');
 
+  selectedStatusFilter = signal<string>('');
+  selectedRoleFilter = signal<string>('');
+
+  // Client-side filtering by status & role
+  filteredUsers = computed(() => {
+    let list = this.users();
+    const status = this.selectedStatusFilter();
+    const role = this.selectedRoleFilter();
+
+    if (status) {
+      list = list.filter(u => u.status === status);
+    }
+    if (role) {
+      list = list.filter(u => u.roles && u.roles.includes(role));
+    }
+    return list;
+  });
+
+  totalPages = computed(() => Math.ceil(this.totalElements() / this.pageSize()));
+  startIndex = computed(() => this.totalElements() === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
+  endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.totalElements()));
+
+  // Edit Modal State (Combines Name & Status)
   isEditModalOpen = signal(false);
   selectedUserForEdit = signal<User | null>(null);
   editForm!: FormGroup;
 
+  // Role Modal State
   isRoleModalOpen = signal(false);
   selectedUserForRole = signal<User | null>(null);
   selectedRoleNames = signal<string[]>([]);
 
-  isStatusModalOpen = signal(false);
-  selectedUserForStatus = signal<User | null>(null);
-  selectedStatus = new FormControl<UserStatus | ''>('', Validators.required);
-
+  // Reset Password Modal State
   isResetModalOpen = signal(false);
   userToReset = signal<User | null>(null);
 
   ngOnInit() {
     this.editForm = this.fb.group({
       fullName: ['', [Validators.maxLength(100)]],
-      phone: ['', [Validators.maxLength(20)]]
+      status: ['ACTIVE', [Validators.required]]
     });
     this.loadRoles();
     this.setupFilters();
@@ -75,22 +93,20 @@ export class UserComponent implements OnInit {
       .subscribe(() => { this.currentPage.set(1); this.loadData(); });
 
     this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
+      .subscribe((val) => { this.selectedStatusFilter.set(val || ''); });
 
     this.roleFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => { this.currentPage.set(1); this.loadData(); });
+      .subscribe((val) => { this.selectedRoleFilter.set(val || ''); });
   }
 
   loadData() {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
-    const status = this.statusFilterControl.value || undefined;
-    const role = this.roleFilterControl.value || undefined;
 
-    this.userService.getAll(keyword, status, role, this.currentPage() - 1, this.pageSize()).subscribe({
+    this.userService.getAll(keyword, undefined, undefined, this.currentPage() - 1, this.pageSize()).subscribe({
       next: (res) => {
-        this.users.set(res.content);
-        this.totalElements.set(res.totalElements);
+        this.users.set(res.content || []);
+        this.totalElements.set(res.totalElements || 0);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
@@ -113,7 +129,7 @@ export class UserComponent implements OnInit {
     this.selectedUserForEdit.set(user);
     this.editForm.patchValue({
       fullName: user.fullName || '',
-      phone: user.phone || ''
+      status: user.status || 'ACTIVE'
     });
     this.isEditModalOpen.set(true);
   }
@@ -127,8 +143,21 @@ export class UserComponent implements OnInit {
     const user = this.selectedUserForEdit();
     if (!user || this.editForm.invalid) return;
 
+    const val = this.editForm.value;
+    const nameChanged = val.fullName !== user.fullName;
+    const statusChanged = val.status && val.status !== user.status;
+
+    if (!nameChanged && !statusChanged) {
+      this.closeEditModal();
+      return;
+    }
+
     this.isProcessing.set(true);
-    this.userService.update(user.id, this.editForm.value).subscribe({
+
+    const updateName$ = nameChanged ? this.userService.update(user.id, { fullName: val.fullName }) : of(null);
+    const updateStatus$ = statusChanged ? this.userService.updateStatus(user.id, val.status) : of(null);
+
+    forkJoin([updateName$, updateStatus$]).subscribe({
       next: () => {
         this.toastService.success('Thành công', 'Đã cập nhật thông tin tài khoản!');
         this.isProcessing.set(false);
@@ -190,42 +219,6 @@ export class UserComponent implements OnInit {
       error: (err) => {
         this.isProcessing.set(false);
         this.toastService.error('Lỗi', err.error?.message || 'Không thể đổi vai trò!');
-      }
-    });
-  }
-
-  openStatusModal(user: User) {
-    this.selectedUserForStatus.set(user);
-    this.selectedStatus.setValue(user.status);
-    this.isStatusModalOpen.set(true);
-  }
-
-  closeStatusModal() {
-    this.isStatusModalOpen.set(false);
-    this.selectedUserForStatus.set(null);
-  }
-
-  submitStatusChange() {
-    const user = this.selectedUserForStatus();
-    const newStatus = this.selectedStatus.value;
-    if (!user || !newStatus || this.selectedStatus.invalid) return;
-
-    if (user.status === newStatus) {
-      this.closeStatusModal();
-      return;
-    }
-
-    this.isProcessing.set(true);
-    this.userService.updateStatus(user.id, newStatus).subscribe({
-      next: () => {
-        this.toastService.success('Thành công', `Tài khoản ${user.email} đã chuyển sang: ${newStatus}`);
-        this.isProcessing.set(false);
-        this.closeStatusModal();
-        this.loadData();
-      },
-      error: (err) => {
-        this.isProcessing.set(false);
-        this.toastService.error('Lỗi', err.error?.message || 'Không thể cập nhật trạng thái!');
       }
     });
   }

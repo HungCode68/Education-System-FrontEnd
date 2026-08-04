@@ -3,14 +3,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ScheduleAssignmentService } from '../../services/schedule-assignment.service';
-import { ClassesService } from '../../services/classes.service';
-import { ScheduleService } from '../../services/schedule.service';
-import { StaffService } from '../../../admin/services/staff.service';
-import { ScheduleAssignment, SCHEDULE_ROLE_MAP, SCHEDULE_ROLE_OPTIONS } from '../../models/schedule-assignment.model';
-import { ClassEntity } from '../../models/class.model';
-import { ClassSchedule, DAY_OF_WEEK_MAP } from '../../models/schedule.model';
-import { Staff } from '../../../admin/models/staff.model';
+import { ScheduleAssignmentService } from '../../../../modules/teaching/services/schedule-assignment.service';
+import { ClassesService } from '../../../../modules/academic/services/class.service';
+import { ScheduleService } from '../../../../modules/academic/services/schedule.service';
+import { StaffService } from '../../../../modules/user/services/staff.service';
+import { ScheduleAssignment, SCHEDULE_ROLE_MAP, SCHEDULE_ROLE_OPTIONS } from '../../../../modules/teaching/models/schedule-assignment.model';
+import { ClassEntity } from '../../../../modules/academic/models/class.model';
+import { ClassSchedule, DAY_OF_WEEK_MAP } from '../../../../modules/academic/models/schedule.model';
+import { Staff } from '../../../../modules/user/models/staff.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -50,13 +50,13 @@ export class ScheduleAssignmentComponent implements OnInit {
   // Modal State
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   assignmentForm!: FormGroup;
   isFormSubmitted = signal(false);
 
   // Delete Modal State
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
@@ -209,7 +209,7 @@ export class ScheduleAssignmentComponent implements OnInit {
       });
 
       if (classIdVal) {
-        this.loadModalSchedules(Number(classIdVal), item.scheduleId);
+        this.loadModalSchedules(Number(classIdVal), Number(item.scheduleId));
       }
     } else {
       if (this.isEditing() || !this.assignmentForm.get('staffId')?.value) {
@@ -284,9 +284,11 @@ export class ScheduleAssignmentComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {
@@ -311,10 +313,6 @@ export class ScheduleAssignmentComponent implements OnInit {
     this.idToDelete.set(null);
   }
 
-  getRoleBadge(roleKey?: string) {
-    if (!roleKey) return { label: 'Giảng viên', bgClass: 'bg-gray-50', textClass: 'text-gray-700', borderClass: 'border-gray-200' };
-    return this.roleMap[roleKey] || { label: roleKey, bgClass: 'bg-gray-50', textClass: 'text-gray-700', borderClass: 'border-gray-200' };
-  }
 
   formatStaffTypeLabel(type?: string): string {
     if (!type) return 'Giảng viên';
@@ -335,5 +333,16 @@ export class ScheduleAssignmentComponent implements OnInit {
   formatDayOfWeek(day?: number): string {
     if (!day) return '---';
     return this.dayMap[day] || `Thứ ${day}`;
+  }
+
+  getRoleBadge(roleKey?: string): { label: string; bgClass: string; textClass: string; borderClass: string } {
+    const label = roleKey ? (this.roleMap[roleKey] || roleKey) : 'Giảng viên chính';
+    if (roleKey === 'ASSISTANT_TEACHER') {
+      return { label, bgClass: 'bg-purple-50', textClass: 'text-purple-700', borderClass: 'border-purple-200' };
+    }
+    if (roleKey === 'TUTOR') {
+      return { label, bgClass: 'bg-amber-50', textClass: 'text-amber-700', borderClass: 'border-amber-200' };
+    }
+    return { label, bgClass: 'bg-blue-50', textClass: 'text-blue-700', borderClass: 'border-blue-200' };
   }
 }

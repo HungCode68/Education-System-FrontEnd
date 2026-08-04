@@ -3,12 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ClassesService } from '../../services/classes.service';
-import { CourseService } from '../../services/course.service';
-import { TermService } from '../../services/term.service';
-import { ClassEntity } from '../../models/class.model';
-import { Course } from '../../models/course.model';
-import { Term } from '../../models/term.model';
+import { ClassesService } from '../../../../modules/academic/services/class.service';
+import { CourseService } from '../../../../modules/academic/services/course.service';
+import { TermService } from '../../../../modules/academic/services/term.service';
+import { ClassEntity } from '../../../../modules/academic/models/class.model';
+import { Course } from '../../../../modules/academic/models/course.model';
+import { Term } from '../../../../modules/academic/models/term.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -40,7 +40,7 @@ export class ClassesComponent implements OnInit {
   // --- STATE MODAL THÊM / SỬA ---
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   classForm!: FormGroup;
   isFormSubmitted = signal(false);
 
@@ -50,7 +50,7 @@ export class ClassesComponent implements OnInit {
 
   // --- STATE MODAL XÓA ---
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
@@ -317,9 +317,11 @@ export class ClassesComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {

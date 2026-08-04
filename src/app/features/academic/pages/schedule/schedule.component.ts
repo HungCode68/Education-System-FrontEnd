@@ -1,12 +1,13 @@
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ScheduleService } from '../../services/schedule.service';
-import { ClassesService } from '../../services/classes.service';
-import { RoomService } from '../../services/room.service';
-import { ClassSchedule, DAY_OF_WEEK_MAP, DAY_OPTIONS } from '../../models/schedule.model';
-import { ClassEntity } from '../../models/class.model';
-import { Room } from '../../models/room.model';
+import { ScheduleService } from '../../../../modules/academic/services/schedule.service';
+import { ClassesService } from '../../../../modules/academic/services/class.service';
+import { RoomService } from '../../../../modules/academic/services/room.service';
+import { ClassSchedule, DAY_OF_WEEK_MAP, DAY_OPTIONS } from '../../../../modules/academic/models/schedule.model';
+import { ClassEntity } from '../../../../modules/academic/models/class.model';
+import { Room } from '../../../../modules/academic/models/room.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -21,6 +22,7 @@ export class ScheduleComponent implements OnInit {
   private roomService = inject(RoomService);
   private fb = inject(FormBuilder);
   private toastService = inject(ToastService);
+  private route = inject(ActivatedRoute);
 
   // Constants
   dayOptions = DAY_OPTIONS;
@@ -30,19 +32,19 @@ export class ScheduleComponent implements OnInit {
   schedules = signal<ClassSchedule[]>([]);
   availableClasses = signal<ClassEntity[]>([]);
   availableRooms = signal<Room[]>([]);
-  selectedClassId = signal<number | null>(null);
+  selectedClassId = signal<number | string | null>(null);
   isLoading = signal(false);
 
   // Modal State
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   scheduleForm!: FormGroup;
   isFormSubmitted = signal(false);
 
   // Delete Modal State
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   ngOnInit() {
     this.initForm();
@@ -66,10 +68,14 @@ export class ScheduleComponent implements OnInit {
       next: (res) => {
         const list = res.content || [];
         this.availableClasses.set(list);
-        if (list.length > 0 && !this.selectedClassId()) {
-          this.selectedClassId.set(list[0].id!);
-          this.loadSchedules();
+
+        const routeClassId = this.route.snapshot.paramMap.get('id') || this.route.snapshot.queryParamMap.get('classId');
+        if (routeClassId) {
+          this.selectedClassId.set(Number(routeClassId));
+        } else if (list.length > 0 && !this.selectedClassId()) {
+          this.selectedClassId.set(list[0].id ?? null);
         }
+        this.loadSchedules();
       },
       error: (err) => {
         this.toastService.error('Lỗi', 'Lỗi khi tải danh sách lớp học: ' + (err.error?.message || err.message));
@@ -194,8 +200,8 @@ export class ScheduleComponent implements OnInit {
 
     if (this.isEditing() && this.currentId()) {
       this.scheduleService.update(this.currentId()!, dto).subscribe({
-        next: (res) => {
-          this.toastService.success('Thành công', res.message || 'Cập nhật ca học thành công!');
+        next: () => {
+          this.toastService.success('Thành công', 'Cập nhật ca học thành công!');
           this.closeModal();
           this.loadSchedules();
         },
@@ -205,8 +211,8 @@ export class ScheduleComponent implements OnInit {
       });
     } else {
       this.scheduleService.create(dto).subscribe({
-        next: (res) => {
-          this.toastService.success('Thành công', res.message || 'Tạo mới ca học thành công!');
+        next: () => {
+          this.toastService.success('Thành công', 'Tạo mới ca học thành công!');
           this.resetAddForm();
           this.closeModal();
           this.loadSchedules();
@@ -218,9 +224,11 @@ export class ScheduleComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {
@@ -228,8 +236,8 @@ export class ScheduleComponent implements OnInit {
     if (!id) return;
 
     this.scheduleService.delete(id).subscribe({
-      next: (res) => {
-        this.toastService.success('Thành công', res.message || 'Xóa ca học thành công!');
+      next: () => {
+        this.toastService.success('Thành công', 'Xóa ca học thành công!');
         this.isDeleteModalOpen.set(false);
         this.idToDelete.set(null);
         this.loadSchedules();

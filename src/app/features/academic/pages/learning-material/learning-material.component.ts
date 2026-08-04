@@ -3,10 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { LearningMaterialService } from '../../services/learning-material.service';
-import { CourseService } from '../../services/course.service';
-import { LearningMaterial, MATERIAL_TYPE_MAP, INDEXING_STATUS_MAP } from '../../models/learning-material.model';
-import { Course } from '../../models/course.model';
+import { LearningMaterialService } from '../../../../modules/academic/services/learning-material.service';
+import { CourseService } from '../../../../modules/academic/services/course.service';
+import { LearningMaterial, MATERIAL_TYPE_MAP, INDEXING_STATUS_MAP } from '../../../../modules/academic/models/learning-material.model';
+import { Course } from '../../../../modules/academic/models/course.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -41,14 +41,14 @@ export class LearningMaterialComponent implements OnInit {
   // Modal Signals
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   materialForm!: FormGroup;
   selectedFile = signal<File | null>(null);
   isFormSubmitted = signal(false);
 
-  // Delete Modal
+  // Delete Modal Signals
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals for Pagination
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
@@ -357,9 +357,11 @@ export class LearningMaterialComponent implements OnInit {
 
   // --- DELETE MODAL ---
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {

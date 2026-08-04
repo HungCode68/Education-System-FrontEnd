@@ -12,7 +12,7 @@ import { EnrollmentComponent } from './pages/enrollment/enrollment.component';
 import { LearningMaterialComponent } from './pages/learning-material/learning-material.component';
 import { ReportingComponent } from './pages/reporting/reporting.component';
 import { StudentComponent } from '../admin/pages/student/student.component';
-import { TeacherComponent } from '../admin/pages/teacher/teacher.component';
+import { StaffComponent } from '../admin/pages/staff/staff.component';
 
 export const academicRoutes: Routes = [
   {
@@ -82,7 +82,7 @@ export const academicRoutes: Routes = [
   },
   {
     path: 'staffs',
-    component: TeacherComponent,
+    component: StaffComponent,
     canActivate: [authGuard, roleGuard(['ACADEMIC', 'TRAINING', 'MANAGER', 'ADMIN', 'SYSTEM_ADMIN'])]
   },
   {

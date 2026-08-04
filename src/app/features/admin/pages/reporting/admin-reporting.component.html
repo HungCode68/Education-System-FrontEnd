@@ -1,0 +1,251 @@
+<div class="space-y-6">
+  <!-- PAGE HEADER -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+    <div>
+      <h1 class="text-2xl font-extrabold text-gray-900 tracking-tight">Báo cáo & Thống kê Trung tâm</h1>
+      <p class="text-sm text-gray-500 mt-1">Tổng quan số liệu hiện trạng và biến động quy mô toàn bộ trung tâm (Report Center Statistics)</p>
+    </div>
+
+    <!-- Date Picker & Sync Action -->
+    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+      <!-- Single Date Picker (dd/MM/yyyy) -->
+      <div class="relative flex items-center bg-white px-3.5 py-2 rounded-xl border border-gray-200 shadow-sm cursor-pointer" (click)="openPicker(snapDatePicker)">
+        <span class="text-xs font-bold text-gray-500 uppercase whitespace-nowrap mr-2">Ngày xem:</span>
+        <input 
+          type="text"
+          [value]="selectedDateFormatted()"
+          (input)="onDateTextInput($event, 'selected')"
+          placeholder="dd/MM/yyyy"
+          maxlength="10"
+          class="w-24 text-sm font-semibold text-gray-900 bg-transparent outline-none cursor-pointer"
+        >
+        <svg class="w-4 h-4 ml-1.5 text-gray-400 hover:text-blue-600 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+        </svg>
+        <input 
+          #snapDatePicker
+          type="date" 
+          [value]="selectedDate()"
+          (change)="onDatePickerChange($event, 'selected')"
+          class="sr-only opacity-0 w-0 h-0 absolute pointer-events-none"
+        >
+      </div>
+
+      <button 
+        (click)="syncDailyReport()" 
+        [disabled]="isSyncing()"
+        class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center transition shadow-md text-sm"
+      >
+        @if (isSyncing()) {
+          <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Đang đồng bộ...
+        } @else {
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+          </svg>
+          Đồng bộ số liệu ngày
+        }
+      </button>
+    </div>
+  </div>
+
+  @if (isLoadingSnapshot()) {
+    <div class="bg-white rounded-2xl p-12 text-center text-gray-500 shadow-sm border border-gray-100">
+      <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Đang tải số liệu thống kê trung tâm...
+    </div>
+  } @else {
+    @let snap = dailySnapshot();
+
+    <!-- MAIN METRICS CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      
+      <!-- CARD 1: HỌC VIÊN -->
+      <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2.5 py-1 rounded-lg">Học viên</span>
+          <div class="p-2.5 bg-blue-50 rounded-xl text-blue-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h3 class="text-3xl font-black text-gray-900">{{ snap?.totalActiveStudents || 0 }}</h3>
+          <p class="text-xs text-gray-500 font-medium mt-1">Đang theo học tại trung tâm</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold">
+          <span class="text-emerald-600 flex items-center">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span>
+            +{{ snap?.newStudentsToday || 0 }} mới hôm nay
+          </span>
+          <span class="text-rose-600">
+            -{{ snap?.droppedStudentsToday || 0 }} nghỉ học
+          </span>
+        </div>
+      </div>
+
+      <!-- CARD 2: GIẢNG VIÊN -->
+      <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2.5 py-1 rounded-lg">Giảng viên</span>
+          <div class="p-2.5 bg-indigo-50 rounded-xl text-indigo-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h3 class="text-3xl font-black text-gray-900">{{ snap?.totalTeachers || 0 }}</h3>
+          <p class="text-xs text-gray-500 font-medium mt-1">Giảng viên & Trợ giảng active</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold">
+          <span class="text-emerald-600">
+            +{{ snap?.newTeachersToday || 0 }} mới
+          </span>
+          <span class="text-rose-600">
+            -{{ snap?.resignedTeachersToday || 0 }} nghỉ việc
+          </span>
+        </div>
+      </div>
+
+      <!-- CARD 3: NHÂN SỰ KHÁC -->
+      <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-amber-600 uppercase tracking-wider bg-amber-50 px-2.5 py-1 rounded-lg">Nhân sự phòng ban</span>
+          <div class="p-2.5 bg-amber-50 rounded-xl text-amber-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4">
+          <h3 class="text-3xl font-black text-gray-900">{{ snap?.totalOtherStaffs || 0 }}</h3>
+          <p class="text-xs text-gray-500 font-medium mt-1">Nhân viên hành chính / quản lý</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold">
+          <span class="text-emerald-600">
+            +{{ snap?.newStaffsToday || 0 }} tuyển mới
+          </span>
+          <span class="text-rose-600">
+            -{{ snap?.resignedStaffsToday || 0 }} thôi việc
+          </span>
+        </div>
+      </div>
+
+      <!-- CARD 4: LỚP & KHÓA HỌC -->
+      <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition duration-200">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-2.5 py-1 rounded-lg">Khóa & Lớp học</span>
+          <div class="p-2.5 bg-emerald-50 rounded-xl text-emerald-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="mt-4 flex items-baseline space-x-3">
+          <h3 class="text-3xl font-black text-gray-900">{{ snap?.totalActiveClasses || 0 }}</h3>
+          <span class="text-xs font-semibold text-gray-500">Lớp active / {{ snap?.totalCourses || 0 }} Khóa</span>
+        </div>
+        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-semibold">
+          <span class="text-emerald-600">
+            +{{ snap?.newClassesOpened || 0 }} lớp mở mới
+          </span>
+          <span class="text-gray-500">
+            {{ snap?.classesClosedToday || 0 }} bế giảng
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RANGE KPI CARDS SECTION (dd/MM/yyyy format) -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <!-- Section Header -->
+      <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">Biến Động Số Liệu Theo Khoảng Thời Gian</h2>
+          <p class="text-xs text-gray-500 mt-0.5">Tổng hợp tăng giảm quy mô học viên, nhân sự và lớp học trong giai đoạn lựa chọn</p>
+        </div>
+
+        <div class="flex items-center space-x-3 bg-gray-50 p-2 rounded-xl border border-gray-200 text-xs">
+          <!-- Start Date -->
+          <div class="relative flex items-center cursor-pointer" (click)="openPicker(startDatePicker)">
+            <span class="font-bold text-gray-500 mr-1.5">Từ:</span>
+            <input 
+              type="text" 
+              [value]="rangeStartDateFormatted()"
+              (input)="onDateTextInput($event, 'start')"
+              placeholder="dd/MM/yyyy"
+              maxlength="10"
+              class="w-20 font-semibold text-gray-900 bg-transparent outline-none cursor-pointer"
+            >
+            <input 
+              #startDatePicker
+              type="date" 
+              [value]="rangeStartDate()"
+              (change)="onDatePickerChange($event, 'start')"
+              class="sr-only opacity-0 w-0 h-0 absolute pointer-events-none"
+            >
+          </div>
+
+          <span class="text-gray-300">|</span>
+
+          <!-- End Date -->
+          <div class="relative flex items-center cursor-pointer" (click)="openPicker(endDatePicker)">
+            <span class="font-bold text-gray-500 mr-1.5">Đến:</span>
+            <input 
+              type="text" 
+              [value]="rangeEndDateFormatted()"
+              (input)="onDateTextInput($event, 'end')"
+              placeholder="dd/MM/yyyy"
+              maxlength="10"
+              class="w-20 font-semibold text-gray-900 bg-transparent outline-none cursor-pointer"
+            >
+            <input 
+              #endDatePicker
+              type="date" 
+              [value]="rangeEndDate()"
+              (change)="onDatePickerChange($event, 'end')"
+              class="sr-only opacity-0 w-0 h-0 absolute pointer-events-none"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Range Summary KPI Highlights Cards -->
+      @let sum = rangeSummary();
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 p-6 bg-gray-50/50 text-sm">
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">HV mới trong kỳ</p>
+          <p class="text-2xl font-black text-emerald-600 mt-2">+{{ sum?.totalNewStudentsInRange || 0 }}</p>
+          <p class="text-xs text-gray-400 font-medium mt-1">Học viên đăng ký mới</p>
+        </div>
+        
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">HV thôi học trong kỳ</p>
+          <p class="text-2xl font-black text-rose-600 mt-2">-{{ sum?.totalDroppedStudentsInRange || 0 }}</p>
+          <p class="text-xs text-gray-400 font-medium mt-1">Học viên nghỉ học</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">GV & Nhân sự mới</p>
+          <p class="text-2xl font-black text-indigo-600 mt-2">+{{ (sum?.totalNewTeachersInRange || 0) + (sum?.totalNewStaffsInRange || 0) }}</p>
+          <p class="text-xs text-gray-400 font-medium mt-1">Tuyển dụng mới</p>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Lớp mở mới trong kỳ</p>
+          <p class="text-2xl font-black text-blue-600 mt-2">+{{ sum?.totalNewClassesOpenedInRange || 0 }}</p>
+          <p class="text-xs text-gray-400 font-medium mt-1">Lớp học khai giảng</p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

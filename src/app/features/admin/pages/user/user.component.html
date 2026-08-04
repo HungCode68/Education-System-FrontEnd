@@ -31,11 +31,10 @@
 
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
-      <table class="w-full text-sm text-left text-gray-500 min-w-[1100px]">
+      <table class="w-full text-sm text-left text-gray-500 min-w-[900px]">
         <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
           <tr>
             <th scope="col" class="px-6 py-4">Họ tên / Email</th>
-            <th scope="col" class="px-6 py-4">Số điện thoại</th>
             <th scope="col" class="px-6 py-4">Vai trò</th>
             <th scope="col" class="px-6 py-4 text-center">Thời gian tạo</th>
             <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
@@ -43,24 +42,23 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
-          @if (isLoading() && users().length === 0) {
+          @if (isLoading() && filteredUsers().length === 0) {
             <tr>
-              <td colspan="6" class="px-6 py-12 text-center text-gray-500">Đang tải danh sách tài khoản...</td>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-500">Đang tải danh sách tài khoản...</td>
             </tr>
           }
-          @if (!isLoading() && users().length === 0) {
+          @if (!isLoading() && filteredUsers().length === 0) {
             <tr>
-              <td colspan="6" class="px-6 py-12 text-center text-gray-500">Không tìm thấy tài khoản nào.</td>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-500">Không tìm thấy tài khoản nào phù hợp với bộ lọc.</td>
             </tr>
           }
 
-          @for (user of users(); track user.id) {
+          @for (user of filteredUsers(); track user.id) {
             <tr class="bg-white hover:bg-slate-50/50 transition duration-200">
               <td class="px-6 py-4">
                 <div class="font-bold text-slate-800 text-base">{{ user.fullName || '---' }}</div>
-                <div class="text-sm text-gray-500 mt-0.5">{{ user.email }}</div>
+                <div class="text-sm text-gray-500 mt-0.5 font-mono">{{ user.email }}</div>
               </td>
-              <td class="px-6 py-4 text-gray-600">{{ user.phone || '---' }}</td>
               <td class="px-6 py-4">
                 <div class="flex flex-wrap gap-1">
                   @if (user.roles && user.roles.length > 0) {
@@ -76,7 +74,7 @@
                 {{ user.createdAt | date:'dd/MM/yyyy HH:mm' }}
               </td>
               <td class="px-6 py-4 text-center">
-                <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                <span class="px-2.5 py-1 text-xs font-semibold rounded-full border inline-flex items-center"
                       [class.bg-green-50]="user.status === 'ACTIVE'"
                       [class.text-green-700]="user.status === 'ACTIVE'"
                       [class.border-green-200]="user.status === 'ACTIVE'"
@@ -90,11 +88,10 @@
                 </span>
               </td>
               <td class="px-6 py-4 text-right space-x-2">
-                <button (click)="openEditModal(user)" class="font-semibold text-blue-600 hover:text-blue-800 transition bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200">Sửa</button>
+                <button (click)="openEditModal(user)" class="font-semibold text-blue-600 hover:text-blue-800 transition bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 text-xs">Chỉnh sửa</button>
                 <button (click)="openResetModal(user)" title="Khôi phục mật khẩu mặc định"
-                        class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200">Reset</button>
-                <button (click)="openRoleModal(user)" class="font-semibold text-purple-600 hover:text-purple-800 transition bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200">Vai trò</button>
-                <button (click)="openStatusModal(user)" class="font-semibold text-slate-600 hover:text-slate-800 transition bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-200">Trạng thái</button>
+                        class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200 text-xs">Reset Mật khẩu</button>
+                <button (click)="openRoleModal(user)" class="font-semibold text-purple-600 hover:text-purple-800 transition bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200 text-xs">Vai trò</button>
               </td>
             </tr>
           }
@@ -104,8 +101,7 @@
 
     <div class="flex items-center justify-between px-6 py-4 bg-gray-50/80 border-t border-gray-100 rounded-b-2xl">
       <div class="text-sm text-gray-500">
-        Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> - <span class="font-semibold text-gray-900">{{ endIndex() }}</span>
-        trong số <span class="font-semibold text-gray-900">{{ totalElements() }}</span> tài khoản
+        Hiển thị <span class="font-semibold text-gray-900">{{ filteredUsers().length }}</span> / <span class="font-semibold text-gray-900">{{ totalElements() }}</span> tài khoản
       </div>
       <div class="flex space-x-2">
         <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1"
@@ -120,35 +116,46 @@
   </div>
 </div>
 
+<!-- MODAL CẬP NHẬT THÔNG TIN VÀ TRẠNG THÁI TÀI KHOẢN -->
 @if (isEditModalOpen()) {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeEditModal()"></div>
     <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
       <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-        <h3 class="text-2xl font-extrabold text-gray-900">Sửa thông tin</h3>
+        <h3 class="text-2xl font-extrabold text-gray-900">Chỉnh sửa Tài khoản</h3>
         <button (click)="closeEditModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
       </div>
 
-      <p class="text-sm text-gray-500 mb-4">Tài khoản: <strong class="text-gray-900">{{ selectedUserForEdit()?.email }}</strong></p>
+      <p class="text-sm text-gray-500 mb-4">Email đăng nhập: <strong class="text-gray-900 font-mono">{{ selectedUserForEdit()?.email }}</strong></p>
 
       <form [formGroup]="editForm" (ngSubmit)="submitEdit()" class="space-y-5">
         <div>
           <label class="block mb-1.5 text-sm font-bold text-gray-700">Họ và tên</label>
           <input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
         </div>
+
         <div>
-          <label class="block mb-1.5 text-sm font-bold text-gray-700">Số điện thoại</label>
-          <input type="text" formControlName="phone" placeholder="0912345678" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
+          <label class="block mb-1.5 text-sm font-bold text-gray-700">Trạng thái tài khoản *</label>
+          <select formControlName="status" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none font-semibold">
+            <option value="ACTIVE">Đang hoạt động (Active)</option>
+            <option value="INACTIVE">Ngừng hoạt động (Inactive)</option>
+            <option value="LOCKED">Bị khóa (Locked)</option>
+          </select>
+          @if (editForm.get('status')?.value === 'LOCKED') {
+            <p class="text-xs text-red-600 mt-1.5 font-medium">Tài khoản bị khóa sẽ không thể đăng nhập vào hệ thống.</p>
+          }
         </div>
+
         <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100">
           <button type="button" (click)="closeEditModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy</button>
-          <button type="submit" [disabled]="editForm.invalid || isProcessing()" class="px-5 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 shadow-md">Lưu</button>
+          <button type="submit" [disabled]="editForm.invalid || isProcessing()" class="px-5 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 shadow-md">Lưu cập nhật</button>
         </div>
       </form>
     </div>
   </div>
 }
 
+<!-- MODAL GÁN VAI TRÒ -->
 @if (isRoleModalOpen()) {
   <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeRoleModal()"></div>
@@ -160,7 +167,7 @@
 
       <div class="space-y-5">
         <div class="p-4 bg-purple-50 rounded-xl border border-purple-100">
-          <p class="text-sm text-purple-800">Tài khoản: <strong class="font-bold text-purple-900">{{ selectedUserForRole()?.email }}</strong></p>
+          <p class="text-sm text-purple-800">Tài khoản: <strong class="font-bold text-purple-900 font-mono">{{ selectedUserForRole()?.email }}</strong></p>
           <p class="text-sm text-purple-800 mt-1">Hiện tại: <strong class="font-bold text-purple-900">{{ formatRoles(selectedUserForRole()?.roles) }}</strong></p>
         </div>
 
@@ -195,42 +202,14 @@
   </div>
 }
 
-@if (isStatusModalOpen()) {
-  <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeStatusModal()"></div>
-    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
-      <h3 class="text-2xl font-extrabold text-gray-900 mb-2">Thay đổi Trạng thái</h3>
-      <p class="text-gray-600 text-sm mb-6">Tài khoản: <strong class="text-gray-900">{{ selectedUserForStatus()?.email }}</strong></p>
-
-      <div class="text-left bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6">
-        <label class="block mb-2 text-sm font-bold text-gray-700">Trạng thái tài khoản *</label>
-        <select [formControl]="selectedStatus" class="bg-white border border-gray-300 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-slate-500 block w-full p-3 outline-none font-medium shadow-sm transition">
-          <option value="ACTIVE">Đang hoạt động</option>
-          <option value="INACTIVE">Ngừng hoạt động</option>
-          <option value="LOCKED">Bị khóa</option>
-        </select>
-        @if (selectedStatus.value === 'LOCKED') {
-          <p class="text-xs text-red-600 mt-2 font-medium">Tài khoản bị khóa sẽ không thể đăng nhập.</p>
-        }
-      </div>
-
-      <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-6">
-        <button (click)="closeStatusModal()" class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm transition">Hủy bỏ</button>
-        <button (click)="submitStatusChange()" [disabled]="isProcessing()" class="px-5 py-3.5 text-sm font-semibold text-white bg-slate-800 rounded-xl hover:bg-slate-900 disabled:bg-slate-400 shadow-md transition">
-          Xác nhận
-        </button>
-      </div>
-    </div>
-  </div>
-}
-
+<!-- MODAL RESET MẬT KHẨU -->
 @if (isResetModalOpen()) {
   <div class="fixed inset-0 z-[60] flex items-center justify-center p-4">
     <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeResetModal()"></div>
     <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100 text-center">
       <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Khôi phục mật khẩu?</h3>
       <p class="text-gray-600 mt-3 text-sm leading-relaxed">
-        Đặt lại mật khẩu cho tài khoản <strong class="text-gray-900">{{ userToReset()?.email }}</strong>.
+        Đặt lại mật khẩu cho tài khoản <strong class="text-gray-900 font-mono">{{ userToReset()?.email }}</strong>.
       </p>
       <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
         <button type="button" (click)="closeResetModal()"

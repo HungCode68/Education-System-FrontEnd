@@ -3,9 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { PermissionService } from '../../services/permission.service';
+import { PermissionService } from '../../../../modules/user/services/permission.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Permission } from '../../models/permission.model';
+import { Permission } from '../../../../modules/user/models/permission.model';
 
 @Component({
   selector: 'app-permission',

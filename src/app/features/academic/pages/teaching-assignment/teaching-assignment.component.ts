@@ -3,12 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { TeachingAssignmentService } from '../../services/teaching-assignment.service';
-import { ClassesService } from '../../services/classes.service';
-import { StaffService } from '../../../admin/services/staff.service';
-import { TeachingAssignment, TEACHING_ROLE_MAP, TEACHING_ROLE_OPTIONS } from '../../models/teaching-assignment.model';
-import { ClassEntity } from '../../models/class.model';
-import { Staff } from '../../../admin/models/staff.model';
+import { TeachingAssignmentService } from '../../../../modules/teaching/services/teaching-assignment.service';
+import { ClassesService } from '../../../../modules/academic/services/class.service';
+import { StaffService } from '../../../../modules/user/services/staff.service';
+import { TeachingAssignment, TEACHING_ROLE_MAP, TEACHING_ROLE_OPTIONS } from '../../../../modules/teaching/models/teaching-assignment.model';
+import { ClassEntity } from '../../../../modules/academic/models/class.model';
+import { Staff } from '../../../../modules/user/models/staff.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -42,7 +42,7 @@ export class TeachingAssignmentComponent implements OnInit {
   // Modal State
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   assignmentForm!: FormGroup;
   isFormSubmitted = signal(false);
 
@@ -52,7 +52,7 @@ export class TeachingAssignmentComponent implements OnInit {
 
   // Delete Modal State
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
@@ -301,9 +301,11 @@ export class TeachingAssignmentComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {

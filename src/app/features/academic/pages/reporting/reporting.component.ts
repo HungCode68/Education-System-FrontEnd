@@ -3,12 +3,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { ReportingService } from '../../services/reporting.service';
+import { ReportsService } from '../../../../modules/reporting/services/reports.service';
 import {
+  AcademicReportSummary,
   TrainingOverview,
   ReportClassMetrics,
   ReportSummary
-} from '../../models/reporting.model';
+} from '../../../../modules/reporting/models/reports.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -18,7 +19,7 @@ import { ToastService } from '../../../../core/services/toast.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ReportingComponent implements OnInit {
-  private reportingService = inject(ReportingService);
+  private reportingService = inject(ReportsService);
   private destroyRef = inject(DestroyRef);
   private toastService = inject(ToastService);
 
@@ -48,7 +49,7 @@ export class ReportingComponent implements OnInit {
   isLoadingSummary = signal<boolean>(false);
   isSyncingCenter = signal<boolean>(false);
   isSyncingAllClasses = signal<boolean>(false);
-  syncingClassId = signal<number | null>(null);
+  syncingClassId = signal<number | string | null>(null);
 
   // Computed Filtered Classes
   filteredClassMetrics = computed(() => {
@@ -193,11 +194,12 @@ export class ReportingComponent implements OnInit {
     });
   }
 
-  syncSingleClass(classId: number) {
+  syncSingleClass(classId?: number | string) {
+    if (classId == null) return;
     this.syncingClassId.set(classId);
     this.reportingService.syncClassMetrics(classId).subscribe({
       next: (res) => {
-        this.toastService.success('Thành công', res.message || `Đồng bộ hiệu suất cho lớp ID #${classId} thành công!`);
+        this.toastService.success('Thành công', res?.message || `Đồng bộ hiệu suất cho lớp ID #${classId} thành công!`);
         this.syncingClassId.set(null);
         this.loadDashboardData();
       },

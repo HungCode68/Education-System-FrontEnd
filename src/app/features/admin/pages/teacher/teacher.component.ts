@@ -3,10 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { TeacherService } from '../../services/teacher.service';
+import { TeacherService } from '../../../../modules/user/services/teacher.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Teacher } from '../../models/teacher.model';
-import { DepartmentService } from '../../services/department.service';
+import { Teacher } from '../../../../modules/user/models/teacher.model';
+import { DepartmentService } from '../../../../modules/user/services/department.service';
 
 @Component({
   selector: 'app-teacher',

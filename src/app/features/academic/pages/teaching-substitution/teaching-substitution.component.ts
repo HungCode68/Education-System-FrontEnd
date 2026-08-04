@@ -3,15 +3,15 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { TeachingSubstitutionService } from '../../services/teaching-substitution.service';
-import { ClassesService } from '../../services/classes.service';
-import { ScheduleService } from '../../services/schedule.service';
-import { ScheduleAssignmentService } from '../../services/schedule-assignment.service';
-import { StaffService } from '../../../admin/services/staff.service';
-import { TeachingSubstitution, SUBSTITUTION_STATUS_MAP, SUBSTITUTION_STATUS_OPTIONS } from '../../models/teaching-substitution.model';
-import { ClassEntity } from '../../models/class.model';
-import { ClassSchedule, DAY_OF_WEEK_MAP } from '../../models/schedule.model';
-import { Staff } from '../../../admin/models/staff.model';
+import { TeachingSubstitutionService } from '../../../../modules/teaching/services/teaching-substitution.service';
+import { ClassesService } from '../../../../modules/academic/services/class.service';
+import { ScheduleService } from '../../../../modules/academic/services/schedule.service';
+import { ScheduleAssignmentService } from '../../../../modules/teaching/services/schedule-assignment.service';
+import { StaffService } from '../../../../modules/user/services/staff.service';
+import { TeachingSubstitution, SUBSTITUTION_STATUS_MAP, SUBSTITUTION_STATUS_OPTIONS } from '../../../../modules/teaching/models/teaching-substitution.model';
+import { ClassEntity } from '../../../../modules/academic/models/class.model';
+import { ClassSchedule, DAY_OF_WEEK_MAP } from '../../../../modules/academic/models/schedule.model';
+import { Staff } from '../../../../modules/user/models/staff.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -143,7 +143,7 @@ export class TeachingSubstitutionComponent implements OnInit {
         if (assignments && assignments.length > 0) {
           const mainAssign = assignments.find(a => a.role === 'MAIN_TEACHER') || assignments[0];
           this.assignedAbsentTeacher.set({
-            id: mainAssign.staffId,
+            id: Number(mainAssign.staffId),
             fullName: mainAssign.teacherName || 'Giảng viên',
             staffCode: mainAssign.staffCode
           });

@@ -3,8 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { RoomService } from '../../services/room.service';
-import { Room } from '../../models/room.model';
+import { RoomService } from '../../../../modules/academic/services/room.service';
+import { Room } from '../../../../modules/academic/models/room.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -30,13 +30,13 @@ export class RoomComponent implements OnInit {
   // Modal State
   isModalOpen = signal(false);
   isEditing = signal(false);
-  currentId = signal<number | null>(null);
+  currentId = signal<number | string | null>(null);
   roomForm!: FormGroup;
   isFormSubmitted = signal(false);
 
   // Delete Modal State
   isDeleteModalOpen = signal(false);
-  idToDelete = signal<number | null>(null);
+  idToDelete = signal<number | string | null>(null);
 
   // Computed signals
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
@@ -176,9 +176,11 @@ export class RoomComponent implements OnInit {
     }
   }
 
-  onDelete(id: number) {
-    this.idToDelete.set(id);
-    this.isDeleteModalOpen.set(true);
+  onDelete(id?: number | string) {
+    if (id != null) {
+      this.idToDelete.set(id);
+      this.isDeleteModalOpen.set(true);
+    }
   }
 
   confirmDelete() {

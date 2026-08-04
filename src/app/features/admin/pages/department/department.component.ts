@@ -3,11 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { DepartmentService } from '../../services/department.service';
+import { DepartmentService } from '../../../../modules/user/services/department.service';
 import { ToastService } from '../../../../core/services/toast.service';
-import { Department } from '../../models/department.model';
-import { StaffService } from '../../services/staff.service';
-import { Staff } from '../../models/staff.model';
+import { Department } from '../../../../modules/user/models/department.model';
+import { StaffService } from '../../../../modules/user/services/staff.service';
+import { Staff } from '../../../../modules/user/models/staff.model';
 
 @Component({
   selector: 'app-department',
