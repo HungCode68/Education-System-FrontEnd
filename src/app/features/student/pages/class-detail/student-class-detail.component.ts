@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { StudentClassService } from '../../services/student-class.service';
@@ -6,9 +6,9 @@ import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-student-class-detail',
-  standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './student-class-detail.component.html'
+  templateUrl: './student-class-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StudentClassDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

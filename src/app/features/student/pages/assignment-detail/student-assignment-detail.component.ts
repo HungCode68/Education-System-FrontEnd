@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, OnDestroy } from '@angular/core';
+import { Component, OnInit, inject, signal, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -9,11 +9,11 @@ import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-student-assignment-detail',
-  standalone: true,
   imports: [CommonModule, RouterModule, FormsModule],
-  templateUrl: './student-assignment-detail.component.html'
+  templateUrl: './student-assignment-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StudentAssignmentDetailComponent implements OnInit {
+export class StudentAssignmentDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private location = inject(Location);
   private assignmentService = inject(StudentAssignmentService);
@@ -32,7 +32,7 @@ export class StudentAssignmentDetailComponent implements OnInit {
   // STATE CHO ĐỒNG HỒ ĐẾM NGƯỢC
   remainingTime = signal<number>(0); // Lưu số giây còn lại
   timerDisplay = signal<string>('--:--'); // Chuỗi hiển thị (VD: 45:00)
-  private timerInterval: any;
+  private timerInterval: ReturnType<typeof setInterval> | undefined;
 
   submissionId = signal<string | null>(null);
   isSubmitting = signal(false);
@@ -116,15 +116,15 @@ export class StudentAssignmentDetailComponent implements OnInit {
             }
 
             // Có câu hỏi (Trắc nghiệm/Tự luận) -> Lấy thêm đáp án
-            const optionRequests = questionsRes.map(q => {
+            const optionRequests = questionsRes.map((q: any) => {
               if (this.isMultipleChoice(q.questionType)) {
                 return this.assignmentService.getQuestionOptions(q.id);
               }
               return of([]); 
             });
 
-            forkJoin(optionRequests).subscribe(optionsArray => {
-              questionsRes.forEach((q, index) => {
+            forkJoin(optionRequests).subscribe((optionsArray: any) => {
+              questionsRes.forEach((q: any, index: number) => {
                 q.options = optionsArray[index];
                 q.studentAnswer = null;
               });
@@ -271,14 +271,15 @@ export class StudentAssignmentDetailComponent implements OnInit {
     });
   }
 
-  onFileSelected(event: any) {
-    const file: File = event.target.files[0];
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file: File | undefined = input.files?.[0];
     if (!file) return;
 
     // Giới hạn dung lượng 10MB (Tương đương cấu hình Backend)
     if (file.size > 10 * 1024 * 1024) {
       this.toastService.warning('File quá lớn', 'Vui lòng chọn file có dung lượng dưới 10MB.');
-      event.target.value = ''; // Reset input
+      input.value = ''; // Reset input
       return;
     }
 
@@ -302,7 +303,7 @@ export class StudentAssignmentDetailComponent implements OnInit {
     });
     
     // Reset ô input để có thể chọn lại cùng 1 file nếu lỡ tay xóa
-    event.target.value = '';
+    input.value = '';
   }
 
   // Hàm mở Modal khi người dùng ấn nút Xóa

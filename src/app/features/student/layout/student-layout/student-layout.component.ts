@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -8,11 +8,11 @@ import { StudentAnnouncementService } from '../../services/student-announcement.
 
 @Component({
   selector: 'app-student-layout',
-  standalone: true,
   imports: [CommonModule, RouterModule, NotificationBellComponent],
-  templateUrl: './student-layout.component.html'
+  templateUrl: './student-layout.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class StudentLayoutComponent  {
+export class StudentLayoutComponent implements OnInit {
   public authService = inject(AuthService);
   private router = inject(Router);
   private profileService = inject(StudentProfileService);
@@ -31,15 +31,15 @@ export class StudentLayoutComponent  {
       next: (res) => {
         // Nếu học sinh đã có lớp chủ nhiệm, gán ID vào biến để thanh Menu hiện ra
         if (res && res.currentClassId) {
-          this.physicalClassId.set(res.currentClassId);
-          this.announcementService.checkNewAnnouncements(res.currentClassId);
+          const classIdStr = String(res.currentClassId);
+          this.physicalClassId.set(classIdStr);
+          this.announcementService.checkNewAnnouncements(classIdStr);
 
           setInterval(() => {
-             this.announcementService.checkNewAnnouncements(res.currentClassId);
+             this.announcementService.checkNewAnnouncements(classIdStr);
           }, 5 * 60 * 1000);
           
-          // (Tùy chọn) Lưu thẳng vào LocalStorage 1 key rời để các màn hình khác cần thì dùng
-          localStorage.setItem('physicalClassId', res.currentClassId); 
+          localStorage.setItem('physicalClassId', classIdStr); 
         }
       },
       error: (err) => {
@@ -48,7 +48,6 @@ export class StudentLayoutComponent  {
     });
   }
 
-  //  Kiểm tra Role 
   hasAnyRole(allowedRoles: string[]): boolean {
     const userRoles = this.authService.authState().roles || [];
     return allowedRoles.some(allowedRole => 

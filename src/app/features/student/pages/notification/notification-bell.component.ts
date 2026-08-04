@@ -1,13 +1,16 @@
-import { Component, OnInit, ElementRef, HostListener, inject, signal } from '@angular/core';
+import { Component, OnInit, ElementRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-notification-bell',
-  standalone: true,
   imports: [CommonModule],
-  templateUrl: './notification-bell.component.html'
+  templateUrl: './notification-bell.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'clickout($event)'
+  }
 })
 export class NotificationBellComponent implements OnInit {
   private notifService = inject(NotificationService);
@@ -53,7 +56,6 @@ export class NotificationBellComponent implements OnInit {
   }
 
   // Click ra ngoài để đóng popup
-  @HostListener('document:click', ['$event'])
   clickout(event: Event) {
     if (this.isOpen() && !this.eRef.nativeElement.contains(event.target)) {
       this.isOpen.set(false);

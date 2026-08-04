@@ -1,49 +1,106 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, switchMap, map, of } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { StudentProfileService } from './student-profile.service';
 
+export type EnrollmentStatus = 'ACTIVE' | 'INACTIVE' | 'DROPPED' | 'ENROLLED' | 'COMPLETED' | 'PENDING' | string;
+
+export interface Enrollment {
+  id?: number | string;
+  classId: number | string;
+  classCode?: string;
+  className?: string;
+  studentId: number | string;
+  studentCode?: string;
+  studentName?: string;
+  enrolledAt?: string;
+  enrollmentDate?: string;
+  status?: EnrollmentStatus;
+  note?: string;
+}
+
+export interface Class {
+  id: number | string;
+  code?: string;
+  name?: string;
+  subjectName?: string;
+  physicalClassName?: string;
+  teacherName?: string;
+  teacherCode?: string;
+  [key: string]: any;
+}
+
+export interface ClassmateDto {
+  studentId: number;
+  studentName?: string | null;
+  studentCode?: string | null;
+  status?: string | null;
+}
 
 @Injectable({ providedIn: 'root' })
 export class StudentClassService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/v1/online-classes`;
-  
+  private studentProfileService = inject(StudentProfileService);
+  private classesApi = `${environment.apiUrl}/api/v1/classes`;
+  private enrollmentsApi = `${environment.apiUrl}/api/v1/enrollments`;
+  private assignmentsApi = `${environment.apiUrl}/api/v1/assignments`;
+  private materialsApi = `${environment.apiUrl}/api/v1/learning-materials`;
 
-  // Gọi API lấy danh sách lớp học của Học sinh đang đăng nhập
-  getMyClasses(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/student/my-classes`);
+  getMyClasses(): Observable<(Enrollment & { classDetail?: Class })[]> {
+    return this.studentProfileService.getMyStudentId().pipe(
+      switchMap(studentId => {
+        if (!studentId) return of([]);
+        return this.http.get<Enrollment[]>(`${this.enrollmentsApi}/student/${studentId}`).pipe(
+          map(enrollments =>
+            enrollments.filter(e =>
+              !e.status || ['PENDING', 'ACTIVE', 'COMPLETED'].includes(String(e.status).toUpperCase())
+            )
+          )
+        );
+      })
+    );
   }
 
-  // Lấy chi tiết thông tin Lớp học (Tên lớp, Tên GV)
-  getClassDetail(classId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${classId}`);
+  getClassDetail(classId: string): Observable<Class> {
+    return this.http.get<Class>(`${this.classesApi}/${classId}`);
   }
 
-  // Lấy danh sách thành viên trong lớp (Học sinh)
-  getClassStudents(classId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${classId}/students?status=active`);
+  getClassStudents(classId: string): Observable<ClassmateDto[]> {
+    return this.http.get<Enrollment[]>(`${this.enrollmentsApi}/class/${classId}`).pipe(
+      map(list => list.map(e => ({
+        studentId: Number(e.studentId),
+        studentName: e.studentName,
+        studentCode: e.studentCode,
+        status: e.status
+      })))
+    );
   }
 
-  // Lấy danh sách tài liệu của lớp (Chỉ lấy những tài liệu đã Published)
-  getClassMaterials(classId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/../learning-materials/student/class/${classId}`);
+  getClassMaterials(classId: string) {
+    return this.http.get<any[]>(`${this.materialsApi}/class/${classId}`);
   }
 
-  // Lấy link tải file thực tế (MinIO Presigned URL hoặc External Link)
-  getMaterialDownloadUrl(materialId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/../learning-materials/${materialId}/download-url`);
+  getMaterialDownloadUrl(materialId: string): Observable<{ url: string }> {
+    return this.http.get<any>(`${this.materialsApi}/${materialId}`).pipe(
+      map(m => ({ url: m.downloadUrl || m.resourceUrl || '' }))
+    );
   }
 
-  // Lấy danh sách bài tập của lớp
-  // API Backend của bạn đang dùng page=0 cho trang đầu tiên
-  getClassAssignments(classId: string, page: number = 0, size: number = 10): Observable<any> {
+  getClassAssignments(classId: string, page: number = 0, size: number = 100) {
     const params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString())
       .set('sortBy', 'createdAt')
       .set('sortDir', 'desc');
 
-    return this.http.get(`${environment.apiUrl}/api/v1/assignments/class/${classId}`, { params });
+    return this.http.get<any[]>(`${this.assignmentsApi}/class/${classId}`, { params }).pipe(
+      map(list => ({
+        content: list || [],
+        totalElements: (list || []).length,
+        totalPages: 1,
+        number: 0
+      }))
+    );
   }
 }

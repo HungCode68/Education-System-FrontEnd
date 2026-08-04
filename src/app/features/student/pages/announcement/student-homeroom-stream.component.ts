@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { StudentAnnouncementService } from '../../services/student-announcement.service';
@@ -6,9 +6,9 @@ import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
   selector: 'app-student-homeroom-stream',
-  standalone: true,
   imports: [CommonModule, RouterModule],
-  templateUrl: './student-homeroom-stream.component.html'
+  templateUrl: './student-homeroom-stream.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StudentHomeroomStreamComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -16,7 +16,7 @@ export class StudentHomeroomStreamComponent implements OnInit {
   private toastService = inject(ToastService);
 
   classId = signal<string>('');
-  className = signal<string>('Lớp Chủ Nhiệm'); // Tên lớp (lấy từ thông báo đầu tiên)
+  className = signal<string>('Lớp Chủ Nhiệm');
   
   announcements = signal<any[]>([]);
   isLoading = signal(true);
@@ -26,11 +26,9 @@ export class StudentHomeroomStreamComponent implements OnInit {
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
-      
-      // KIỂM TRA CHẶT CHẼ: Đảm bảo có ID và ID không phải là chuỗi 'null'
       if (id && id !== 'null' && id !== 'undefined') {
         this.classId.set(id);
-        this.loadAnnouncements(1); // Gọi API lấy trang đầu tiên
+        this.loadAnnouncements(1);
       } else {
         this.isLoading.set(false);
         this.toastService.warning('Chưa có lớp', 'Bạn chưa được xếp vào lớp chủ nhiệm nào.');
@@ -40,15 +38,13 @@ export class StudentHomeroomStreamComponent implements OnInit {
 
   loadAnnouncements(page: number = 1) {
     this.isLoading.set(true);
-    // Mặc định lấy 10 thông báo mỗi trang, Backend đã hỗ trợ phân trang
     this.announcementService.getHomeroomAnnouncements(this.classId(), page).subscribe({
       next: (res) => {
         this.announcements.set(res.content || []);
         this.currentPage.set(res.number + 1);
         this.totalPages.set(res.totalPages);
         
-        // Trích xuất tên lớp từ thông báo đầu tiên để làm Banner
-        if (res.content && res.content.length > 0) {
+        if (res.content && res.content.length > 0 && res.content[0].physicalClassName) {
            this.className.set(res.content[0].physicalClassName);
         }
         
@@ -62,7 +58,6 @@ export class StudentHomeroomStreamComponent implements OnInit {
     });
   }
 
-  // Chuyển trang (Cuộn mượt mà lên đầu trang khi bấm Next/Prev)
   changePage(page: number) {
     if (page >= 1 && page <= this.totalPages()) {
       this.loadAnnouncements(page);
@@ -70,7 +65,6 @@ export class StudentHomeroomStreamComponent implements OnInit {
     }
   }
 
-  // Tạo Avatar chữ cái đầu từ tên Giáo viên
   getInitials(name: string): string {
     if (!name) return 'GV';
     const parts = name.trim().split(' ');

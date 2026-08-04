@@ -4,7 +4,6 @@ import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-student',
-  standalone: true,
   imports: [CommonModule],
   template: `
     <div class="p-8">
