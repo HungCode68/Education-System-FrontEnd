@@ -177,10 +177,8 @@ export class LearningMaterialComponent implements OnInit {
       this.isEditing.set(false);
       this.currentId.set(null);
 
-      const firstCourseId = this.availableCourses().length > 0 ? this.availableCourses()[0].id : '';
-
       this.materialForm.reset({
-        courseId: firstCourseId,
+        courseId: '',
         title: '',
         materialType: 'DOCUMENT',
         sourceType: 'MINIO',

@@ -4,7 +4,8 @@ import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { AssignmentService } from '../../services/assignment.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AssignmentQuestionService } from '../../services/assignment-question.service';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms'; 
+import { QuestionService } from '../../services/question.service';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-assignment-detail',
@@ -17,27 +18,29 @@ export class AssignmentDetailComponent implements OnInit {
   public router = inject(Router);
   private assignmentService = inject(AssignmentService);
   private toastService = inject(ToastService);
-  private questionService = inject(AssignmentQuestionService);
+  private assignmentQuestionService = inject(AssignmentQuestionService);
+  private questionService = inject(QuestionService);
   private fb = inject(FormBuilder);
 
   assignmentId = signal<string | null>(null);
   assignment = signal<any | null>(null);
   isLoading = signal(true);
-  questions = signal<any[]>([]);
+  assignmentQuestions = signal<any[]>([]);
   isLoadingQuestions = signal(false);
   isImporting = signal(false);
 
-  // --- STATE MODAL CÂU HỎI ---
+  // --- STATE MODAL CÂU HỎI & MEDIA FILE ---
   isQuestionModalOpen = signal(false);
   isSavingQuestion = signal(false);
+  selectedMediaFile = signal<File | null>(null);
   questionForm!: FormGroup;
 
   // --- STATE SỬA / XÓA CÂU HỎI ---
-  editingQuestion = signal<any | null>(null); // Lưu thông tin câu hỏi đang sửa
+  editingQuestion = signal<any | null>(null);
   
   isDeleteQuestionModalOpen = signal(false);
   isDeletingQuestion = signal(false);
-  questionToDeleteId = signal<string | null>(null);
+  questionToDeleteId = signal<number | string | null>(null);
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
@@ -48,34 +51,32 @@ export class AssignmentDetailComponent implements OnInit {
         this.initQuestionForm();
       }
     });
-    
   }
 
   private initQuestionForm() {
     this.questionForm = this.fb.group({
-      questionType: ['multiple_choice', Validators.required],
-      score: [1, [Validators.required, Validators.min(0)]],
-      questionText: ['', Validators.required],
-      explanation: [''],
-      // FormArray để quản lý danh sách đáp án động
+      questionType: ['MULTIPLE_CHOICE', Validators.required],
+      scoreWeight: [1, [Validators.required, Validators.min(0)]],
+      content: ['', Validators.required],
+      readingPassage: [''],
       options: this.fb.array([
-        this.createOptionForm(true),  // Mặc định đáp án 1 là Đúng
+        this.createOptionForm(true),
         this.createOptionForm(false),
         this.createOptionForm(false),
         this.createOptionForm(false)
       ])
     });
+
     this.questionForm.get('questionType')?.valueChanges.subscribe(type => {
       const optionsArray = this.questionForm.get('options') as FormArray;
-      if (type === 'multiple_choice') {
-        optionsArray.enable(); // Nếu là Trắc nghiệm -> Bật lại mảng đáp án để bắt lỗi bắt buộc nhập
+      if (type === 'MULTIPLE_CHOICE' || type === 'multiple_choice' || type === 'LISTENING') {
+        optionsArray.enable();
       } else {
-        optionsArray.disable(); // Nếu là Tự luận -> Vô hiệu hóa mảng đáp án để Form hết bị lỗi invalid
+        optionsArray.disable();
       }
     });
   }
 
-  // Getter để lấy FormArray Options ra HTML dễ dàng
   get optionsFormArray() {
     return this.questionForm.get('options') as FormArray;
   }
@@ -84,12 +85,30 @@ export class AssignmentDetailComponent implements OnInit {
     this.optionsFormArray.push(this.createOptionForm());
   }
 
-  // Tạo một FormGroup cho 1 đáp án
+  removeOption(index: number) {
+    if (this.optionsFormArray.length > 2) {
+      this.optionsFormArray.removeAt(index);
+    } else {
+      this.toastService.warning('Cảnh báo', 'Câu hỏi trắc nghiệm phải có ít nhất 2 đáp án!');
+    }
+  }
+
   private createOptionForm(isCorrect: boolean = false): FormGroup {
     return this.fb.group({
-      optionText: ['', Validators.required],
+      optionContent: ['', Validators.required],
       isCorrect: [isCorrect]
     });
+  }
+
+  onMediaFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.selectedMediaFile.set(file);
+    }
+  }
+
+  removeSelectedMediaFile() {
+    this.selectedMediaFile.set(null);
   }
 
   loadAssignmentDetails(id: string) {
@@ -98,7 +117,7 @@ export class AssignmentDetailComponent implements OnInit {
       next: (res) => {
         this.assignment.set(res);
         this.isLoading.set(false);
-        this.loadQuestions(id); // <--- THÊM DÒNG NÀY ĐỂ GỌI CÂU HỎI
+        this.loadQuestions(id);
       },
       error: () => {
         this.toastService.error('Lỗi', 'Không thể tải thông tin bài tập');
@@ -107,32 +126,15 @@ export class AssignmentDetailComponent implements OnInit {
     });
   }
 
-
-  // --- LOGIC CÂU HỎI ---
   loadQuestions(assignmentId: string) {
     this.isLoadingQuestions.set(true);
-    
-    this.questionService.getQuestionsByAssignment(assignmentId).subscribe({
-      next: (qs) => {
-        // Gán câu hỏi vào signal trước để giao diện hiển thị
-        this.questions.set(qs);
+    this.assignmentQuestionService.getQuestionsByAssignmentId(assignmentId).subscribe({
+      next: (aqList: any[]) => {
+        this.assignmentQuestions.set(aqList || []);
         this.isLoadingQuestions.set(false);
-
-        // Chạy vòng lặp để lấy đáp án cho các câu Trắc nghiệm
-        qs.forEach((q, index) => {
-          if (q.questionType === 'multiple_choice') {
-            this.questionService.getOptionsByQuestion(q.id).subscribe(opts => {
-               // Cập nhật lại options vào đúng vị trí câu hỏi trong mảng
-               this.questions.update(current => {
-                  current[index].options = opts;
-                  return [...current];
-               });
-            });
-          }
-        });
       },
       error: () => {
-        this.toastService.error('Lỗi', 'Không thể tải danh sách câu hỏi');
+        this.toastService.error('Lỗi', 'Không thể tải danh sách câu hỏi của bài tập');
         this.isLoadingQuestions.set(false);
       }
     });
@@ -144,94 +146,108 @@ export class AssignmentDetailComponent implements OnInit {
 
   getAssignmentTypeName(type: string): string {
     const map: any = {
+      'HOMEWORK': 'Bài tập về nhà',
+      'QUIZ': 'Trắc nghiệm',
+      'ESSAY': 'Tự luận',
+      'PROJECT': 'Đồ án',
+      'MULTIPLE_CHOICE': 'Trắc nghiệm',
+      'LISTENING': '🎧 Bài nghe (Audio)',
+      'FILL_BLANK': 'Điền từ',
+      'TRUE_FALSE': 'Đúng / Sai',
       'multiple_choice': 'Trắc nghiệm',
-      'essay': 'Tự luận',
-      'file_upload': 'Nộp File',
-      'mixed': 'Hỗn hợp'
+      'essay': 'Tự luận'
     };
-    return map[type] || 'Không xác định';
+    return map[type] || type || 'Bài tập';
   }
 
-  // Mở file đính kèm bằng URL MinIO trả về từ Backend
-  downloadAttachment(url: string) {
-    if (url) {
-      window.open(url, '_blank');
-    } else {
-      this.toastService.warning('Cảnh báo', 'Không tìm thấy đường dẫn tải file');
-    }
+  isAudioUrl(url: string | null): boolean {
+    if (!url) return false;
+    const cleanUrl = url.split('?')[0].toLowerCase();
+    return cleanUrl.endsWith('.mp3') || cleanUrl.endsWith('.wav') || cleanUrl.endsWith('.aac') || cleanUrl.endsWith('.m4a') || cleanUrl.endsWith('.ogg');
   }
 
-  // Hàm xử lý khi chọn file Excel
+  isImageUrl(url: string | null): boolean {
+    if (!url) return false;
+    const cleanUrl = url.split('?')[0].toLowerCase();
+    return cleanUrl.endsWith('.png') || cleanUrl.endsWith('.jpg') || cleanUrl.endsWith('.jpeg') || cleanUrl.endsWith('.webp') || cleanUrl.endsWith('.gif') || cleanUrl.endsWith('.svg');
+  }
+
   onExcelFileSelected(event: any) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Kiểm tra đuôi file xem có chuẩn Excel không
     if (!file.name.endsWith('.xlsx') && !file.name.endsWith('.xls')) {
       this.toastService.warning('Cảnh báo', 'Vui lòng chọn file Excel (.xlsx hoặc .xls)');
-      event.target.value = ''; // Reset lại input
+      event.target.value = '';
       return;
     }
 
-    if (!this.assignmentId()) return;
-
     this.isImporting.set(true);
-    this.questionService.importFromExcel(this.assignmentId()!, file).subscribe({
-      next: (res) => {
-        // res.totalImported là biến bạn đã cấu hình trả về từ Backend
-        this.toastService.success('Import thành công!', `Đã thêm ${res.totalImported || ''} câu hỏi vào hệ thống.`);
-        this.loadQuestions(this.assignmentId()!); // Tự động load lại danh sách câu hỏi
+    this.questionService.importExcel(file, this.assignmentId()!).subscribe({
+      next: (res: any) => {
+        const count = res.successCount || res.importedQuestions?.length || 0;
+        this.toastService.success('Import thành công!', `Đã thêm ${count} câu hỏi vào bài tập.`);
         this.isImporting.set(false);
-        event.target.value = ''; // Reset lại input để có thể chọn lại cùng 1 file nếu cần
+        event.target.value = '';
+        if (this.assignmentId()) {
+          this.loadQuestions(this.assignmentId()!);
+        }
       },
       error: (err) => {
-        this.toastService.error('Lỗi Import', err.error?.message || 'Có lỗi xảy ra khi import file. Vui lòng kiểm tra lại định dạng!');
+        this.toastService.error('Lỗi Import', err.error?.message || 'Có lỗi xảy ra khi import file!');
         this.isImporting.set(false);
-        event.target.value = ''; 
+        event.target.value = '';
       }
     });
   }
 
-  removeOption(index: number) {
-    if (this.optionsFormArray.length > 2) {
-      this.optionsFormArray.removeAt(index);
-    } else {
-      this.toastService.warning('Cảnh báo', 'Câu hỏi trắc nghiệm phải có ít nhất 2 đáp án!');
-    }
+  downloadTemplate() {
+    this.questionService.downloadTemplate().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Question_Import_Template.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => this.toastService.error('Lỗi', 'Không thể tải file mẫu')
+    });
   }
 
   openQuestionModal() {
-    this.initQuestionForm(); // Reset form mỗi lần mở
+    this.editingQuestion.set(null);
+    this.selectedMediaFile.set(null);
+    this.initQuestionForm();
     this.isQuestionModalOpen.set(true);
   }
 
   closeQuestionModal() {
     this.isQuestionModalOpen.set(false);
-    this.editingQuestion.set(null); // Reset trạng thái sửa
+    this.editingQuestion.set(null);
+    this.selectedMediaFile.set(null);
   }
 
-  // Hàm mở Form với dữ liệu của câu hỏi cần sửa
-  editQuestion(q: any) {
-    this.editingQuestion.set(q);
-    this.initQuestionForm(); // Reset form trước
+  editQuestion(aq: any) {
+    const q = aq.question || aq;
+    this.editingQuestion.set(aq);
+    this.selectedMediaFile.set(null);
+    this.initQuestionForm();
 
-    // Đổ dữ liệu cơ bản vào Form
     this.questionForm.patchValue({
-      questionType: q.questionType,
-      score: q.score,
-      questionText: q.questionText,
-      explanation: q.explanation
+      questionType: q.questionType || 'MULTIPLE_CHOICE',
+      scoreWeight: aq.scoreWeight || 1,
+      content: q.content || q.questionText || '',
+      readingPassage: q.readingPassage || ''
     });
 
-    // Nếu là Trắc nghiệm, phải lấy mảng options đổ vào FormArray
-    if (q.questionType === 'multiple_choice' && q.options) {
+    if ((q.questionType === 'MULTIPLE_CHOICE' || q.questionType === 'multiple_choice' || q.questionType === 'LISTENING') && q.options) {
       const optionsArray = this.optionsFormArray;
-      optionsArray.clear(); // Xóa 4 đáp án mặc định
-      
+      optionsArray.clear();
       q.options.forEach((opt: any) => {
         optionsArray.push(this.fb.group({
-          optionText: [opt.optionText, Validators.required],
-          isCorrect: [opt.isCorrect]
+          optionContent: [opt.optionContent || opt.optionText, Validators.required],
+          isCorrect: [!!opt.isCorrect]
         }));
       });
     }
@@ -246,72 +262,65 @@ export class AssignmentDetailComponent implements OnInit {
     }
 
     const formValues = this.questionForm.value;
+    const isMultipleChoice = formValues.questionType === 'MULTIPLE_CHOICE' || formValues.questionType === 'multiple_choice' || formValues.questionType === 'LISTENING';
 
-    if (formValues.questionType === 'multiple_choice') {
+    if (isMultipleChoice) {
       const hasCorrect = formValues.options.some((opt: any) => opt.isCorrect);
       if (!hasCorrect) {
-        this.toastService.warning('Lỗi', 'Vui lòng chọn ít nhất 1 đáp án ĐÚNG cho câu hỏi!');
+        this.toastService.warning('Lỗi', 'Vui lòng chọn ít nhất 1 đáp án ĐÚNG!');
         return;
       }
     }
 
     this.isSavingQuestion.set(true);
 
-    // Dữ liệu chung
-    const questionPayload: any = {
-      assignmentId: this.assignmentId(),
-      questionText: formValues.questionText,
-      explanation: formValues.explanation,
+    const questionDto = {
       questionType: formValues.questionType,
-      score: formValues.score
+      content: formValues.content,
+      readingPassage: formValues.readingPassage,
+      options: isMultipleChoice ? formValues.options : []
     };
 
-    // Chuẩn bị mảng đáp án (Nếu là trắc nghiệm)
-    const optionsPayload = formValues.questionType === 'multiple_choice' 
-      ? formValues.options.map((o: any, index: number) => ({
-          displayOrder: index + 1,
-          optionText: o.optionText,
-          isCorrect: o.isCorrect
-        }))
-      : [];
+    const mediaFile = this.selectedMediaFile();
 
-    // NẾU ĐANG Ở CHẾ ĐỘ SỬA
     if (this.editingQuestion()) {
-      questionPayload.questionOrder = this.editingQuestion().questionOrder; // Giữ nguyên thứ tự cũ
-      
-      this.questionService.updateQuestion(this.editingQuestion().id, questionPayload).subscribe({
+      const aq = this.editingQuestion();
+      const questionId = aq.questionId || aq.question?.id;
+
+      this.questionService.updateQuestion(questionId, questionDto, mediaFile).subscribe({
         next: () => {
-          if (formValues.questionType === 'multiple_choice') {
-            this.questionService.saveOptions(this.editingQuestion().id, optionsPayload).subscribe({
-              next: () => this.finalizeSubmit('Đã cập nhật câu hỏi thành công!'),
-              error: () => this.toastService.error('Lỗi', 'Cập nhật đáp án thất bại!')
-            });
-          } else {
-            this.finalizeSubmit('Đã cập nhật câu hỏi thành công!');
-          }
+          this.assignmentQuestionService.updateQuestionInAssignment(this.assignmentId()!, questionId, {
+            orderNumber: aq.orderNumber,
+            scoreWeight: formValues.scoreWeight
+          }).subscribe({
+            next: () => this.finalizeSubmit('Đã cập nhật câu hỏi thành công!'),
+            error: () => this.finalizeSubmit('Đã cập nhật câu hỏi!')
+          });
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error('Lỗi', err.error?.message || 'Không thể cập nhật câu hỏi');
           this.isSavingQuestion.set(false);
         }
       });
-    } 
-    // NẾU ĐANG Ở CHẾ ĐỘ TẠO MỚI
-    else {
-      questionPayload.questionOrder = this.questions().length + 1; // Tính thứ tự mới
-      
-      this.questionService.createQuestion(questionPayload).subscribe({
-        next: (resQuestion) => {
-          if (formValues.questionType === 'multiple_choice') {
-            this.questionService.saveOptions(resQuestion.id, optionsPayload).subscribe({
-              next: () => this.finalizeSubmit('Đã thêm câu hỏi thành công!'),
-              error: () => this.toastService.error('Lỗi', 'Lưu đáp án thất bại!')
+    } else {
+      this.questionService.createQuestion(questionDto, mediaFile).subscribe({
+        next: (res: any) => {
+          const newQuestionId = res?.data?.id || res?.id;
+          if (newQuestionId) {
+            const nextOrder = this.assignmentQuestions().length + 1;
+            this.assignmentQuestionService.addQuestionToAssignment(this.assignmentId()!, {
+              questionId: newQuestionId,
+              orderNumber: nextOrder,
+              scoreWeight: formValues.scoreWeight
+            }).subscribe({
+              next: () => this.finalizeSubmit('Đã thêm câu hỏi vào bài tập thành công!'),
+              error: () => this.finalizeSubmit('Đã tạo câu hỏi!')
             });
           } else {
-            this.finalizeSubmit('Đã thêm câu hỏi thành công!');
+            this.finalizeSubmit('Đã tạo câu hỏi!');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.toastService.error('Lỗi', err.error?.message || 'Không thể tạo câu hỏi');
           this.isSavingQuestion.set(false);
         }
@@ -323,12 +332,11 @@ export class AssignmentDetailComponent implements OnInit {
     this.toastService.success('Thành công', message);
     this.isSavingQuestion.set(false);
     this.closeQuestionModal();
-    this.loadQuestions(this.assignmentId()!); // Load lại danh sách ngoài màn hình
+    this.loadQuestions(this.assignmentId()!);
   }
 
-  // --- LOGIC XÓA CÂU HỎI ---
-  openDeleteQuestionModal(id: string) {
-    this.questionToDeleteId.set(id);
+  openDeleteQuestionModal(questionId: number | string) {
+    this.questionToDeleteId.set(questionId);
     this.isDeleteQuestionModalOpen.set(true);
   }
 
@@ -338,17 +346,18 @@ export class AssignmentDetailComponent implements OnInit {
   }
 
   confirmDeleteQuestion() {
-    if (!this.questionToDeleteId()) return;
+    const qId = this.questionToDeleteId();
+    if (!qId || !this.assignmentId()) return;
     this.isDeletingQuestion.set(true);
-    
-    this.questionService.deleteQuestion(this.questionToDeleteId()!).subscribe({
+
+    this.assignmentQuestionService.removeQuestionFromAssignment(this.assignmentId()!, qId).subscribe({
       next: () => {
         this.toastService.success('Thành công', 'Đã xóa câu hỏi khỏi bài tập!');
         this.isDeletingQuestion.set(false);
         this.closeDeleteQuestionModal();
-        this.loadQuestions(this.assignmentId()!); // Tải lại danh sách
+        this.loadQuestions(this.assignmentId()!);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.toastService.error('Lỗi', err.error?.message || 'Xóa câu hỏi thất bại');
         this.isDeletingQuestion.set(false);
         this.closeDeleteQuestionModal();

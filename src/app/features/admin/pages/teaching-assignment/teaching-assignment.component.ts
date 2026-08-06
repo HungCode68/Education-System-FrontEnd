@@ -8,10 +8,11 @@ import { TeachingAssignment, TeachingRole } from '../../../../modules/teaching/m
 import { Staff } from '../../../../modules/user/models/staff.model';
 import { Class } from '../../../../modules/academic/models/class.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-teaching-assignment',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './teaching-assignment.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

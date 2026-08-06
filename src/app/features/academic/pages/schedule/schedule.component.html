@@ -23,6 +23,7 @@
 
       <!-- Add Schedule Button -->
       <button 
+        *hasPermission="'SCHEDULE_CREATE'"
         (click)="openModal()" 
         class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center justify-center transition shadow-md hover:shadow-lg text-sm"
       >
@@ -105,12 +106,14 @@
               <!-- Actions -->
               <td class="px-6 py-4 text-right space-x-3">
                 <button 
+                  *hasPermission="'SCHEDULE_UPDATE'"
                   (click)="openModal(s)" 
                   class="font-medium text-blue-600 hover:text-blue-800 transition text-sm"
                 >
                   Chỉnh sửa
                 </button>
                 <button 
+                  *hasPermission="'SCHEDULE_DELETE'"
                   (click)="onDelete(s.id!)" 
                   class="font-medium text-red-600 hover:text-red-800 transition text-sm"
                 >
@@ -178,6 +181,7 @@
                 formControlName="dayOfWeek"
                 class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition bg-white font-semibold text-indigo-700"
               >
+                <option value="">-- Chọn Thứ trong tuần --</option>
                 @for (day of dayOptions; track day.value) {
                   <option [value]="day.value">{{ day.label }}</option>
                 }

@@ -207,10 +207,6 @@ export class TeachingSubstitutionComponent implements OnInit {
         this.modalSchedules.set(schedules || []);
         if (selectedScheduleId) {
           this.substitutionForm.get('scheduleId')?.setValue(selectedScheduleId);
-        } else if (schedules && schedules.length > 0) {
-          if (!this.isEditing()) {
-            this.substitutionForm.get('scheduleId')?.setValue(schedules[0].id);
-          }
         } else {
           this.substitutionForm.get('scheduleId')?.setValue('');
         }
@@ -316,24 +312,16 @@ export class TeachingSubstitutionComponent implements OnInit {
   resetAddForm() {
     this.startDateDisplay.set('');
     this.endDateDisplay.set('');
-    const firstClassId = this.availableClasses().length > 0 ? this.availableClasses()[0].id : '';
-    const firstStaffId = this.availableStaffs().length > 0 ? this.availableStaffs()[0].id : '';
-    const secondStaffId = this.availableStaffs().length > 1 ? this.availableStaffs()[1].id : firstStaffId;
-
     this.substitutionForm.reset({
-      classId: firstClassId,
+      classId: '',
       scheduleId: '',
-      absentStaffId: firstStaffId,
-      substituteStaffId: secondStaffId,
+      absentStaffId: '',
+      substituteStaffId: '',
       startDate: '',
       endDate: '',
       reason: '',
       status: 'PENDING'
     });
-
-    if (firstClassId) {
-      this.loadModalSchedules(Number(firstClassId));
-    }
   }
 
   closeModal() {

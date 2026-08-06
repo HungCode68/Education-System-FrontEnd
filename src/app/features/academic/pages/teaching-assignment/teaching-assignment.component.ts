@@ -10,10 +10,11 @@ import { TeachingAssignment, TEACHING_ROLE_MAP, TEACHING_ROLE_OPTIONS } from '..
 import { ClassEntity } from '../../../../modules/academic/models/class.model';
 import { Staff } from '../../../../modules/user/models/staff.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-teaching-assignment',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './teaching-assignment.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -172,11 +173,9 @@ export class TeachingAssignmentComponent implements OnInit {
   resetAddForm() {
     this.startDateDisplay.set('');
     this.endDateDisplay.set('');
-    const firstStaffId = this.availableStaffs().length > 0 ? this.availableStaffs()[0].id : '';
-    const firstClassId = this.availableClasses().length > 0 ? this.availableClasses()[0].id : '';
     this.assignmentForm.reset({
-      staffId: firstStaffId,
-      classId: firstClassId,
+      staffId: '',
+      classId: '',
       role: 'MAIN_TEACHER',
       assignedDate: '',
       endDate: '',

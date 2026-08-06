@@ -7,10 +7,11 @@ import { ClassService } from '../../../../modules/academic/services/class.servic
 import { Lesson } from '../../../../modules/academic/models/learning-material.model';
 import { Class } from '../../../../modules/academic/models/class.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-lesson',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './lesson.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

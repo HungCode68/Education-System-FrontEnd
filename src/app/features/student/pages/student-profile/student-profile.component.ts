@@ -27,21 +27,6 @@ export class StudentProfileComponent implements OnInit {
     this.profileService.getMyProfile().subscribe({
       next: (res) => {
         this.profile.set(res);
-        
-        // CẬP NHẬT LẠI LỚP CHỦ NHIỆM VÀO LOCAL STORAGE CHO THANH MENU NHẬN DIỆN
-        const userInfoStr = localStorage.getItem('user_info');
-        if (userInfoStr) {
-           const userInfo = JSON.parse(userInfoStr);
-           
-           if (res.currentClassId) {
-               userInfo.physicalClassId = res.currentClassId;
-           }
-           // Lưu ké luôn cái studentId vào để sau này cần thì dùng
-           userInfo.studentId = res.id; 
-           
-           localStorage.setItem('user_info', JSON.stringify(userInfo));
-        }
-
         this.isLoading.set(false);
       },
       error: (err) => {

@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Lớp học (Classes)</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Danh sách lớp học theo khóa học, kỳ học và sĩ số đăng ký</p>
     </div>
-    <button (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
+    <button *hasPermission="'CLASS_CREATE'" (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
@@ -60,7 +60,7 @@
             <th class="px-6 py-3.5 font-semibold">Kỳ học</th>
             <th class="px-6 py-3.5 font-semibold">Sĩ số</th>
             <th class="px-6 py-3.5 font-semibold">Trạng thái</th>
-            <th class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
+            <th *hasAnyPermission="['CLASS_UPDATE', 'CLASS_DELETE', 'ENROLLMENT_VIEW', 'SCHEDULE_VIEW']" class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -108,11 +108,11 @@
                     }
                   }
                 </td>
-                <td class="px-6 py-4 text-right space-x-1">
-                  <button (click)="viewEnrollments(cls.id)" title="Danh sách học viên" class="px-2.5 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors">Học viên</button>
-                  <button (click)="viewSchedules(cls.id)" title="Lịch học" class="px-2.5 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors">Lịch học</button>
-                  <button (click)="openModal(cls)" class="px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
-                  <button (click)="onDelete(cls.id)" class="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
+                <td *hasAnyPermission="['CLASS_UPDATE', 'CLASS_DELETE', 'ENROLLMENT_VIEW', 'SCHEDULE_VIEW']" class="px-6 py-4 text-right space-x-1">
+                  <button *hasPermission="'ENROLLMENT_VIEW'" (click)="viewEnrollments(cls.id)" title="Danh sách học viên" class="px-2.5 py-1.5 text-xs font-medium text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors">Học viên</button>
+                  <button *hasPermission="'SCHEDULE_VIEW'" (click)="viewSchedules(cls.id)" title="Lịch học" class="px-2.5 py-1.5 text-xs font-medium text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 rounded-lg transition-colors">Lịch học</button>
+                  <button *hasPermission="'CLASS_UPDATE'" (click)="openModal(cls)" class="px-2.5 py-1.5 text-xs font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
+                  <button *hasPermission="'CLASS_DELETE'" (click)="onDelete(cls.id)" class="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
                 </td>
               </tr>
             }

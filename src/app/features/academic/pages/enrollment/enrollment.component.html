@@ -187,6 +187,7 @@
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center gap-3">
           <button 
+            *hasPermission="'ENROLLMENT_CREATE'"
             (click)="openBulkModal()" 
             class="bg-white hover:bg-blue-50 text-blue-700 font-bold py-2.5 px-4 rounded-xl flex items-center transition shadow-md text-sm"
           >
@@ -209,7 +210,7 @@
             <th scope="col" class="px-6 py-4">Ngày nhập học</th>
             <th scope="col" class="px-6 py-4">Trạng thái</th>
             <th scope="col" class="px-6 py-4">Ghi chú</th>
-            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+            <th *hasAnyPermission="['ENROLLMENT_UPDATE', 'ENROLLMENT_DELETE']" scope="col" class="px-6 py-4 text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -257,14 +258,16 @@
                   {{ e.note || '---' }}
                 </td>
                 <!-- Actions -->
-                <td class="px-6 py-4 text-right space-x-3">
+                <td *hasAnyPermission="['ENROLLMENT_UPDATE', 'ENROLLMENT_DELETE']" class="px-6 py-4 text-right space-x-3">
                   <button 
+                    *hasPermission="'ENROLLMENT_UPDATE'"
                     (click)="openEditModal(e)"
                     class="font-medium text-blue-600 hover:text-blue-800 transition text-sm"
                   >
                     Chỉnh sửa
                   </button>
                   <button 
+                    *hasPermission="'ENROLLMENT_DELETE'"
                     (click)="onDelete(e.id!)"
                     class="font-medium text-red-600 hover:text-red-800 transition text-sm"
                   >

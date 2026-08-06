@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { AssignmentService } from '../../services/assignment.service';
+import { LearningMaterialService } from '../../services/learning-material.service';
 import { ToastService } from '../../../../core/services/toast.service';
 
 @Component({
@@ -14,25 +15,23 @@ import { ToastService } from '../../../../core/services/toast.service';
 export class AssignmentFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private assignmentService = inject(AssignmentService);
+  private materialService = inject(LearningMaterialService);
   private toastService = inject(ToastService);
   public router = inject(Router);
   private route = inject(ActivatedRoute);
 
   assignmentForm!: FormGroup;
   classId = signal<string | null>(null);
-  assignmentId = signal<string | null>(null); // Lưu ID nếu đang ở chế độ Sửa
-  
-  isEditMode = signal(false); // Trạng thái Create / Edit
+  assignmentId = signal<string | null>(null);
+  lessons = signal<any[]>([]);
+
+  isEditMode = signal(false);
   isSubmitting = signal(false);
   isLoadingData = signal(false);
-  
-  selectedFile = signal<File | null>(null);
-  existingFileName = signal<string | null>(null); // Lưu tên file cũ nếu có
 
   ngOnInit() {
     this.initForm();
 
-    // Kiểm tra xem trên URL có ID bài tập không (Chế độ Edit)
     this.route.paramMap.subscribe(params => {
       const id = params.get('id');
       if (id) {
@@ -40,11 +39,12 @@ export class AssignmentFormComponent implements OnInit {
         this.assignmentId.set(id);
         this.loadExistingAssignment(id);
       } else {
-        // Chế độ Create: Lấy classId từ QueryParam
         this.route.queryParamMap.subscribe(qParams => {
           const cid = qParams.get('classId');
+          const lid = qParams.get('lessonId');
           if (cid) {
             this.classId.set(cid);
+            this.loadLessons(cid, lid ? Number(lid) : undefined);
           } else {
             this.toastService.error('Lỗi', 'Không xác định được Lớp học!');
             this.router.navigate(['/teacher/my-classes']);
@@ -56,51 +56,51 @@ export class AssignmentFormComponent implements OnInit {
 
   private initForm() {
     this.assignmentForm = this.fb.group({
+      lessonId: [null, Validators.required],
       title: ['', Validators.required],
+      assignmentType: ['HOMEWORK', Validators.required],
+      dueDate: [this.getDefaultDueDate(), Validators.required],
+      timeLimitMinutes: [0, [Validators.min(0)]],
+      maxAttempts: [1, [Validators.min(1)]],
       description: [''],
-      assignmentType: ['multiple_choice', Validators.required],
-      maxScore: [10, [Validators.required, Validators.min(0), Validators.max(100)]],
-      startTime: [null],
-      dueTime: [null],
-      durationMinutes: [null, Validators.min(1)],
-      allowLateSubmission: [false],
-      maxAttempts: [1, Validators.min(1)],
-      shuffleQuestions: [false],
-      viewAnswers: [false],
-      status: ['unpublished', Validators.required]
+      status: ['PUBLISHED', Validators.required]
     });
   }
 
-  // --- LOGIC DÀNH CHO CHẾ ĐỘ EDIT ---
+  private loadLessons(classId: string, preselectedLessonId?: number) {
+    this.materialService.getLessonsByClassId(classId).subscribe({
+      next: (res: any) => {
+        this.lessons.set(res || []);
+        if (preselectedLessonId) {
+          this.assignmentForm.patchValue({ lessonId: preselectedLessonId });
+        } else if (res && res.length > 0 && !this.assignmentForm.get('lessonId')?.value) {
+          this.assignmentForm.patchValue({ lessonId: res[0].id });
+        }
+      },
+      error: (err) => console.error('Lỗi khi tải bài học:', err)
+    });
+  }
+
   private loadExistingAssignment(id: string) {
     this.isLoadingData.set(true);
     this.assignmentService.getAssignmentById(id).subscribe({
       next: (res) => {
-        this.classId.set(res.onlineClassId);
-        
-        // Đổ dữ liệu cũ vào Form
+        if (res.classId) {
+          this.classId.set(res.classId.toString());
+          this.loadLessons(res.classId.toString(), res.lessonId);
+        }
+
         this.assignmentForm.patchValue({
+          lessonId: res.lessonId,
           title: res.title,
-          description: res.description,
-          assignmentType: res.assignmentType,
-          maxScore: res.maxScore,
-          startTime: this.formatToDateTimeLocal(res.startTime), // Format ngược lại cho Input
-          dueTime: this.formatToDateTimeLocal(res.dueTime),
-          durationMinutes: res.durationMinutes,
-          allowLateSubmission: res.allowLateSubmission,
-          maxAttempts: res.maxAttempts,
-          shuffleQuestions: res.shuffleQuestions,
-          viewAnswers: res.viewAnswers,
-          status: res.status
+          assignmentType: res.assignmentType || 'HOMEWORK',
+          dueDate: this.formatToDateTimeLocal(res.dueDate),
+          timeLimitMinutes: res.timeLimitMinutes || 0,
+          maxAttempts: res.maxAttempts || 1,
+          description: res.description || '',
+          status: res.status || 'PUBLISHED'
         });
 
-        // Nếu bài tập cũ có file đính kèm, lưu tạm tên file để hiển thị
-        if (res.attachmentPath) {
-           // Cắt chuỗi để lấy tên file gốc (Bỏ đoạn UUID MinIO đi cho đẹp)
-           const parts = res.attachmentPath.split('_');
-           this.existingFileName.set(parts.length > 1 ? parts[parts.length - 1] : 'Tệp đính kèm hiện tại');
-        }
-        
         this.isLoadingData.set(false);
       },
       error: () => {
@@ -110,76 +110,60 @@ export class AssignmentFormComponent implements OnInit {
     });
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      this.selectedFile.set(file);
-      this.existingFileName.set(null); // Ghi đè file cũ
-    }
+  private getDefaultDueDate(): string {
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    nextWeek.setHours(23, 59, 0, 0);
+    return nextWeek.toISOString().slice(0, 16);
   }
 
-  removeFile() {
-    this.selectedFile.set(null);
-    this.existingFileName.set(null); // Xóa luôn file cũ (nếu muốn)
-  }
-
-  // Chuyển từ (YYYY-MM-DDThh:mm) sang (YYYY-MM-DD HH:mm:ss) gửi Backend
-  private formatDateTime(datetimeLocal: string | null): string | null {
-    if (!datetimeLocal) return null;
-    return datetimeLocal.replace('T', ' ') + ':00';
-  }
-
-  // Chuyển từ Backend (YYYY-MM-DD HH:mm:ss) sang (YYYY-MM-DDThh:mm) cho Input HTML
-  private formatToDateTimeLocal(dateStr: string | null): string | null {
-    if (!dateStr) return null;
+  private formatToDateTimeLocal(dateStr: string | null): string {
+    if (!dateStr) return this.getDefaultDueDate();
     return dateStr.replace(' ', 'T').substring(0, 16);
   }
 
+  private formatDateTimeForBackend(datetimeLocal: string): string {
+    if (!datetimeLocal) return '';
+    return datetimeLocal.replace('T', ' ') + ':00';
+  }
+
   onSubmit() {
-    if (this.assignmentForm.invalid || !this.classId()) {
+    if (this.assignmentForm.invalid) {
       this.assignmentForm.markAllAsTouched();
       return;
     }
 
-    const formValues = this.assignmentForm.value;
-    
-    if (formValues.startTime && formValues.dueTime) {
-      if (new Date(formValues.dueTime) <= new Date(formValues.startTime)) {
-        this.toastService.warning('Lưu ý', 'Hạn nộp phải diễn ra sau Thời gian mở đề!');
-        return;
-      }
-    }
-
     this.isSubmitting.set(true);
-
+    const val = this.assignmentForm.value;
     const payload = {
-      ...formValues,
-      onlineClassId: this.classId(),
-      startTime: this.formatDateTime(formValues.startTime),
-      dueTime: this.formatDateTime(formValues.dueTime)
+      ...val,
+      lessonId: Number(val.lessonId),
+      dueDate: this.formatDateTimeForBackend(val.dueDate)
     };
 
-    // KIỂM TRA CHẾ ĐỘ ĐỂ GỌI ĐÚNG API
     if (this.isEditMode()) {
-      // GỌI API UPDATE
-      this.assignmentService.updateAssignment(this.assignmentId()!, payload, this.selectedFile()).subscribe({
+      this.assignmentService.updateAssignment(this.assignmentId()!, payload).subscribe({
         next: () => {
           this.toastService.success('Thành công', 'Đã cập nhật bài tập!');
           this.isSubmitting.set(false);
-          this.router.navigate(['/teacher/assignments', this.assignmentId()]); // Quay lại trang chi tiết bài tập
+          this.router.navigate(['/teacher/assignments', this.assignmentId()]);
         },
         error: (err) => {
-          this.toastService.error('Lỗi', err.error?.message || 'Cập nhật thất bại');
+          this.toastService.error('Lỗi', err.error?.message || 'Cập nhật bài tập thất bại');
           this.isSubmitting.set(false);
         }
       });
     } else {
-      // GỌI API CREATE
-      this.assignmentService.createAssignment(payload, this.selectedFile()).subscribe({
-        next: () => {
+      this.assignmentService.createAssignment(payload).subscribe({
+        next: (res: any) => {
           this.toastService.success('Thành công', 'Đã tạo bài tập mới!');
           this.isSubmitting.set(false);
-          this.router.navigate(['/teacher/classes', this.classId()]); // Quay lại danh sách lớp
+          const createdId = res?.data?.id || res?.id;
+          if (createdId) {
+            this.router.navigate(['/teacher/assignments', createdId]);
+          } else if (this.classId()) {
+            this.router.navigate(['/teacher/classes', this.classId()]);
+          }
         },
         error: (err) => {
           this.toastService.error('Lỗi', err.error?.message || 'Tạo bài tập thất bại');

@@ -23,9 +23,10 @@ export class MyClassesComponent implements OnInit {
     if (!query) return this.classes();
     
     return this.classes().filter(c => 
-      c.name.toLowerCase().includes(query) || 
-      c.subjectName.toLowerCase().includes(query) ||
-      c.physicalClassName.toLowerCase().includes(query)
+      (c.name && c.name.toLowerCase().includes(query)) || 
+      (c.code && c.code.toLowerCase().includes(query)) || 
+      (c.subjectName && c.subjectName.toLowerCase().includes(query)) ||
+      (c.physicalClassName && c.physicalClassName.toLowerCase().includes(query))
     );
   });
 
@@ -37,7 +38,13 @@ export class MyClassesComponent implements OnInit {
     this.isLoading.set(true);
     this.classService.getMyClasses().subscribe({
       next: (res) => {
-        this.classes.set(res || []);
+        const rawList = Array.isArray(res) ? res : (res as any).content || [];
+        const formatted = rawList.map((item: any) => ({
+          ...item,
+          subjectName: item.subjectName || item.courseName || 'Chưa xếp môn',
+          physicalClassName: item.physicalClassName || item.code || 'Lớp học phần'
+        }));
+        this.classes.set(formatted);
         this.isLoading.set(false);
       },
       error: (err) => {

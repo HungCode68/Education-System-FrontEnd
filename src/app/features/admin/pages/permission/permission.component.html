@@ -12,7 +12,7 @@
         <input type="text" [formControl]="searchControl" placeholder="Tìm tên quyền..." class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 block w-48 xl:w-64 pl-10 p-2.5 outline-none transition shadow-sm">
       </div>
 
-      <button (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
+      <button *hasPermission="'PERMISSION_CREATE'" (click)="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Tạo Quyền
       </button>
@@ -26,7 +26,7 @@
           <tr>
             <th scope="col" class="px-6 py-4">Tên quyền</th>
             <th scope="col" class="px-6 py-4">Mô tả</th>
-            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+            <th *hasAnyPermission="['PERMISSION_UPDATE', 'PERMISSION_DELETE']" scope="col" class="px-6 py-4 text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -49,9 +49,9 @@
               <td class="px-6 py-4 text-gray-600 max-w-md truncate" [title]="p.description || ''">
                 {{ p.description || 'Chưa có mô tả' }}
               </td>
-              <td class="px-6 py-4 text-right space-x-4">
-                <button (click)="openModal(p)" class="font-semibold text-blue-600 hover:text-blue-800 transition">Sửa</button>
-                <button (click)="onDelete(p.id)" class="font-semibold text-red-600 hover:text-red-800 transition">Xóa</button>
+              <td *hasAnyPermission="['PERMISSION_UPDATE', 'PERMISSION_DELETE']" class="px-6 py-4 text-right space-x-4">
+                <button *hasPermission="'PERMISSION_UPDATE'" (click)="openModal(p)" class="font-semibold text-blue-600 hover:text-blue-800 transition">Sửa</button>
+                <button *hasPermission="'PERMISSION_DELETE'" (click)="onDelete(p.id)" class="font-semibold text-red-600 hover:text-red-800 transition">Xóa</button>
               </td>
             </tr>
           }

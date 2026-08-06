@@ -7,9 +7,11 @@ import { CourseService } from '../../../../modules/academic/services/course.serv
 import { Course } from '../../../../modules/academic/models/course.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-course',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './course.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

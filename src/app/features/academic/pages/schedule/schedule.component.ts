@@ -10,9 +10,11 @@ import { ClassEntity } from '../../../../modules/academic/models/class.model';
 import { Room } from '../../../../modules/academic/models/room.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-schedule',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './schedule.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -153,14 +155,12 @@ export class ScheduleComponent implements OnInit {
   }
 
   resetAddForm() {
-    const currentClassId = this.selectedClassId() || (this.availableClasses().length > 0 ? this.availableClasses()[0].id : '');
-    const firstRoomId = this.availableRooms().length > 0 ? this.availableRooms()[0].id : '';
     this.scheduleForm.reset({
-      classId: currentClassId,
-      dayOfWeek: 2,
+      classId: this.selectedClassId() || '',
+      dayOfWeek: '',
       startTime: '08:00',
       endTime: '10:00',
-      roomId: firstRoomId,
+      roomId: '',
       roomName: ''
     });
   }

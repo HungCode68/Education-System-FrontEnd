@@ -8,10 +8,11 @@ import { ScheduleAssignment, ScheduleAssignmentRole } from '../../../../modules/
 import { ClassSchedule } from '../../../../modules/academic/models/schedule.model';
 import { Staff } from '../../../../modules/user/models/staff.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-schedule-assignment',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './schedule-assignment.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

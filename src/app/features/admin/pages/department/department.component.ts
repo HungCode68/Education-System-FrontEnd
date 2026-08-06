@@ -8,10 +8,11 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { Department } from '../../../../modules/user/models/department.model';
 import { StaffService } from '../../../../modules/user/services/staff.service';
 import { Staff } from '../../../../modules/user/models/staff.model';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-department',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './department.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

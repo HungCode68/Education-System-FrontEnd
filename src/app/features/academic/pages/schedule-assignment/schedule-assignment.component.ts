@@ -225,19 +225,12 @@ export class ScheduleAssignmentComponent implements OnInit {
   }
 
   resetAddForm() {
-    const firstClassId = this.availableClasses().length > 0 ? this.availableClasses()[0].id : '';
-    const firstStaffId = this.availableStaffs().length > 0 ? this.availableStaffs()[0].id : '';
-
     this.assignmentForm.reset({
-      classId: firstClassId,
+      classId: '',
       scheduleId: '',
-      staffId: firstStaffId,
+      staffId: '',
       role: 'MAIN_TEACHER'
     });
-
-    if (firstClassId) {
-      this.loadModalSchedules(Number(firstClassId));
-    }
   }
 
   closeModal() {

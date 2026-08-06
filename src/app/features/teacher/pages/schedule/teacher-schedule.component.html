@@ -1,0 +1,345 @@
+<div class="space-y-6">
+
+  <!-- HEADER & CONTROLS -->
+  <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-gray-900 tracking-tight">Lịch Dạy Học</h1>
+          <p class="text-xs text-gray-500 font-medium mt-0.5">Bấm vào ca dạy để xem Thông tin Giảng viên & Điểm danh học viên</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPACT DATE RANGE NAVIGATOR WITH ARROW BUTTONS -->
+    <div class="flex items-center space-x-1 bg-indigo-50/70 p-1.5 rounded-2xl border border-indigo-100/80 shadow-2xs">
+      <button (click)="prevWeek()" title="Tuần trước"
+        class="p-2 rounded-xl text-indigo-700 hover:bg-white hover:shadow-sm transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+
+      <div (click)="todayWeek()" title="Bấm để về Tuần hiện tại"
+        class="px-4 py-2 bg-white text-indigo-700 font-extrabold text-xs sm:text-sm rounded-xl border border-indigo-100 shadow-2xs cursor-pointer hover:bg-indigo-50 transition flex items-center space-x-2">
+        <span>📅 Tuần: {{ startDateStr() | date:'dd/MM' }} - {{ endDateStr() | date:'dd/MM/yyyy' }}</span>
+      </div>
+
+      <button (click)="nextWeek()" title="Tuần sau"
+        class="p-2 rounded-xl text-indigo-700 hover:bg-white hover:shadow-sm transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING SPINNER -->
+  <div *ngIf="isLoading()" class="bg-white p-12 rounded-2xl border border-gray-100 shadow-sm text-center">
+    <svg class="animate-spin h-10 w-10 text-indigo-600 mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <p class="text-sm font-medium text-gray-500">Đang tải lịch dạy học...</p>
+  </div>
+
+  <!-- EMPTY STATE WHEN NO SCHEDULE FOR THE ENTIRE WEEK -->
+  <div *ngIf="!isLoading() && timetable().length === 0" class="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center shadow-xs">
+    <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+      </svg>
+    </div>
+    <h3 class="text-lg font-bold text-gray-900 mb-1">Không Có Lịch Dạy Học Trong Tuần Này</h3>
+    <p class="text-sm text-gray-500 max-w-md mx-auto mb-6">
+      Không tìm thấy ca giảng dạy nào từ ngày <strong>{{ startDateStr() | date:'dd/MM/yyyy' }}</strong> đến <strong>{{ endDateStr() | date:'dd/MM/yyyy' }}</strong>.
+    </p>
+    <div class="flex items-center justify-center space-x-3">
+      <button (click)="prevWeek()" class="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition flex items-center">
+        &larr; Xem tuần trước
+      </button>
+
+      <button (click)="nextWeek()" class="px-4 py-2 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition flex items-center">
+        Xem tuần sau &rarr;
+      </button>
+    </div>
+  </div>
+
+  <!-- GRID TIMETABLE (BẢNG DẠNG LƯỚI VỚI KHUNG GIỜ LINH HOẠT) -->
+  <div *ngIf="!isLoading() && timetable().length > 0" class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="overflow-x-auto custom-scrollbar">
+      <table class="w-full text-left border-collapse min-w-[900px]">
+        <thead>
+          <tr class="bg-gray-50/80 border-b border-gray-200">
+            <!-- Header Column: Khung giờ linh hoạt -->
+            <th class="p-4 w-40 text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider border-r border-gray-200">
+              Khung Giờ Dạy
+            </th>
+
+            <!-- Header Columns: Thứ 2 -> Chủ Nhật -->
+            <th *ngFor="let col of weekDays()"
+              [ngClass]="col.isToday ? 'bg-indigo-50/70 border-b-2 border-b-indigo-600' : ''"
+              class="p-4 text-center border-r border-gray-200 last:border-r-0 min-w-[140px]">
+              <div class="flex flex-col items-center">
+                <span [ngClass]="col.isToday ? 'text-indigo-700 font-extrabold' : 'text-gray-700 font-bold'" class="text-sm">
+                  {{ col.dayOfWeekName }}
+                </span>
+                <span [ngClass]="col.isToday ? 'bg-indigo-600 text-white font-extrabold shadow-2xs' : 'bg-gray-200/80 text-gray-600 font-semibold'"
+                  class="mt-1 text-xs px-2 py-0.5 rounded-full">
+                  {{ col.dayNum }}/{{ col.monthNum }}
+                </span>
+              </div>
+            </th>
+          </tr>
+        </thead>
+
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let slot of dynamicTimeSlots()" class="hover:bg-gray-50/30 transition-colors">
+            <!-- Dynamic Time Slot Column -->
+            <td class="p-3 text-center bg-gray-50/50 border-r border-gray-200 align-middle">
+              <div class="space-y-1">
+                <span class="inline-block px-2.5 py-0.5 text-xs font-bold rounded-md border" [ngClass]="slot.bgBadge">
+                  ⏰ {{ slot.periodLabel }}
+                </span>
+                <p class="text-xs font-extrabold text-gray-800 tracking-tight">{{ slot.shortTimeLabel }}</p>
+              </div>
+            </td>
+
+            <!-- Day Columns -->
+            <td *ngFor="let col of weekDays()"
+              [ngClass]="col.isToday ? 'bg-indigo-50/20' : ''"
+              class="p-2 border-r border-gray-200 last:border-r-0 align-top min-h-[110px] transition">
+
+              <div class="h-full space-y-2">
+                <ng-container *ngFor="let ev of getEventsForCell(col.dateStr, slot)">
+                  <div (click)="openSessionDetail(ev, $event)"
+                    class="p-3 rounded-xl bg-white border border-indigo-100 hover:border-indigo-400 shadow-sm hover:shadow-md transition cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute top-0 left-0 bottom-0 w-1.5 bg-indigo-600 group-hover:bg-indigo-700"></div>
+
+                    <div class="pl-1">
+                      <!-- Badge Row -->
+                      <div class="flex items-center justify-between gap-1 mb-1">
+                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-indigo-50 text-indigo-700 border border-indigo-100 truncate">
+                          {{ ev.classCode }}
+                        </span>
+                        <span *ngIf="ev.isSubstituted" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                          Dạy thay
+                        </span>
+                      </div>
+
+                      <!-- Class Name -->
+                      <h4 class="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition line-clamp-2" [title]="ev.className">
+                        {{ ev.className }}
+                      </h4>
+                    </div>
+
+                    <!-- Room & Role Footer -->
+                    <div class="pl-1 pt-2 border-t border-gray-100 mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                      <span class="font-semibold text-gray-700 flex items-center">
+                        📍 {{ ev.roomName || 'Phòng học' }}
+                      </span>
+                      <span class="text-[10px] font-bold text-indigo-600">
+                        📋 Điểm danh
+                      </span>
+                    </div>
+                  </div>
+                </ng-container>
+
+                <!-- Empty State for cell -->
+                <div *ngIf="getEventsForCell(col.dateStr, slot).length === 0"
+                  class="h-full min-h-[90px] rounded-xl border border-dashed border-gray-100 flex items-center justify-center opacity-30 hover:opacity-100 transition">
+                  <span class="text-[11px] text-gray-400 font-medium">-</span>
+                </div>
+              </div>
+
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL ĐIỂM DANH & CHI TIẾT CA DẠY (THIẾT KẾ TỐI GIẢN & ELEGANT) -->
+<div *ngIf="isAttendanceModalOpen()" class="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 lg:p-10 overflow-y-auto">
+  <!-- Backdrop -->
+  <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" (click)="closeAttendanceModal()"></div>
+
+  <!-- Dialog Box -->
+  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden z-10">
+    
+    <!-- MODAL HEADER -->
+    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
+      <div>
+        <div class="flex items-center space-x-2">
+          <h2 class="text-lg font-bold text-gray-900">{{ selectedSession()?.className }}</h2>
+          <span class="text-xs font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded">({{ selectedSession()?.classCode }})</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-0.5">
+          📅 {{ selectedSession()?.date | date:'dd/MM/yyyy' }} • ⏱️ {{ selectedSession()?.startTime }} - {{ selectedSession()?.endTime }}
+          <span *ngIf="selectedSession()?.isSubstituted" class="ml-2 font-bold text-amber-600">(Ca dạy thay)</span>
+        </p>
+      </div>
+
+      <button (click)="closeAttendanceModal()" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition shrink-0">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- MODAL BODY -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
+
+      <!-- SECTION 1: THÔNG TIN GIẢNG VIÊN & PHÒNG HỌC (TỐI GIẢN - KHÔNG ICON) -->
+      <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <!-- Teacher Info (Without Avatar Icon) -->
+        <div>
+          <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Giảng viên phụ trách</p>
+          <div class="flex items-center space-x-2 mt-0.5">
+            <h4 class="text-sm font-bold text-gray-900">{{ selectedSession()?.teacherName || 'Giáo viên phụ trách' }}</h4>
+            <span class="text-xs text-gray-400">(Mã: {{ selectedSession()?.teacherCode || 'N/A' }})</span>
+            <span class="text-xs font-medium px-2 py-0.5 rounded border"
+              [ngClass]="selectedSession()?.isSubstituted ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'">
+              {{ selectedSession()?.isSubstituted ? 'Dạy thay' : 'Giảng chính' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Room Info & Class Link -->
+        <div class="flex items-center space-x-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-gray-200">
+          <div class="text-right">
+            <p class="text-[11px] text-gray-500">Phòng học</p>
+            <p class="text-xs font-bold text-gray-900">📍 {{ selectedSession()?.roomName || 'Phòng học' }}</p>
+          </div>
+
+          <button (click)="navigateToClass(selectedSession()?.classId)"
+            class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 font-semibold text-xs rounded-lg shadow-2xs transition">
+            Đến Lớp Học &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- SECTION 2: BẢNG ĐIỂM DANH HỌC VIÊN -->
+      <div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div>
+            <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
+              <span>Danh sách học viên điểm danh</span>
+              <span class="text-xs font-medium text-gray-500">({{ attendanceSheet().length }} học viên)</span>
+            </h3>
+          </div>
+
+          <!-- Quick Action Buttons -->
+          <div class="flex items-center space-x-2">
+            <button (click)="setAllStatus('PRESENT')"
+              class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-medium rounded-lg transition">
+              Tất cả Có mặt
+            </button>
+            <button (click)="setAllStatus('ABSENT')"
+              class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-medium rounded-lg transition">
+              Tất cả Vắng mặt
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary Bar -->
+        <div class="flex items-center space-x-4 bg-gray-50 border border-gray-200 p-2.5 rounded-xl text-xs mb-3">
+          <span class="text-gray-700 font-semibold">Thống kê:</span>
+          <span class="text-emerald-700 font-bold">Có mặt: {{ presentCount() }}</span>
+          <span class="text-red-700 font-bold">Vắng mặt: {{ absentCount() }}</span>
+          <span class="text-amber-700 font-bold">Đi muộn: {{ lateCount() }}</span>
+          <span class="text-blue-700 font-bold">Có lý do: {{ excusedCount() }}</span>
+        </div>
+
+        <!-- Search Student Bar -->
+        <div class="relative mb-3">
+          <svg class="w-4 h-4 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input type="text" [(ngModel)]="studentFilterQuery" placeholder="Tìm tên hoặc mã học viên..."
+            class="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 transition">
+        </div>
+
+        <!-- Loading state -->
+        <div *ngIf="isLoadingAttendance()" class="py-8 text-center text-gray-500 text-xs">
+          Đang tải danh sách học viên...
+        </div>
+
+        <!-- Empty List -->
+        <div *ngIf="!isLoadingAttendance() && filteredAttendanceSheet().length === 0"
+          class="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-6 text-center text-gray-400 text-xs">
+          Không tìm thấy học viên nào.
+        </div>
+
+        <!-- Student List Table -->
+        <div *ngIf="!isLoadingAttendance() && filteredAttendanceSheet().length > 0"
+          class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div class="divide-y divide-gray-100">
+            <div *ngFor="let item of filteredAttendanceSheet(); let idx = index"
+              class="p-3 hover:bg-gray-50/70 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              
+              <!-- Student Info (Minimal without Avatar circle) -->
+              <div class="flex items-center space-x-3">
+                <span class="text-xs font-semibold text-gray-400 w-5 text-center">{{ idx + 1 }}</span>
+                <div>
+                  <h5 class="text-xs font-bold text-gray-900">{{ item.studentName }}</h5>
+                  <p class="text-[11px] text-gray-500">Mã: <span class="font-medium text-gray-700">{{ item.studentCode }}</span></p>
+                </div>
+              </div>
+
+              <!-- Status Selector Pill Buttons -->
+              <div class="flex items-center space-x-1.5 shrink-0">
+                <button (click)="setStudentStatus(item.studentId, 'PRESENT')"
+                  [ngClass]="item.status === 'PRESENT' ? 'bg-emerald-600 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                  Có mặt
+                </button>
+
+                <button (click)="setStudentStatus(item.studentId, 'ABSENT')"
+                  [ngClass]="item.status === 'ABSENT' ? 'bg-red-600 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                  Vắng mặt
+                </button>
+
+                <button (click)="setStudentStatus(item.studentId, 'LATE')"
+                  [ngClass]="item.status === 'LATE' ? 'bg-amber-500 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                  Đi muộn
+                </button>
+
+                <button (click)="setStudentStatus(item.studentId, 'EXCUSED')"
+                  [ngClass]="item.status === 'EXCUSED' ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                  Có lý do
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- MODAL FOOTER -->
+    <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center shrink-0">
+      <button (click)="closeAttendanceModal()" class="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 rounded-lg transition">
+        Hủy / Đóng
+      </button>
+
+      <button (click)="saveAttendanceSheet()" [disabled]="isSavingAttendance()"
+        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center disabled:opacity-50">
+        {{ isSavingAttendance() ? 'Đang lưu...' : 'Lưu Điểm Danh' }}
+      </button>
+    </div>
+
+  </div>
+</div>

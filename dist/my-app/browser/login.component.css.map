@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["src/app/features/auth/pages/login/%3Cno source%3E", "src/app/features/auth/pages/login/login.component.css"],
+  "sourcesContent": [null, "@reference \"tailwindcss\";\r\n\r\n/* Chỉ giữ lại :host để đảm bảo component chiếm toàn màn hình.\r\n  Toàn bộ styling khác đã được xử lý bằng Tailwind Classes trong file HTML.\r\n*/\r\n:host {\r\n  display: block;\r\n  height: 100%;\r\n}"],
+  "mappings": ";ACKA;AACE,WAAA;AACA,UAAA;AACD;",
+  "names": []
+}

@@ -23,32 +23,22 @@ export class AssignmentService {
     return this.http.get<any>(`${this.apiUrl}/${id}`);
   }
 
-  createAssignment(data: any, file: File | null): Observable<any> {
-    const formData = new FormData();
-    // Chuyển JSON data thành Blob để gửi kèm FormData
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-    
-    if (file) {
-      formData.append('file', file);
-    }
-    
-    return this.http.post(this.apiUrl, formData);
+  createAssignment(dto: any): Observable<any> {
+    return this.http.post(this.apiUrl, dto);
   }
 
-  // Cập nhật bài tập (Có hỗ trợ đổi file đính kèm mới)
-  updateAssignment(id: string, data: any, file: File | null): Observable<any> {
-    const formData = new FormData();
-    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-    
-    if (file) {
-      formData.append('file', file);
-    }
-    
-    return this.http.put(`${this.apiUrl}/${id}`, formData);
+  // Cập nhật bài tập
+  updateAssignment(id: string | number, dto: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, dto);
   }
 
   // Xóa bài tập
   deleteAssignment(id: string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  // Lấy danh sách bài tập thuộc bài học cụ thể (lessonId)
+  getAssignmentsByLessonId(lessonId: string | number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/lesson/${lessonId}`);
   }
 }

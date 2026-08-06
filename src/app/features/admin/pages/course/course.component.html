@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Khóa học (Courses)</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Danh sách các chương trình đào tạo, thời lượng và học phí niêm yết</p>
     </div>
-    <button (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
+    <button *hasPermission="'COURSE_CREATE'" (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
@@ -44,7 +44,7 @@
             <th class="px-6 py-3.5 font-semibold">Thời lượng (Giờ)</th>
             <th class="px-6 py-3.5 font-semibold">Học phí cơ bản</th>
             <th class="px-6 py-3.5 font-semibold">Trạng thái</th>
-            <th class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
+            <th *hasAnyPermission="['COURSE_UPDATE', 'COURSE_DELETE']" class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -89,9 +89,9 @@
                     }
                   }
                 </td>
-                <td class="px-6 py-4 text-right space-x-2">
-                  <button (click)="openModal(course)" class="px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
-                  <button (click)="onDelete(course.id)" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
+                <td *hasAnyPermission="['COURSE_UPDATE', 'COURSE_DELETE']" class="px-6 py-4 text-right space-x-2">
+                  <button *hasPermission="'COURSE_UPDATE'" (click)="openModal(course)" class="px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
+                  <button *hasPermission="'COURSE_DELETE'" (click)="onDelete(course.id)" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
                 </td>
               </tr>
             }

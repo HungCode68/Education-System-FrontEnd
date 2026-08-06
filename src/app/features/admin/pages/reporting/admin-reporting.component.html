@@ -32,6 +32,7 @@
       </div>
 
       <button 
+        *hasAnyPermission="['REPORT_CREATE', 'REPORT_UPDATE']"
         (click)="syncDailyReport()" 
         [disabled]="isSyncing()"
         class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center transition shadow-md text-sm"

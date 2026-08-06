@@ -38,7 +38,7 @@
             <th scope="col" class="px-6 py-4">Vai trò</th>
             <th scope="col" class="px-6 py-4 text-center">Thời gian tạo</th>
             <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
-            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+            <th *hasAnyPermission="['ACCOUNT_UPDATE', 'ROLE_ASSIGN_PERMISSION']" scope="col" class="px-6 py-4 text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -87,11 +87,11 @@
                   {{ statusLabel(user.status) }}
                 </span>
               </td>
-              <td class="px-6 py-4 text-right space-x-2">
-                <button (click)="openEditModal(user)" class="font-semibold text-blue-600 hover:text-blue-800 transition bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 text-xs">Chỉnh sửa</button>
-                <button (click)="openResetModal(user)" title="Khôi phục mật khẩu mặc định"
+              <td *hasAnyPermission="['ACCOUNT_UPDATE', 'ROLE_ASSIGN_PERMISSION']" class="px-6 py-4 text-right space-x-2">
+                <button *hasPermission="'ACCOUNT_UPDATE'" (click)="openEditModal(user)" class="font-semibold text-blue-600 hover:text-blue-800 transition bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 text-xs">Chỉnh sửa</button>
+                <button *hasPermission="'ACCOUNT_UPDATE'" (click)="openResetModal(user)" title="Khôi phục mật khẩu mặc định"
                         class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200 text-xs">Reset Mật khẩu</button>
-                <button (click)="openRoleModal(user)" class="font-semibold text-purple-600 hover:text-purple-800 transition bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200 text-xs">Vai trò</button>
+                <button *hasPermission="'ROLE_ASSIGN_PERMISSION'" (click)="openRoleModal(user)" class="font-semibold text-purple-600 hover:text-purple-800 transition bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200 text-xs">Vai trò</button>
               </td>
             </tr>
           }

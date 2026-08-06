@@ -6,10 +6,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { TermService } from '../../../../modules/academic/services/term.service';
 import { Term, TermStatus } from '../../../../modules/academic/models/term.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-term',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './term.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core'; 
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -19,9 +19,9 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
-  
+
   // State quản lý việc ẩn/hiện mật khẩu
-  showPassword = signal(false); 
+  showPassword = signal(false);
 
   ngOnInit(): void {
     this.initializeForm();
@@ -68,18 +68,15 @@ export class LoginComponent implements OnInit {
   }
 
   private navigateByRole(roles: string[]): void {
-    const hasRole = (role: string) => roles.some(r => r === role || r === `ROLE_${role}` || r.endsWith(`_${role}`));
-    
-    if (hasRole('ADMIN') || hasRole('SYSTEM_ADMIN')) {
+    const hasRole = (role: string) => roles.some(r => r === role || r === `ROLE_${role}` || r.endsWith(`_${role}`) || r.includes(role));
+    const isTeacher = roles.some(r => r.includes('TEACHER'));
+
+    if (hasRole('ADMIN') || hasRole('SYSTEM') || hasRole('ADMIN_SYSTEM')) {
       this.router.navigate(['/admin']);
     } else if (hasRole('ACADEMIC') || hasRole('TRAINING') || hasRole('MANAGER')) {
       this.router.navigate(['/academic']);
-    } else if (hasRole('HOMEROOM_TEACHER')) {
-      this.router.navigate(['/teacher/homeroom']);
-    } else if (hasRole('SUBJECT_TEACHER')) {
+    } else if (isTeacher) {
       this.router.navigate(['/teacher']);
-    } else if (hasRole('TEACHER_HEAD_DEPARTMENT')) {
-      this.router.navigate(['/teacher/department-member']);
     } else if (hasRole('STUDENT')) {
       this.router.navigate(['/student']);
     } else {

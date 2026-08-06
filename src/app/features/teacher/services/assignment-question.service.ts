@@ -6,42 +6,30 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class AssignmentQuestionService {
   private http = inject(HttpClient);
-  private questionUrl = `${environment.apiUrl}/api/v1/assignment-questions`;
-  private optionUrl = `${environment.apiUrl}/api/v1/questions`;
+  private apiUrl = `${environment.apiUrl}/api/v1/assignment-questions`;
 
-  // Lấy toàn bộ câu hỏi của 1 bài tập
-  getQuestionsByAssignment(assignmentId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.questionUrl}/assignment/${assignmentId}`);
+  // Lấy danh sách câu hỏi đính kèm bài tập
+  getQuestionsByAssignmentId(assignmentId: number | string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/assignment/${assignmentId}`);
   }
 
-  // Lấy đáp án của 1 câu hỏi trắc nghiệm
-  getOptionsByQuestion(questionId: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.optionUrl}/${questionId}/options`);
+  // Thêm 1 câu hỏi vào bài tập
+  addQuestionToAssignment(assignmentId: number | string, dto: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/assignment/${assignmentId}`, dto);
   }
 
-  importFromExcel(assignmentId: string, file: File): Observable<any> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post(`${this.questionUrl}/assignment/${assignmentId}/import`, formData);
+  // Cập nhật điểm số / thứ tự câu hỏi trong bài tập
+  updateQuestionInAssignment(assignmentId: number | string, questionId: number | string, dto: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/assignment/${assignmentId}/question/${questionId}`, dto);
   }
 
-  // Tạo câu hỏi mới
-  createQuestion(data: any): Observable<any> {
-    return this.http.post(`${this.questionUrl}`, data);
+  // Xóa câu hỏi khỏi bài tập
+  removeQuestionFromAssignment(assignmentId: number | string, questionId: number | string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/assignment/${assignmentId}/question/${questionId}`);
   }
 
-  //  Lưu danh sách đáp án cho câu hỏi trắc nghiệm
-  saveOptions(questionId: string, options: any[]): Observable<any> {
-    return this.http.put(`${this.optionUrl}/${questionId}/options`, options);
-  }
-
-  // Cập nhật câu hỏi
-  updateQuestion(id: string, data: any): Observable<any> {
-    return this.http.put(`${this.questionUrl}/${id}`, data);
-  }
-
-  //  Xóa câu hỏi
-  deleteQuestion(id: string): Observable<any> {
-    return this.http.delete(`${this.questionUrl}/${id}`);
+  // Thay thế / gán hàng loạt câu hỏi vào bài tập
+  batchReplaceAssignmentQuestions(assignmentId: number | string, dtos: any[]): Observable<any> {
+    return this.http.put(`${this.apiUrl}/assignment/${assignmentId}/batch`, dtos);
   }
 }

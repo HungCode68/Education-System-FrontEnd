@@ -56,4 +56,18 @@ export class ScheduleService {
   delete(id: number | string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  getMyTimetable(startDate: string, endDate: string): Observable<any[]> {
+    const params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
+    return this.http.get<any[]>(`${this.apiUrl}/my-timetable`, { params });
+  }
+
+  getTeacherTimetable(teacherId: number | string, startDate: string, endDate: string): Observable<any[]> {
+    const params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
+    return this.http.get<any[]>(`${this.apiUrl}/teacher/${teacherId}/timetable`, { params });
+  }
 }

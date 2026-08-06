@@ -5,9 +5,11 @@ import { ReportsService } from '../../../../modules/reporting/services/reports.s
 import { ReportCenterStatistics, ReportSummary } from '../../../../modules/reporting/models/reports.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-admin-reporting',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './admin-reporting.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

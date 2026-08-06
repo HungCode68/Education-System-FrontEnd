@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Quản lý Buổi học / Bài học (Lessons)</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Quản lý danh sách bài học theo từng lớp học</p>
     </div>
-    <button (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
+    <button *hasPermission="'LESSON_CREATE'" (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
@@ -36,7 +36,7 @@
             <th class="px-6 py-3.5 font-semibold">Thứ tự</th>
             <th class="px-6 py-3.5 font-semibold">Tên bài học</th>
             <th class="px-6 py-3.5 font-semibold">Mô tả</th>
-            <th class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
+            <th *hasAnyPermission="['LESSON_UPDATE', 'LESSON_DELETE']" class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -63,9 +63,9 @@
                 <td class="px-6 py-4 font-mono text-blue-600 dark:text-blue-400">#{{ lesson.orderNumber }}</td>
                 <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">{{ lesson.name }}</td>
                 <td class="px-6 py-4 text-gray-500 max-w-md truncate">{{ lesson.description || '-' }}</td>
-                <td class="px-6 py-4 text-right space-x-2">
-                  <button (click)="openModal(lesson)" class="px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
-                  <button (click)="onDelete(lesson.id)" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
+                <td *hasAnyPermission="['LESSON_UPDATE', 'LESSON_DELETE']" class="px-6 py-4 text-right space-x-2">
+                  <button *hasPermission="'LESSON_UPDATE'" (click)="openModal(lesson)" class="px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
+                  <button *hasPermission="'LESSON_DELETE'" (click)="onDelete(lesson.id)" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
                 </td>
               </tr>
             }

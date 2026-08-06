@@ -10,9 +10,11 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { User, UserStatus } from '../../../../modules/user/models/user.model';
 import { Role } from '../../../../modules/user/models/role.model';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-user',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './user.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

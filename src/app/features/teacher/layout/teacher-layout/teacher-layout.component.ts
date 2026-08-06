@@ -13,8 +13,8 @@ export class TeacherLayoutComponent {
   public authService = inject(AuthService);
   private router = inject(Router);
 
-  // Lấy email/tên giáo viên từ Token
-  teacherName = computed(() => this.authService.authState().email || 'Giáo viên');
+  // Lấy Họ tên/Email giáo viên từ AuthState
+  teacherName = computed(() => this.authService.authState().fullName || this.authService.authState().email || 'Giáo viên');
   
   // State đóng/mở sidebar trên mobile
   isSidebarOpen = signal(false);

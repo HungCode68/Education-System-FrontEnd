@@ -35,78 +35,15 @@
           Lớp học của tôi
         </a>
 
-        <a *ngIf="hasAnyRole(['HOMEROOM_TEACHER'])" routerLink="/teacher/homeroom"
+        <a routerLink="/teacher/schedule" routerLinkActive="bg-indigo-50 text-indigo-700"
           class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition group">
           <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition" fill="none"
             stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
             </path>
           </svg>
-          <span>Bảng tin lớp chủ nhiệm</span>
-        </a>
-
-        <a *ngIf="hasAnyRole(['TEACHER_HEAD_DEPARTMENT'])" routerLink="/teacher/department-member"
-          class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition group">
-          <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition" fill="none"
-            stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
-            </path>
-          </svg>
-          <span>Quản lý Tổ bộ môn</span>
-        </a>
-
-        <a *ngIf="hasAnyRole(['TEACHER_HEAD_DEPARTMENT'])" routerLink="/teacher/teacher-assignment"
-          class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition group">
-
-          <!-- Icon: Phân công giảng dạy (Clipboard / Assign) -->
-          <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition" fill="none"
-            stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 5h6m-6 4h6m-9 4h12M7 3h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z" />
-          </svg>
-
-          <span>Phân công giảng dạy</span>
-        </a>
-
-        <a *ngIf="hasAnyRole(['TEACHER_HEAD_DEPARTMENT'])" routerLink="/teacher/teacher-assignment-list"
-          class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition group">
-
-          <!-- Icon: Danh sách (List) -->
-          <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition" fill="none"
-            stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-          </svg>
-
-          <span>Danh sách phân công</span>
-        </a>
-
-        <a *ngIf="hasAnyRole(['TEACHER_HEAD_DEPARTMENT'])" routerLink="/teacher/teacher-substitution"
-          class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition group">
-
-          <!-- Icon: Dạy thay (Switch / Refresh) -->
-          <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition" fill="none"
-            stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0114-7M19 5a9 9 0 00-14 7" />
-          </svg>
-
-          <span>Phân công dạy thay</span>
-        </a>
-
-        <a *ngIf="hasAnyRole(['TEACHER_HEAD_DEPARTMENT'])" routerLink="/teacher/teacher-history"
-          class="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition group">
-
-          <!-- Icon: Nhật ký (History / Clock) -->
-          <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-indigo-600 transition" fill="none"
-            stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 8v4l3 3M12 3a9 9 0 100 18 9 9 0 000-18z" />
-          </svg>
-
-          <span>Nhật ký phân công</span>
+          Lịch dạy học
         </a>
 
         <div class="px-3 pt-5 pb-2">

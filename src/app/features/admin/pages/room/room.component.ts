@@ -6,10 +6,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RoomService } from '../../../../modules/academic/services/room.service';
 import { Room, RoomType } from '../../../../modules/academic/models/room.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-room',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './room.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

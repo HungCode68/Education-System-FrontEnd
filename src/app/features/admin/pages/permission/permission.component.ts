@@ -6,10 +6,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { PermissionService } from '../../../../modules/user/services/permission.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Permission } from '../../../../modules/user/models/permission.model';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-permission',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './permission.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

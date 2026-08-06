@@ -11,10 +11,11 @@ import { Class, ClassStatus } from '../../../../modules/academic/models/class.mo
 import { Course } from '../../../../modules/academic/models/course.model';
 import { Term } from '../../../../modules/academic/models/term.model';
 import { ToastService } from '../../../../core/services/toast.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-class',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './class.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

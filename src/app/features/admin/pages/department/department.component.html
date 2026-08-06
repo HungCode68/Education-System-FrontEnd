@@ -13,7 +13,7 @@
         <input type="text" [formControl]="searchControl" placeholder="Tìm mã hoặc tên..." class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-48 xl:w-64 pl-10 p-2.5 outline-none transition shadow-sm">
       </div>
 
-      <button (click)="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
+      <button *hasPermission="'DEPARTMENT_CREATE'" (click)="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl flex items-center transition shadow-md hover:shadow-lg text-sm shrink-0">
         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         Thêm Phòng ban
       </button>
@@ -28,7 +28,7 @@
             <th scope="col" class="px-6 py-4">Mã</th>
             <th scope="col" class="px-6 py-4">Tên Phòng ban</th>
             <th scope="col" class="px-6 py-4">Mô tả</th>
-            <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
+            <th *hasAnyPermission="['DEPARTMENT_UPDATE', 'DEPARTMENT_DELETE']" scope="col" class="px-6 py-4 text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -57,10 +57,10 @@
               <td class="px-6 py-4 text-gray-600 max-w-xs truncate" [title]="dept.description || ''">
                 {{ dept.description || '---' }}
               </td>
-              <td class="px-6 py-4 text-right space-x-3">
+              <td *hasAnyPermission="['DEPARTMENT_UPDATE', 'DEPARTMENT_DELETE']" class="px-6 py-4 text-right space-x-3">
                 <button (click)="openTeacherListModal(dept)" class="font-medium text-emerald-600 hover:text-emerald-800 transition">DS Nhân sự</button>
-                <button (click)="openModal(dept)" class="font-medium text-blue-600 hover:text-blue-800 transition">Sửa</button>
-                <button (click)="onDelete(dept.id)" class="font-medium text-red-600 hover:text-red-800 transition">Xóa</button>
+                <button *hasPermission="'DEPARTMENT_UPDATE'" (click)="openModal(dept)" class="font-medium text-blue-600 hover:text-blue-800 transition">Sửa</button>
+                <button *hasPermission="'DEPARTMENT_DELETE'" (click)="onDelete(dept.id)" class="font-medium text-red-600 hover:text-red-800 transition">Xóa</button>
               </td>
             </tr>
           }

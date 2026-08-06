@@ -11,9 +11,11 @@ import { Course } from '../../../../modules/academic/models/course.model';
 import { Term } from '../../../../modules/academic/models/term.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-classes',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './classes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -174,7 +176,7 @@ export class ClassesComponent implements OnInit {
     this.startDateDisplay.set('');
     this.endDateDisplay.set('');
     this.classForm.reset({
-      courseId: this.availableCourses().length > 0 ? this.availableCourses()[0].id : '',
+      courseId: '',
       termId: '',
       code: '',
       name: '',

@@ -44,7 +44,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class HeaderComponent {
   private authService = inject(AuthService);
-  
+
   @Output() toggleSidebar = new EventEmitter<void>();
 
   userName = computed(() => this.authService.authState().fullName || this.authService.authState().email || 'Tài khoản');

@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, roleGuard } from '../../core/guards/auth.guard';
+import { authGuard } from '../../core/guards/auth.guard';
 import { TeacherDashboardComponent } from './pages/dashboard/teacher-dashboard.component';
 import { ClassDetailComponent } from './pages/class-detail/class-detail.component';
 import { StudentsTabComponent } from './components/students-tab/students-tab.component';
@@ -19,6 +19,7 @@ import { DepartmentAssignmentComponent } from './pages/teaching-assignment/depar
 import { DepartmentAssignmentListComponent } from './pages/teaching-assginment-list/department-assignment-list.component';
 import { DepartmentSubstitutionComponent } from './pages/teaching-substitution/department-substitution.component';
 import { AssignmentHistoryComponent } from './pages/assignment-history/assignment-history.component';
+import { TeacherScheduleComponent } from './pages/schedule/teacher-schedule.component';
 
 export const teacherRoutes: Routes = [
   {
@@ -29,47 +30,18 @@ export const teacherRoutes: Routes = [
       // Tạm thời chưa làm Dashboard, mình trỏ thẳng vào my-classes
       { path: 'my-classes', component: MyClassesComponent },
       { path: 'classes/:id', component: ClassDetailComponent },
+      { path: 'schedule', component: TeacherScheduleComponent },
       { path: 'assignments/create', component: AssignmentFormComponent },
       { path: 'assignments/:id', component: AssignmentDetailComponent },
       { path: 'assignments/edit/:id', component: AssignmentFormComponent },
       { path: 'assignments/:id/submissions', component: AssignmentSubmissionsComponent },
       { path: 'profile', component: TeacherProfileComponent },  
-      { 
-        path: 'homeroom', 
-        component: HomeroomAnnouncementComponent,
-        canActivate: [roleGuard(['HOMEROOM_TEACHER'])], 
-        
-      },
-      { 
-        path: 'department-member', 
-        component: DepartmentMembersComponent,
-        canActivate: [roleGuard(['TEACHER_HEAD_DEPARTMENT'])], 
-        
-      },
-      { 
-        path: 'teacher-assignment', 
-        component: DepartmentAssignmentComponent,
-        canActivate: [roleGuard(['TEACHER_HEAD_DEPARTMENT'])], 
-        
-      },
-      { 
-        path: 'teacher-assignment-list', 
-        component: DepartmentAssignmentListComponent,
-        canActivate: [roleGuard(['TEACHER_HEAD_DEPARTMENT'])], 
-        
-      },
-      { 
-        path: 'teacher-substitution', 
-        component: DepartmentSubstitutionComponent,
-        canActivate: [roleGuard(['TEACHER_HEAD_DEPARTMENT'])], 
-        
-      },
-      { 
-        path: 'teacher-history', 
-        component: AssignmentHistoryComponent,
-        canActivate: [roleGuard(['TEACHER_HEAD_DEPARTMENT'])], 
-        
-      },
+      { path: 'homeroom', component: HomeroomAnnouncementComponent },
+      { path: 'department-member', component: DepartmentMembersComponent },
+      { path: 'teacher-assignment', component: DepartmentAssignmentComponent },
+      { path: 'teacher-assignment-list', component: DepartmentAssignmentListComponent },
+      { path: 'teacher-substitution', component: DepartmentSubstitutionComponent },
+      { path: 'teacher-history', component: AssignmentHistoryComponent }
     ]
   }
 ];

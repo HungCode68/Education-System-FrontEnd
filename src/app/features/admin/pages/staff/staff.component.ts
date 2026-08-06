@@ -10,9 +10,11 @@ import { Staff, StaffType, StaffContractType } from '../../../../modules/user/mo
 import { Department } from '../../../../modules/user/models/department.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-staff',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './staff.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

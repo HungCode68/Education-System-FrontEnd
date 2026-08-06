@@ -5,7 +5,7 @@
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Phân công Giảng dạy (Teaching Assignments)</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Phân công giáo viên chính, trợ giảng và tutor cho từng lớp học</p>
     </div>
-    <button (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
+    <button *hasPermission="'ASSIGNMENT_CREATE'" (click)="openModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
       </svg>
@@ -45,7 +45,7 @@
             <th class="px-6 py-3.5 font-semibold">Ngày bắt đầu</th>
             <th class="px-6 py-3.5 font-semibold">Ngày kết thúc</th>
             <th class="px-6 py-3.5 font-semibold">Trạng thái</th>
-            <th class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
+            <th *hasAnyPermission="['ASSIGNMENT_UPDATE', 'ASSIGNMENT_DELETE']" class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
@@ -90,9 +90,9 @@
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300">Đã kết thúc</span>
                   }
                 </td>
-                <td class="px-6 py-4 text-right space-x-2">
-                  <button (click)="openModal(item)" class="px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
-                  <button (click)="onDelete(item.id)" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
+                <td *hasAnyPermission="['ASSIGNMENT_UPDATE', 'ASSIGNMENT_DELETE']" class="px-6 py-4 text-right space-x-2">
+                  <button *hasPermission="'ASSIGNMENT_UPDATE'" (click)="openModal(item)" class="px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors">Sửa</button>
+                  <button *hasPermission="'ASSIGNMENT_DELETE'" (click)="onDelete(item.id)" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg transition-colors">Xóa</button>
                 </td>
               </tr>
             }

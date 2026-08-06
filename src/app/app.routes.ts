@@ -13,7 +13,7 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: MainLayoutComponent,
-    canActivate: [authGuard, roleGuard(['ADMIN', 'SYSTEM_ADMIN'])],
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -24,7 +24,7 @@ export const routes: Routes = [
   {
     path: 'academic',
     component: MainLayoutComponent,
-    canActivate: [authGuard, roleGuard(['ACADEMIC', 'TRAINING', 'MANAGER', 'ADMIN', 'SYSTEM_ADMIN'])],
+    canActivate: [authGuard],
     children: [
       {
         path: '',
@@ -34,7 +34,7 @@ export const routes: Routes = [
   },
   {
     path: 'teacher',
-    canActivate: [authGuard, roleGuard(['SUBJECT_TEACHER', 'HOMEROOM_TEACHER', 'TEACHER_HEAD_DEPARTMENT'])],
+    canActivate: [authGuard],
     children: [
       {
         path: '',

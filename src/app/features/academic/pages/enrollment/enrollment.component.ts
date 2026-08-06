@@ -12,9 +12,11 @@ import { Enrollment, BulkEnrollment, ENROLLMENT_STATUS_MAP, ENROLLMENT_STATUS_OP
 import { Student } from '../../../../modules/user/models/student.model';
 import { ToastService } from '../../../../core/services/toast.service';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-enrollment',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './enrollment.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -238,10 +240,8 @@ export class EnrollmentComponent implements OnInit {
 
     const enrolledIds = new Set(this.enrollments().map(e => e.studentId));
     const available = this.allStudents().filter(s => !enrolledIds.has(Number(s.id)));
-    const firstStudentId = available.length > 0 ? available[0].id : '';
-
     this.enrollmentForm.reset({
-      studentId: firstStudentId,
+      studentId: '',
       enrollmentDate: todayIso,
       status: 'ACTIVE',
       note: ''

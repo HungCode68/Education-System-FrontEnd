@@ -7,10 +7,11 @@ import { RoleService } from '../../../../modules/user/services/role.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Role, Permission } from '../../../../modules/user/models/role.model';
 import { PermissionService } from '../../../../modules/user/services/permission.service';
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
 @Component({
   selector: 'app-role',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './role.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -46,6 +47,69 @@ export class RoleComponent implements OnInit {
   allPermissions = signal<Permission[]>([]);
   selectedPermissionIds = signal<number[]>([]);
   isAssigning = signal(false);
+
+  private readonly MODULE_LABELS: Record<string, string> = {
+    COURSE: '📚 Quản lý Khóa học',
+    CLASS: '🏫 Quản lý Lớp học',
+    STUDENT: '🎓 Quản lý Học viên',
+    STAFF: '👨‍🏫 Quản lý Giảng viên',
+    ENROLLMENT: '📋 Quản lý Đăng ký học',
+    SCHEDULE: '📅 Quản lý Lịch học',
+    LESSON: '📖 Quản lý Buổi học',
+    ROOM: '🏢 Quản lý Phòng học',
+    TERM: '📆 Quản lý Học kỳ',
+    TEACHING: '🖊️ Phân công Giảng dạy',
+    ASSIGNMENT: '📝 Quản lý Bài tập',
+    SUBSTITUTION: '🔄 Thay thế Giảng dạy',
+    DEPARTMENT: '🏛️ Quản lý Bộ phận',
+    ROLE: '🛡️ Quản lý Vai trò',
+    PERMISSION: '🔑 Quản lý Quyền hạn',
+    ACCOUNT: '👤 Quản lý Tài khoản',
+    USER: '👤 Quản lý Người dùng',
+    REPORT: '📊 Báo cáo & Thống kê',
+    LOG: '📜 Nhật ký hoạt động',
+    SYSTEM: '⚙️ Quản lý Hệ thống',
+  };
+
+  groupedPermissions = computed(() => {
+    const groups = new Map<string, { label: string; permissions: Permission[] }>();
+    for (const perm of this.allPermissions()) {
+      const prefix = perm.name.split('_')[0];
+      const label = this.MODULE_LABELS[prefix] ?? `🔧 ${prefix}`;
+      if (!groups.has(prefix)) {
+        groups.set(prefix, { label, permissions: [] });
+      }
+      groups.get(prefix)!.permissions.push(perm);
+    }
+    return Array.from(groups.values()).sort((a, b) => a.label.localeCompare(b.label));
+  });
+
+  isGroupAllSelected(permissions: Permission[]): boolean {
+    const current = this.selectedPermissionIds();
+    return permissions.length > 0 && permissions.every(p => current.includes(Number(p.id)));
+  }
+
+  isGroupPartialSelected(permissions: Permission[]): boolean {
+    const current = this.selectedPermissionIds();
+    const count = permissions.filter(p => current.includes(Number(p.id))).length;
+    return count > 0 && count < permissions.length;
+  }
+
+  getGroupSelectedCount(permissions: Permission[]): number {
+    const current = this.selectedPermissionIds();
+    return permissions.filter(p => current.includes(Number(p.id))).length;
+  }
+
+  toggleGroupPermissions(permissions: Permission[], selectAll: boolean) {
+    const ids = permissions.map(p => Number(p.id));
+    const current = this.selectedPermissionIds();
+    if (selectAll) {
+      const merged = Array.from(new Set([...current, ...ids]));
+      this.selectedPermissionIds.set(merged);
+    } else {
+      this.selectedPermissionIds.set(current.filter(id => !ids.includes(id)));
+    }
+  }
 
   ngOnInit() {
     this.initForm();

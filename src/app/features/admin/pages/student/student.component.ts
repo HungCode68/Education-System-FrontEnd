@@ -9,9 +9,11 @@ import { ClassStudentService } from '../../../../modules/user/services/class-stu
 import { ToastService } from '../../../../core/services/toast.service';
 import { Student, StudentStatus } from '../../../../modules/user/models/student.model';
 
+import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
+
 @Component({
   selector: 'app-student',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HasPermissionDirective],
   templateUrl: './student.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
