@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/core/layout/main-layout.component.ts", "main-layout.component.ts"],
-  "sourcesContent": ["\n    :host { display: block; height: 100%; width: 100%; }\n    /* Responsive margins are handled via Tailwind classes and ngStyle */\n  ", ":host {\n  display: block;\n  height: 100%;\n  width: 100%;\n}\n\n/* Responsive margins are handled via Tailwind classes and ngStyle */\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJmaWxlOi8vL0Q6L0VkdWNhdGlvbi1TeXN0ZW0tRnJvbnRFbmQvc3JjL2FwcC9jb3JlL2xheW91dC9tYWluLWxheW91dC5jb21wb25lbnQudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQ0k7RUFBUTtFQUFnQjtFQUFjOzs7QUFDdEMiLCJzb3VyY2VzQ29udGVudCI6WyJcbiAgICA6aG9zdCB7IGRpc3BsYXk6IGJsb2NrOyBoZWlnaHQ6IDEwMCU7IHdpZHRoOiAxMDAlOyB9XG4gICAgLyogUmVzcG9uc2l2ZSBtYXJnaW5zIGFyZSBoYW5kbGVkIHZpYSBUYWlsd2luZCBjbGFzc2VzIGFuZCBuZ1N0eWxlICovXG4gICJdfQ== */"],
-  "mappings": ";AACI;AAAQ,WAAA;AAAgB,UAAA;AAAc,SAAA;ACG1C;",
-  "names": []
-}

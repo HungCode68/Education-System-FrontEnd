@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["src/app/core/layout/header/header.component.ts", "header.component.ts"],
-  "sourcesContent": ["\n    :host { display: block; width: 100%; }\n    .header { height: 64px; }\n  ", ":host {\n  display: block;\n  width: 100%;\n}\n\n.header {\n  height: 64px;\n}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyJmaWxlOi8vL0Q6L0VkdWNhdGlvbi1TeXN0ZW0tRnJvbnRFbmQvc3JjL2FwcC9jb3JlL2xheW91dC9oZWFkZXIvaGVhZGVyLmNvbXBvbmVudC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFDSTtFQUFRO0VBQWdCOzs7QUFDeEI7RUFBVSIsInNvdXJjZXNDb250ZW50IjpbIlxuICAgIDpob3N0IHsgZGlzcGxheTogYmxvY2s7IHdpZHRoOiAxMDAlOyB9XG4gICAgLmhlYWRlciB7IGhlaWdodDogNjRweDsgfVxuICAiXX0= */"],
-  "mappings": ";AACI;AAAQ,WAAA;AAAgB,SAAA;ACE5B;ADDI,CAAA;AAAU,UAAA;ACKd;",
-  "names": []
-}

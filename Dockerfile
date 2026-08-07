@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build -- --configuration production
+RUN npm run build
 
 # Stage 2: Serve với Nginx
 FROM nginx:alpine
