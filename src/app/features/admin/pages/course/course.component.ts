@@ -53,6 +53,7 @@ export class CourseComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(255)]],
       description: [''],
       durationHours: [30, [Validators.required, Validators.min(1)]],
+      totalSessions: [0, [Validators.min(0)]],
       basePrice: [0, [Validators.required, Validators.min(0)]],
       status: ['ACTIVE' as CourseStatus, Validators.required]
     });
@@ -107,6 +108,7 @@ export class CourseComponent implements OnInit {
         name: course.name,
         description: course.description || '',
         durationHours: course.durationHours || 0,
+        totalSessions: course.totalSessions || 0,
         basePrice: course.basePrice || 0,
         status: course.status
       });
@@ -118,6 +120,7 @@ export class CourseComponent implements OnInit {
         name: '',
         description: '',
         durationHours: 30,
+        totalSessions: 0,
         basePrice: 0,
         status: 'ACTIVE'
       });

@@ -62,6 +62,8 @@ export class CourseComponent implements OnInit {
       name: ['', [Validators.required, Validators.maxLength(255)]],
       description: [''],
       durationHours: [0, [Validators.required, Validators.min(0)]],
+      totalSessions: [0, [Validators.min(0)]],
+      sessionsPerWeek: [0, [Validators.min(0)]],
       basePrice: [0, [Validators.required, Validators.min(0)]],
       status: ['ACTIVE', [Validators.required]]
     });
@@ -119,6 +121,8 @@ export class CourseComponent implements OnInit {
         name: course.name,
         description: course.description || '',
         durationHours: course.durationHours || 0,
+        totalSessions: course.totalSessions || 0,
+        sessionsPerWeek: course.sessionsPerWeek || 0,
         basePrice: price,
         status: course.status || 'ACTIVE'
       });
@@ -142,6 +146,8 @@ export class CourseComponent implements OnInit {
       name: '',
       description: '',
       durationHours: 0,
+      totalSessions: 0,
+      sessionsPerWeek: 0,
       basePrice: 0,
       status: 'ACTIVE'
     });
@@ -182,6 +188,8 @@ export class CourseComponent implements OnInit {
       name: formValues.name,
       description: formValues.description,
       durationHours: Number(formValues.durationHours),
+      totalSessions: Number(formValues.totalSessions),
+      sessionsPerWeek: Number(formValues.sessionsPerWeek),
       basePrice: Number(formValues.basePrice),
       status: formValues.status
     };

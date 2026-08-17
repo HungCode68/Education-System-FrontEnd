@@ -46,9 +46,40 @@
         </svg>
         Phân công ca mới
       </button>
+
+      <!-- Toggle View -->
+      <div class="inline-flex rounded-lg p-1 bg-gray-100 border border-gray-200">
+        <button 
+          (click)="toggleViewMode('TABLE')"
+          [class.bg-white]="viewMode() === 'TABLE'"
+          [class.shadow-sm]="viewMode() === 'TABLE'"
+          [class.text-gray-900]="viewMode() === 'TABLE'"
+          [class.text-gray-500]="viewMode() !== 'TABLE'"
+          class="px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center"
+        >
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path>
+          </svg>
+          Danh sách
+        </button>
+        <button 
+          (click)="toggleViewMode('CALENDAR')"
+          [class.bg-white]="viewMode() === 'CALENDAR'"
+          [class.shadow-sm]="viewMode() === 'CALENDAR'"
+          [class.text-gray-900]="viewMode() === 'CALENDAR'"
+          [class.text-gray-500]="viewMode() !== 'CALENDAR'"
+          class="px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center"
+        >
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+          </svg>
+          Lịch tuần
+        </button>
+      </div>
     </div>
   </div>
 
+  @if (viewMode() === 'TABLE') {
   <!-- DATA TABLE -->
   <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
     <table class="w-full text-sm text-left text-gray-500">
@@ -186,6 +217,143 @@
       </div>
     </div>
   </div>
+  }
+
+  @if (viewMode() === 'CALENDAR') {
+  <!-- CALENDAR VIEW -->
+  <div class="space-y-6">
+    <!-- Date Navigator -->
+    <div class="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+      <div class="flex items-center space-x-4">
+        <button (click)="previousWeek()" class="p-2 hover:bg-gray-100 rounded-full transition">
+          <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <button (click)="goToCurrentWeek()" class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition">
+          Tuần hiện tại
+        </button>
+        <button (click)="nextWeek()" class="p-2 hover:bg-gray-100 rounded-full transition">
+          <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+      <div class="text-base font-bold text-gray-900 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl border border-blue-100">
+        {{ currentWeekStart() | date:'dd/MM/yyyy' }} - {{ currentWeekEnd() | date:'dd/MM/yyyy' }}
+      </div>
+    </div>
+
+    @if (isLoading()) {
+      <div class="flex justify-center py-12 bg-white rounded-2xl border border-gray-100">
+        <div class="text-center text-gray-500">
+          <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Đang tải dữ liệu thời khóa biểu...
+        </div>
+      </div>
+    } @else {
+      <!-- Weekly Grid -->
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+        <div class="min-w-[1000px]">
+          <!-- Grid Header (Days) -->
+          <div class="grid grid-cols-8 divide-x divide-gray-100 border-b border-gray-100 bg-gray-50/50">
+            <div class="p-4 flex items-center justify-center">
+              <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Khung giờ</span>
+            </div>
+            @for (day of daysOfWeek(); track day.dateStr) {
+              <div class="p-4 text-center">
+                <div class="font-bold text-gray-900">{{ day.dayName }}</div>
+                <div class="text-xs font-medium text-gray-500 mt-0.5">{{ day.date | date:'dd/MM' }}</div>
+              </div>
+            }
+          </div>
+
+          <!-- Grid Body (Time Slots) -->
+          <div class="divide-y divide-gray-100">
+            @for (slot of dynamicTimeSlots(); track slot.shortTimeLabel) {
+              <div class="grid grid-cols-8 divide-x divide-gray-100">
+                <!-- Time Slot Label -->
+                <div class="p-4 bg-gray-50/30 flex flex-col items-center justify-center border-r border-gray-100">
+                  <span class="px-2.5 py-1 text-[10px] font-bold rounded-full mb-2" [class]="slot.bgBadge">
+                    Buổi {{ slot.periodLabel }}
+                  </span>
+                  <span class="text-sm font-bold text-gray-700 text-center">{{ slot.shortTimeLabel }}</span>
+                </div>
+
+                <!-- Days Columns -->
+                @for (day of daysOfWeek(); track day.dateStr) {
+                  <div class="p-3 bg-white min-h-[120px] transition-colors relative group hover:bg-blue-50/30">
+                    
+                    <!-- Events -->
+                    <div class="space-y-2">
+                      @for (session of getEventsForCell(day.dateStr, slot); track session.scheduleId) {
+                        
+                        <div 
+                          (click)="onCalendarCellClick(session, $event)"
+                          class="p-2.5 rounded-xl border cursor-pointer hover:shadow-md transition-all relative overflow-hidden"
+                          [class.bg-white]="session.status === 'NORMAL'"
+                          [class.border-gray-200]="session.status === 'NORMAL'"
+                          [class.bg-gray-50]="session.status === 'CANCELLED'"
+                          [class.border-gray-200]="session.status === 'CANCELLED'"
+                        >
+                          <!-- Cancelled overlay -->
+                          @if (session.status === 'CANCELLED') {
+                            <div class="absolute inset-0 bg-gray-200/70 flex flex-col items-center justify-center z-10 pointer-events-none p-1.5 text-center">
+                              <span class="bg-gray-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow mb-1">NGHỈ</span>
+                              <span class="text-[9px] font-bold text-gray-800 bg-white/90 px-1.5 py-0.5 rounded truncate w-full border border-gray-300" [title]="session.cancellationReason">
+                                {{ session.cancellationReason || 'Không rõ lý do' }}
+                              </span>
+                            </div>
+                          }
+
+                          <div [class.opacity-50]="session.status === 'CANCELLED'">
+                            <!-- Lớp học & Phòng -->
+                            <div class="flex justify-between items-start mb-1.5">
+                              <div class="font-bold text-blue-700 text-xs truncate max-w-[120px]" title="{{ session.className }}">
+                                {{ session.classCode }}
+                              </div>
+                              <span class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-gray-200">
+                                {{ session.roomName || 'LMS' }}
+                              </span>
+                            </div>
+
+                            <!-- Teacher Info -->
+                            @if (session.isSubstituted) {
+                              <div class="flex items-center mt-1.5">
+                                <div class="w-1.5 h-1.5 rounded-full bg-orange-500 mr-1.5"></div>
+                                <span class="text-[11px] font-medium text-orange-700 truncate" title="{{ session.teacherName }} (Dạy thay)">
+                                  {{ session.teacherName }} (Thay)
+                                </span>
+                              </div>
+                            } @else {
+                              <div class="flex items-center mt-1.5">
+                                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></div>
+                                <span class="text-[11px] font-medium text-gray-700 truncate" title="{{ session.teacherName }}">
+                                  {{ session.teacherName }}
+                                </span>
+                              </div>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                  </div>
+                }
+              </div>
+            }
+            
+            @if (dynamicTimeSlots().length === 0) {
+              <div class="p-12 text-center text-gray-500 bg-gray-50/50">
+                Không có lịch học nào trong tuần này.
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  }
+
 </div>
 
 <!-- MODAL THÊM / CẬP NHẬT PHÂN CÔNG BUỔI HỌC -->

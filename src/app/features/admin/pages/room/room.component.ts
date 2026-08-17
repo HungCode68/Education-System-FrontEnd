@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { RoomService } from '../../../../modules/academic/services/room.service';
-import { Room, RoomType } from '../../../../modules/academic/models/room.model';
+import { Room } from '../../../../modules/academic/models/room.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
@@ -27,7 +27,6 @@ export class RoomComponent implements OnInit {
   isLoading = signal(false);
 
   searchControl = new FormControl('');
-  typeFilter = new FormControl('');
 
   isModalOpen = signal(false);
   isEditing = signal(false);
@@ -50,7 +49,6 @@ export class RoomComponent implements OnInit {
   private initForm() {
     this.roomForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
-      roomType: ['PHYSICAL' as RoomType, Validators.required],
       capacity: [30, [Validators.required, Validators.min(1)]]
     });
   }
@@ -64,19 +62,13 @@ export class RoomComponent implements OnInit {
       this.currentPage.set(1);
       this.loadData();
     });
-
-    this.typeFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-      this.currentPage.set(1);
-      this.loadData();
-    });
   }
 
   loadData() {
     this.isLoading.set(true);
     const keyword = this.searchControl.value || undefined;
-    const roomType = this.typeFilter.value || undefined;
 
-    this.roomService.getAll(this.currentPage() - 1, this.pageSize(), keyword, roomType).subscribe({
+    this.roomService.getAll(this.currentPage() - 1, this.pageSize(), keyword).subscribe({
       next: (res) => {
         this.rooms.set(res.content || []);
         this.totalElements.set(res.totalElements || 0);
@@ -99,7 +91,6 @@ export class RoomComponent implements OnInit {
       this.currentId.set(room.id);
       this.roomForm.patchValue({
         name: room.name,
-        roomType: room.roomType,
         capacity: room.capacity || 30
       });
     } else {
@@ -107,7 +98,6 @@ export class RoomComponent implements OnInit {
       this.currentId.set(null);
       this.roomForm.reset({
         name: '',
-        roomType: 'PHYSICAL',
         capacity: 30
       });
     }

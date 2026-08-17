@@ -8,6 +8,8 @@ import { StudentService } from '../../../../modules/user/services/student.servic
 import { ClassStudentService } from '../../../../modules/user/services/class-student.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { Student, StudentStatus } from '../../../../modules/user/models/student.model';
+import { RoleService } from '../../../../modules/user/services/role.service';
+import { Role } from '../../../../modules/user/models/role.model';
 
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
@@ -24,6 +26,7 @@ export class StudentComponent implements OnInit {
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
+  private roleService = inject(RoleService);
 
   isReadOnly = signal(false);
   isAcademic = signal(false);
@@ -45,6 +48,7 @@ export class StudentComponent implements OnInit {
   statusFilterControl = new FormControl('');
 
   selectedStudentIds = signal<(number | string)[]>([]);
+  roles = signal<Role[]>([]);
 
   isModalOpen = signal(false);
   isEditing = signal(false);
@@ -59,6 +63,7 @@ export class StudentComponent implements OnInit {
   idToDelete = signal<number | string | null>(null);
 
   isBatchAccountModalOpen = signal(false);
+  batchAccountForm!: FormGroup;
   isDistributeModalOpen = signal(false);
   selectedClassIds = signal<string[]>([]);
   distributeForm!: FormGroup;
@@ -70,6 +75,14 @@ export class StudentComponent implements OnInit {
     this.initForms();
     this.setupFilters();
     this.loadData();
+    this.loadRoles();
+  }
+
+  private loadRoles() {
+    this.roleService.getAll(undefined, 0, 100).subscribe({
+      next: (res) => this.roles.set(res.content),
+      error: (err) => console.error('Failed to load roles', err)
+    });
   }
 
   private initForms() {
@@ -79,11 +92,22 @@ export class StudentComponent implements OnInit {
       parentName: [''],
       parentPhone: [''],
       targetScore: [''],
-      status: ['STUDYING' as StudentStatus, Validators.required]
+      status: ['STUDYING' as StudentStatus, Validators.required],
+      phone: ['', [Validators.pattern(/^(0[3|5|7|8|9])+([0-9]{8})$/)]],
+      identityNumber: [''],
+      dateOfBirth: [''],
+      gender: [''],
+      address: [''],
+      nationality: ['Vietnam']
     });
 
     this.accountForm = this.fb.group({
-      email: ['']
+      email: [''],
+      roleIds: [[], Validators.required]
+    });
+
+    this.batchAccountForm = this.fb.group({
+      roleIds: [[], Validators.required]
     });
 
     this.distributeForm = this.fb.group({
@@ -247,7 +271,7 @@ export class StudentComponent implements OnInit {
   getStatusText(status?: string): string {
     if (this.isGraduated(status)) return 'Tốt nghiệp';
     if (this.isReserved(status)) return 'Bảo lưu';
-    if (this.isDropped(status)) return 'Bỏ học';
+    if (this.isDropped(status)) return 'Nghỉ học';
     return 'Đang học';
   }
 
@@ -262,7 +286,13 @@ export class StudentComponent implements OnInit {
         parentName: student.parentName || '',
         parentPhone: student.parentPhone || '',
         targetScore: student.targetScore || '',
-        status: student.status
+        status: student.status,
+        phone: student.phone || '',
+        identityNumber: student.identityNumber || '',
+        dateOfBirth: student.dateOfBirth || '',
+        gender: student.gender || '',
+        address: student.address || '',
+        nationality: student.nationality || 'Vietnam'
       });
       this.studentForm.get('studentCode')?.disable();
     } else {
@@ -274,7 +304,13 @@ export class StudentComponent implements OnInit {
         parentName: '',
         parentPhone: '',
         targetScore: '',
-        status: 'STUDYING'
+        status: 'STUDYING',
+        phone: '',
+        identityNumber: '',
+        dateOfBirth: '',
+        gender: '',
+        address: '',
+        nationality: 'Vietnam'
       });
       this.studentForm.get('studentCode')?.enable();
     }
@@ -290,6 +326,13 @@ export class StudentComponent implements OnInit {
     if (this.studentForm.invalid) return;
     this.isLoading.set(true);
     const data = this.studentForm.getRawValue();
+    
+    // Xử lý giá trị chuỗi rỗng thành null để backend không báo lỗi regex / UNIQUE
+    Object.keys(data).forEach(key => {
+      if (data[key] === '') {
+        data[key] = null;
+      }
+    });
 
     if (this.isEditing() && this.currentId() != null) {
       this.studentService.update(this.currentId()!, data).subscribe({
@@ -321,8 +364,21 @@ export class StudentComponent implements OnInit {
 
   openAccountModal(student: Student) {
     this.selectedStudentForAccount.set(student);
-    this.accountForm.reset({ email: student.userEmail || '' });
+    const studentRole = this.roles().find(r => r.name === 'STUDENT' || r.name === 'Học viên');
+    const defaultRoles = studentRole ? [studentRole.id] : [];
+    this.accountForm.reset({ email: student.userEmail || '', roleIds: defaultRoles });
     this.isAccountModalOpen.set(true);
+  }
+
+  toggleRole(form: FormGroup, roleId: number | string) {
+    const currentRoles = form.get('roleIds')?.value as (number | string)[] || [];
+    const index = currentRoles.indexOf(roleId);
+    if (index === -1) {
+      form.get('roleIds')?.setValue([...currentRoles, roleId]);
+    } else {
+      form.get('roleIds')?.setValue(currentRoles.filter(id => id !== roleId));
+    }
+    form.get('roleIds')?.markAsTouched();
   }
 
   closeAccountModal() {
@@ -336,8 +392,9 @@ export class StudentComponent implements OnInit {
 
     this.isLoading.set(true);
     const email = this.accountForm.value.email;
+    const roleIds = this.accountForm.value.roleIds || [];
 
-    this.studentService.createAccount(studentId, email).subscribe({
+    this.studentService.createAccount(studentId, roleIds, email).subscribe({
       next: () => {
         this.loadData();
         this.closeAccountModal();
@@ -352,6 +409,9 @@ export class StudentComponent implements OnInit {
 
   openBatchAccountModal() {
     if (this.selectedStudentIds().length === 0) return;
+    const studentRole = this.roles().find(r => r.name === 'STUDENT' || r.name === 'Học viên');
+    const defaultRoles = studentRole ? [studentRole.id] : [];
+    this.batchAccountForm.reset({ roleIds: defaultRoles });
     this.isBatchAccountModalOpen.set(true);
   }
 
@@ -363,8 +423,10 @@ export class StudentComponent implements OnInit {
     const ids = this.selectedStudentIds();
     if (ids.length === 0) return;
 
+    const roleIds = this.batchAccountForm.value.roleIds || [];
+
     this.isLoading.set(true);
-    this.studentService.createAccountsBatch(ids).subscribe({
+    this.studentService.createAccountsBatch(ids, roleIds).subscribe({
       next: (res) => {
         this.loadData();
         this.closeBatchAccountModal();

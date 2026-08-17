@@ -2,9 +2,11 @@ import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@ang
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ScheduleService } from '../../../../modules/academic/services/schedule.service';
 import { ClassesService } from '../../../../modules/academic/services/class.service';
 import { RoomService } from '../../../../modules/academic/services/room.service';
+import { CourseService } from '../../../../modules/academic/services/course.service';
 import { ClassSchedule, DAY_OF_WEEK_MAP, DAY_OPTIONS } from '../../../../modules/academic/models/schedule.model';
 import { ClassEntity } from '../../../../modules/academic/models/class.model';
 import { Room } from '../../../../modules/academic/models/room.model';
@@ -22,6 +24,7 @@ export class ScheduleComponent implements OnInit {
   private scheduleService = inject(ScheduleService);
   private classesService = inject(ClassesService);
   private roomService = inject(RoomService);
+  private courseService = inject(CourseService);
   private fb = inject(FormBuilder);
   private toastService = inject(ToastService);
   private route = inject(ActivatedRoute);
@@ -36,6 +39,7 @@ export class ScheduleComponent implements OnInit {
   availableRooms = signal<Room[]>([]);
   selectedClassId = signal<number | string | null>(null);
   isLoading = signal(false);
+  isFindingRooms = signal(false);
 
   // Modal State
   isModalOpen = signal(false);
@@ -63,6 +67,41 @@ export class ScheduleComponent implements OnInit {
       roomId: [''],
       roomName: ['']
     });
+
+    this.scheduleForm.valueChanges.pipe(
+      debounceTime(500)
+    ).subscribe(val => {
+      this.checkAvailableRooms(val);
+    });
+  }
+
+  private checkAvailableRooms(val: any) {
+    if (val.classId && val.dayOfWeek && val.startTime && val.endTime && val.startTime < val.endTime) {
+      this.isFindingRooms.set(true);
+      
+      const startTimeFormatted = val.startTime.length === 5 ? `${val.startTime}:00` : val.startTime;
+      const endTimeFormatted = val.endTime.length === 5 ? `${val.endTime}:00` : val.endTime;
+      const excludeId = this.isEditing() ? Number(this.currentId()) : undefined;
+
+      this.roomService.getAvailableRooms(
+        Number(val.classId),
+        Number(val.dayOfWeek),
+        startTimeFormatted,
+        endTimeFormatted,
+        excludeId
+      ).subscribe({
+        next: (rooms) => {
+          this.availableRooms.set(rooms || []);
+          this.isFindingRooms.set(false);
+        },
+        error: () => {
+          this.availableRooms.set([]);
+          this.isFindingRooms.set(false);
+        }
+      });
+    } else {
+      this.availableRooms.set([]);
+    }
   }
 
   loadAvailableClasses() {
@@ -141,6 +180,8 @@ export class ScheduleComponent implements OnInit {
         roomId: item.roomId || '',
         roomName: item.roomName || ''
       });
+      // setTimeout to allow form to update and trigger checkAvailableRooms
+      setTimeout(() => this.checkAvailableRooms(this.scheduleForm.value), 0);
     } else {
       if (this.isEditing() || !this.scheduleForm.get('classId')?.value) {
         this.isEditing.set(false);
@@ -199,6 +240,35 @@ export class ScheduleComponent implements OnInit {
     };
 
     if (this.isEditing() && this.currentId()) {
+      this.doSubmit(dto, true);
+    } else {
+      // Check maximum sessions per week before adding
+      const currentSchedulesCount = this.schedules().length;
+      const classInfo = this.availableClasses().find(c => c.id === Number(val.classId));
+      
+      if (classInfo && classInfo.courseId) {
+        this.courseService.getById(classInfo.courseId as number).subscribe({
+          next: (course) => {
+            const maxSessions = course.sessionsPerWeek || 0;
+            if (maxSessions > 0 && currentSchedulesCount >= maxSessions) {
+              this.toastService.error('Cảnh báo', `Khóa học này chỉ cho phép tối đa ${maxSessions} buổi/tuần. Bạn không thể xếp thêm ca học.`);
+              this.isFormSubmitted.set(false);
+            } else {
+              this.doSubmit(dto, false);
+            }
+          },
+          error: () => {
+            this.doSubmit(dto, false);
+          }
+        });
+      } else {
+        this.doSubmit(dto, false);
+      }
+    }
+  }
+
+  private doSubmit(dto: Partial<ClassSchedule>, isUpdate: boolean) {
+    if (isUpdate && this.currentId()) {
       this.scheduleService.update(this.currentId()!, dto).subscribe({
         next: () => {
           this.toastService.success('Thành công', 'Cập nhật ca học thành công!');

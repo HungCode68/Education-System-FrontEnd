@@ -11,6 +11,8 @@ export interface Course {
   metadata?: Record<string, unknown>;
   createdAt?: string;
   updatedAt?: string;
+  totalSessions?: number;
+  sessionsPerWeek?: number;
 }
 
 export interface SpringPage<T> {

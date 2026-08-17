@@ -18,6 +18,9 @@ export interface Student {
   email?: string;
   targetScore?: string;
   createdAt?: string;
+  phone?: string;
+  identityNumber?: string;
+  nationality?: string;
 }
 
 export interface SpringPage<T> {

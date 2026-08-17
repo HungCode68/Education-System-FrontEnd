@@ -42,7 +42,6 @@
         <tr>
           <th scope="col" class="px-6 py-4">STT</th>
           <th scope="col" class="px-6 py-4">Tên phòng học</th>
-          <th scope="col" class="px-6 py-4">Loại phòng</th>
           <th scope="col" class="px-6 py-4">Sức chứa</th>
           <th scope="col" class="px-6 py-4">Ngày tạo</th>
           <th scope="col" class="px-6 py-4 text-right">Thao tác</th>
@@ -51,7 +50,7 @@
       <tbody class="divide-y divide-gray-50">
         @if (isLoading() && rooms().length === 0) {
           <tr>
-            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
               <svg class="animate-spin mx-auto h-8 w-8 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -61,7 +60,7 @@
           </tr>
         } @else if (rooms().length === 0) {
           <tr>
-            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+            <td colspan="5" class="px-6 py-12 text-center text-gray-500">
               Không tìm thấy phòng học nào.
             </td>
           </tr>
@@ -81,24 +80,7 @@
                   <span>{{ r.name }}</span>
                 </div>
               </td>
-              <!-- Room Type Badge -->
-              <td class="px-6 py-4">
-                @if (r.roomType === 'LMS' || r.roomType === 'ONLINE') {
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full border bg-purple-50 text-purple-700 border-purple-200 inline-flex items-center">
-                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                    </svg>
-                    Phòng Online (Zoom/LMS)
-                  </span>
-                } @else {
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200 inline-flex items-center">
-                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
-                    </svg>
-                    Phòng học thực tế
-                  </span>
-                }
-              </td>
+
               <!-- Capacity -->
               <td class="px-6 py-4 font-semibold text-gray-900">
                 {{ r.capacity || 'N/A' }} chỗ ngồi
@@ -209,21 +191,9 @@
             }
           </div>
 
-          <!-- Room Type & Capacity Grid -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                Loại phòng <span class="text-red-500">*</span>
-              </label>
-              <select 
-                formControlName="roomType"
-                class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition bg-white font-semibold text-gray-900"
-              >
-                <option value="PHYSICAL">Phòng học thực tế (PHYSICAL)</option>
-                <option value="LMS">Phòng Online / Zoom (LMS)</option>
-              </select>
-            </div>
 
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                 Sức chứa (Số chỗ) <span class="text-red-500">*</span>

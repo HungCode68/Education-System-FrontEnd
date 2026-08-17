@@ -11,6 +11,7 @@ import { TeachingSubstitutionComponent } from './pages/teaching-substitution/tea
 import { EnrollmentComponent } from './pages/enrollment/enrollment.component';
 import { LearningMaterialComponent } from './pages/learning-material/learning-material.component';
 import { ReportingComponent } from './pages/reporting/reporting.component';
+import { CancellationListComponent } from './pages/cancellation-list/cancellation-list.component';
 import { StudentComponent } from '../admin/pages/student/student.component';
 import { StaffComponent } from '../admin/pages/staff/staff.component';
 // Tái sử dụng các component quản trị hệ thống cho academic portal
@@ -44,6 +45,11 @@ export const academicRoutes: Routes = [
   {
     path: 'schedules',
     component: ScheduleComponent,
+    canActivate: [authGuard, permissionGuard(['SCHEDULE_VIEW', 'SCHEDULE_READ', 'SCHEDULE_MANAGE', 'SCHEDULE_CREATE'])]
+  },
+  {
+    path: 'cancellations',
+    component: CancellationListComponent,
     canActivate: [authGuard, permissionGuard(['SCHEDULE_VIEW', 'SCHEDULE_READ', 'SCHEDULE_MANAGE', 'SCHEDULE_CREATE'])]
   },
   {

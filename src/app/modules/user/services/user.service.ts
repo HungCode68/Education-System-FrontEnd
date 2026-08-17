@@ -31,9 +31,9 @@ export class UserService {
     return this.http.put<User>(`${this.apiUrl}/${id}`, data);
   }
 
-  /** Gán nhiều role cho user (Set&lt;string&gt;) */
+  /** Gán nhiều role cho user (Set<string>) */
   updateRoles(userId: string | number, roles: string[]): Observable<unknown> {
-    return this.http.patch(`${this.apiUrl}/${userId}/roles`, { roles });
+    return this.http.patch(`${this.apiUrl}/${userId}/roles`, roles);
   }
 
   updateStatus(userId: string | number, status: string): Observable<unknown> {
@@ -42,5 +42,9 @@ export class UserService {
 
   resetPassword(userId: string | number): Observable<unknown> {
     return this.http.patch(`${this.apiUrl}/${userId}/reset-password`, {});
+  }
+
+  delete(userId: string | number): Observable<unknown> {
+    return this.http.delete(`${this.apiUrl}/${userId}`);
   }
 }

@@ -59,4 +59,14 @@ export class StaffService {
   delete(id: number | string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }
+
+  createAccount(id: number | string, roleIds: (number | string)[], email?: string): Observable<any> {
+    const payload: any = { staffIds: [id], roleIds };
+    if (email) payload.email = email;
+    return this.http.post(`${this.apiUrl}/provision-accounts`, payload);
+  }
+
+  createAccountsBatch(staffIds: (number | string)[], roleIds: (number | string)[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/provision-accounts`, { staffIds, roleIds });
+  }
 }

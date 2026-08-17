@@ -87,11 +87,12 @@
                   {{ statusLabel(user.status) }}
                 </span>
               </td>
-              <td *hasAnyPermission="['ACCOUNT_UPDATE', 'ROLE_ASSIGN_PERMISSION']" class="px-6 py-4 text-right space-x-2">
+              <td *hasAnyPermission="['ACCOUNT_UPDATE', 'ROLE_ASSIGN_PERMISSION', 'ACCOUNT_DELETE']" class="px-6 py-4 text-right space-x-2">
                 <button *hasPermission="'ACCOUNT_UPDATE'" (click)="openEditModal(user)" class="font-semibold text-blue-600 hover:text-blue-800 transition bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 text-xs">Chỉnh sửa</button>
                 <button *hasPermission="'ACCOUNT_UPDATE'" (click)="openResetModal(user)" title="Khôi phục mật khẩu mặc định"
-                        class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200 text-xs">Reset Mật khẩu</button>
-                <button *hasPermission="'ROLE_ASSIGN_PERMISSION'" (click)="openRoleModal(user)" class="font-semibold text-purple-600 hover:text-purple-800 transition bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg border border-purple-200 text-xs">Vai trò</button>
+                        class="font-medium text-amber-600 hover:text-amber-800 transition bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg border border-amber-200 text-xs">Reset</button>
+                <button *hasPermission="'ACCOUNT_DELETE'" (click)="openDeleteModal(user)" title="Thu hồi tài khoản"
+                        class="font-semibold text-red-600 hover:text-red-800 transition bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 text-xs">Thu hồi</button>
               </td>
             </tr>
           }
@@ -130,11 +131,6 @@
 
       <form [formGroup]="editForm" (ngSubmit)="submitEdit()" class="space-y-5">
         <div>
-          <label class="block mb-1.5 text-sm font-bold text-gray-700">Họ và tên</label>
-          <input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none">
-        </div>
-
-        <div>
           <label class="block mb-1.5 text-sm font-bold text-gray-700">Trạng thái tài khoản *</label>
           <select formControlName="status" class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-500 block w-full p-3 outline-none font-semibold">
             <option value="ACTIVE">Đang hoạt động (Active)</option>
@@ -146,41 +142,16 @@
           }
         </div>
 
-        <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100">
-          <button type="button" (click)="closeEditModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy</button>
-          <button type="submit" [disabled]="editForm.invalid || isProcessing()" class="px-5 py-3 text-sm font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 shadow-md">Lưu cập nhật</button>
-        </div>
-      </form>
-    </div>
-  </div>
-}
-
-<!-- MODAL GÁN VAI TRÒ -->
-@if (isRoleModalOpen()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" (click)="closeRoleModal()"></div>
-    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-gray-100">
-      <div class="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-        <h3 class="text-2xl font-extrabold text-gray-900">Gán Vai Trò</h3>
-        <button (click)="closeRoleModal()" class="text-gray-400 hover:text-gray-900 p-2 rounded-full"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-      </div>
-
-      <div class="space-y-5">
-        <div class="p-4 bg-purple-50 rounded-xl border border-purple-100">
-          <p class="text-sm text-purple-800">Tài khoản: <strong class="font-bold text-purple-900 font-mono">{{ selectedUserForRole()?.email }}</strong></p>
-          <p class="text-sm text-purple-800 mt-1">Hiện tại: <strong class="font-bold text-purple-900">{{ formatRoles(selectedUserForRole()?.roles) }}</strong></p>
-        </div>
-
         <div>
-          <label class="block mb-2 text-sm font-bold text-gray-700">Chọn một hoặc nhiều vai trò *</label>
-          <div class="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-xl p-3">
+          <label class="block mb-2 text-sm font-bold text-gray-700">Vai trò của tài khoản *</label>
+          <div class="space-y-2 max-h-60 overflow-y-auto border border-gray-200 rounded-xl p-3 bg-gray-50">
             @for (role of roles(); track role.id) {
-              <label class="flex items-center p-2 rounded-lg cursor-pointer hover:bg-purple-50 transition"
-                     [class.bg-purple-50]="isRoleSelected(role.name)">
+              <label class="flex items-center p-2 rounded-lg cursor-pointer hover:bg-blue-50 transition"
+                     [class.bg-blue-50]="editForm.get('roleNames')?.value?.includes(role.name)">
                 <input type="checkbox"
-                       [checked]="isRoleSelected(role.name)"
+                       [checked]="editForm.get('roleNames')?.value?.includes(role.name)"
                        (change)="toggleRole(role.name)"
-                       class="w-4 h-4 text-purple-600 rounded cursor-pointer">
+                       class="w-4 h-4 text-blue-600 rounded cursor-pointer border-gray-300">
                 <span class="ml-3 text-sm font-mono font-semibold text-gray-800">{{ role.name }}</span>
                 @if (role.description) {
                   <span class="ml-2 text-xs text-gray-500 truncate">{{ role.description }}</span>
@@ -188,19 +159,19 @@
               </label>
             }
           </div>
-          <p class="text-xs text-gray-500 mt-2">Một tài khoản có thể mang nhiều vai trò cùng lúc.</p>
         </div>
 
-        <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100 mt-6">
-          <button type="button" (click)="closeRoleModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm transition">Hủy bỏ</button>
-          <button type="button" (click)="submitRoleChange()" [disabled]="isProcessing()" class="px-5 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 disabled:bg-purple-300 shadow-md transition">
+        <div class="flex justify-end space-x-3.5 pt-4 border-t border-gray-100">
+          <button type="button" (click)="closeEditModal()" class="px-5 py-3 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 shadow-sm">Hủy</button>
+          <button type="submit" [disabled]="editForm.invalid || isProcessing()" class="px-5 py-3 text-sm font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 disabled:bg-purple-300 shadow-md transition">
             Lưu Vai Trò
           </button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
 }
+
 
 <!-- MODAL RESET MẬT KHẨU -->
 @if (isResetModalOpen()) {
@@ -219,6 +190,41 @@
         <button type="button" (click)="confirmResetPassword()" [disabled]="isProcessing()"
             class="px-5 py-3.5 text-sm font-semibold text-white bg-amber-500 rounded-xl hover:bg-amber-600 disabled:bg-amber-300 transition shadow-md">
             Đồng ý Reset
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL XÁC NHẬN THU HỒI TÀI KHOẢN -->
+@if (isDeleteModalOpen()) {
+  <div class="fixed inset-0 z-[70] flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-gray-900/70 backdrop-blur-sm" (click)="closeDeleteModal()"></div>
+    <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 border border-red-100 text-center transform transition-all">
+      <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+        <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+      </div>
+      <h3 class="text-2xl font-extrabold text-gray-900 tracking-tight">Thu hồi Tài khoản?</h3>
+      <p class="text-gray-600 mt-4 text-sm leading-relaxed">
+        Bạn có chắc chắn muốn thu hồi vĩnh viễn tài khoản <br/>
+        <strong class="text-red-600 font-mono text-base">{{ userToDelete()?.email }}</strong> ?
+      </p>
+      <div class="bg-amber-50 p-3 rounded-xl border border-amber-100 mt-4 text-left">
+        <p class="text-xs text-amber-700 font-medium flex items-start">
+          <svg class="w-4 h-4 mr-1.5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Hồ sơ gốc (Học viên/Nhân sự) liên kết với tài khoản này sẽ được giữ nguyên vẹn và không bị xóa.
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 mt-8 pt-6 border-t border-gray-100">
+        <button type="button" (click)="closeDeleteModal()"
+            class="px-5 py-3.5 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition shadow-sm">
+            Hủy bỏ
+        </button>
+        <button type="button" (click)="confirmDelete()" [disabled]="isProcessing()"
+            class="px-5 py-3.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 disabled:bg-red-300 transition shadow-md">
+            Đồng ý Thu hồi
         </button>
       </div>
     </div>

@@ -194,11 +194,16 @@
               </label>
               <select 
                 formControlName="roomId"
+                [disabled]="isFindingRooms()"
                 class="w-full px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none transition bg-white font-semibold text-gray-900"
               >
-                <option value="">-- Chọn Phòng học --</option>
-                @for (r of availableRooms(); track r.id) {
-                  <option [value]="r.id">{{ r.name }} (Sức chứa: {{ r.capacity || 'N/A' }})</option>
+                @if (isFindingRooms()) {
+                  <option value="">-- Đang tìm phòng trống... --</option>
+                } @else {
+                  <option value="">-- Chọn Phòng học --</option>
+                  @for (r of availableRooms(); track r.id) {
+                    <option [value]="r.id">{{ r.name }} (Sức chứa: {{ r.capacity || 'N/A' }})</option>
+                  }
                 }
               </select>
             </div>

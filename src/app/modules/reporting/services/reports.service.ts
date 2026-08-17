@@ -25,6 +25,18 @@ export class ReportsService {
     return this.http.get<ReportCenterStatistics[]>(`${this.statsApiUrl}/range`, { params });
   }
 
+  getStudentDetails(ids: number[]): Observable<any[]> {
+    return this.http.post<any[]>(`${this.statsApiUrl}/details/students`, ids);
+  }
+
+  getStaffDetails(ids: number[]): Observable<any[]> {
+    return this.http.post<any[]>(`${this.statsApiUrl}/details/staffs`, ids);
+  }
+
+  getClassDetails(ids: number[]): Observable<any[]> {
+    return this.http.post<any[]>(`${this.statsApiUrl}/details/classes`, ids);
+  }
+
   getSummaryReportBetween(start?: string, end?: string): Observable<ReportSummary> {
     let params = new HttpParams();
     if (start) params = params.set('startDate', start);

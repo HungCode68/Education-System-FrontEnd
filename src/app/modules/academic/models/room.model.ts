@@ -1,9 +1,7 @@
-export type RoomType = 'PHYSICAL' | 'LMS' | 'ONLINE' | 'HYBRID' | string;
 
 export interface Room {
   id: number | string;
   name: string;
-  roomType: RoomType;
   capacity?: number;
   createdAt?: string;
 }

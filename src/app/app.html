@@ -1,2 +1,5 @@
 <router-outlet></router-outlet>
 <app-toast></app-toast>
+@if (authService.isAuthenticated()) {
+  <app-ai-chat-widget></app-ai-chat-widget>
+}

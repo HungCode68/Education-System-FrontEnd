@@ -1,1 +1,0 @@
-import{Dc as o,M as r,R as e,zc as i}from"./chunk-6UAAG742.js";var a=class t{http=e(i);apiUrl=`${o.apiUrl}/api/v1/students`;getMyProfile(){return this.http.get(`${this.apiUrl}/my-profile`)}static \u0275fac=function(p){return new(p||t)};static \u0275prov=r({token:t,factory:t.\u0275fac,providedIn:"root"})};export{a};

@@ -68,11 +68,13 @@ export class StudentService {
    * Backend endpoint: POST /api/v1/students/provision-accounts
    * Cấp tài khoản hàng loạt — nhận { studentIds: number[] }
    */
-  createAccount(id: number | string, email?: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/provision-accounts`, { studentIds: [id] });
+  createAccount(id: number | string, roleIds: number[], email?: string): Observable<any> {
+    const payload: any = { studentIds: [id], roleIds };
+    if (email) payload.email = email;
+    return this.http.post(`${this.apiUrl}/provision-accounts`, payload);
   }
 
-  createAccountsBatch(studentIds: (number | string)[]): Observable<any> {
-    return this.http.post(`${this.apiUrl}/provision-accounts`, { studentIds });
+  createAccountsBatch(studentIds: (number | string)[], roleIds: number[]): Observable<any> {
+    return this.http.post(`${this.apiUrl}/provision-accounts`, { studentIds, roleIds });
   }
 }

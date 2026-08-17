@@ -74,10 +74,14 @@ export class UserComponent implements OnInit {
   isResetModalOpen = signal(false);
   userToReset = signal<User | null>(null);
 
+  // Delete Modal State
+  isDeleteModalOpen = signal(false);
+  userToDelete = signal<User | null>(null);
+
   ngOnInit() {
     this.editForm = this.fb.group({
-      fullName: ['', [Validators.maxLength(100)]],
-      status: ['ACTIVE', [Validators.required]]
+      status: ['ACTIVE', [Validators.required]],
+      roleNames: [[], [Validators.required]]
     });
     this.loadRoles();
     this.setupFilters();
@@ -130,8 +134,8 @@ export class UserComponent implements OnInit {
   openEditModal(user: User) {
     this.selectedUserForEdit.set(user);
     this.editForm.patchValue({
-      fullName: user.fullName || '',
-      status: user.status || 'ACTIVE'
+      status: user.status || 'ACTIVE',
+      roleNames: [...(user.roles || [])]
     });
     this.isEditModalOpen.set(true);
   }
@@ -141,25 +145,37 @@ export class UserComponent implements OnInit {
     this.selectedUserForEdit.set(null);
   }
 
+  toggleRole(roleName: string) {
+    const current = this.editForm.get('roleNames')?.value as string[] || [];
+    if (current.includes(roleName)) {
+      this.editForm.get('roleNames')?.setValue(current.filter(r => r !== roleName));
+    } else {
+      this.editForm.get('roleNames')?.setValue([...current, roleName]);
+    }
+    this.editForm.get('roleNames')?.markAsTouched();
+  }
+
   submitEdit() {
     const user = this.selectedUserForEdit();
     if (!user || this.editForm.invalid) return;
 
     const val = this.editForm.value;
-    const nameChanged = val.fullName !== user.fullName;
     const statusChanged = val.status && val.status !== user.status;
+    const oldRoles = [...(user.roles || [])].sort().join(',');
+    const nextRoles = [...(val.roleNames || [])].sort().join(',');
+    const rolesChanged = oldRoles !== nextRoles;
 
-    if (!nameChanged && !statusChanged) {
+    if (!statusChanged && !rolesChanged) {
       this.closeEditModal();
       return;
     }
 
     this.isProcessing.set(true);
 
-    const updateName$ = nameChanged ? this.userService.update(user.id, { fullName: val.fullName }) : of(null);
     const updateStatus$ = statusChanged ? this.userService.updateStatus(user.id, val.status) : of(null);
+    const updateRoles$ = rolesChanged ? this.userService.updateRoles(user.id, val.roleNames) : of(null);
 
-    forkJoin([updateName$, updateStatus$]).subscribe({
+    forkJoin([updateStatus$, updateRoles$]).subscribe({
       next: () => {
         this.toastService.success('Thành công', 'Đã cập nhật thông tin tài khoản!');
         this.isProcessing.set(false);
@@ -169,58 +185,6 @@ export class UserComponent implements OnInit {
       error: (err) => {
         this.isProcessing.set(false);
         this.toastService.error('Lỗi', err.error?.message || 'Không thể cập nhật!');
-      }
-    });
-  }
-
-  openRoleModal(user: User) {
-    this.selectedUserForRole.set(user);
-    this.selectedRoleNames.set([...(user.roles || [])]);
-    this.isRoleModalOpen.set(true);
-  }
-
-  closeRoleModal() {
-    this.isRoleModalOpen.set(false);
-    this.selectedUserForRole.set(null);
-  }
-
-  toggleRole(roleName: string) {
-    const current = this.selectedRoleNames();
-    if (current.includes(roleName)) {
-      this.selectedRoleNames.set(current.filter(r => r !== roleName));
-    } else {
-      this.selectedRoleNames.set([...current, roleName]);
-    }
-  }
-
-  isRoleSelected(roleName: string): boolean {
-    return this.selectedRoleNames().includes(roleName);
-  }
-
-  submitRoleChange() {
-    const user = this.selectedUserForRole();
-    if (!user) return;
-
-    const newRoles = this.selectedRoleNames();
-    const oldRoles = [...(user.roles || [])].sort().join(',');
-    const nextRoles = [...newRoles].sort().join(',');
-
-    if (oldRoles === nextRoles) {
-      this.toastService.warning('Cảnh báo', 'Danh sách vai trò không thay đổi.');
-      return;
-    }
-
-    this.isProcessing.set(true);
-    this.userService.updateRoles(user.id, newRoles).subscribe({
-      next: () => {
-        this.toastService.success('Thành công', `Đã cập nhật vai trò cho ${user.email}`);
-        this.isProcessing.set(false);
-        this.closeRoleModal();
-        this.loadData();
-      },
-      error: (err) => {
-        this.isProcessing.set(false);
-        this.toastService.error('Lỗi', err.error?.message || 'Không thể đổi vai trò!');
       }
     });
   }
@@ -251,6 +215,36 @@ export class UserComponent implements OnInit {
         this.isProcessing.set(false);
         this.closeResetModal();
         this.toastService.error('Lỗi', err.error?.message || 'Không thể reset mật khẩu!');
+      }
+    });
+  }
+
+  openDeleteModal(user: User) {
+    this.userToDelete.set(user);
+    this.isDeleteModalOpen.set(true);
+  }
+
+  closeDeleteModal() {
+    this.isDeleteModalOpen.set(false);
+    this.userToDelete.set(null);
+  }
+
+  confirmDelete() {
+    const user = this.userToDelete();
+    if (!user) return;
+    
+    this.isProcessing.set(true);
+    this.userService.delete(user.id).subscribe({
+      next: () => {
+        this.toastService.success('Thành công', 'Đã thu hồi tài khoản thành công!');
+        this.isProcessing.set(false);
+        this.closeDeleteModal();
+        this.loadData();
+      },
+      error: (err) => {
+        this.isProcessing.set(false);
+        this.closeDeleteModal();
+        this.toastService.error('Lỗi', err.error?.message || 'Không thể thu hồi tài khoản!');
       }
     });
   }

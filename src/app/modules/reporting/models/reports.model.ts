@@ -13,6 +13,14 @@ export interface ReportCenterStatistics {
   totalActiveClasses?: number;
   newClassesOpened?: number;
   classesClosedToday?: number;
+
+  newStudentIds?: number[];
+  droppedStudentIds?: number[];
+  newTeacherIds?: number[];
+  resignedTeacherIds?: number[];
+  newClassIds?: number[];
+  closedClassIds?: number[];
+
   createdAt?: string;
 }
 
@@ -52,6 +60,14 @@ export interface TrainingOverview {
   resignedTeachersToday?: number;
   newClassesOpened?: number;
   classesClosedToday?: number;
+
+  newStudentIds?: number[];
+  droppedStudentIds?: number[];
+  newTeacherIds?: number[];
+  resignedTeacherIds?: number[];
+  newClassIds?: number[];
+  closedClassIds?: number[];
+
   centerOverview?: any;
   classMetricsList?: any[];
 }

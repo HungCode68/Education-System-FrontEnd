@@ -159,6 +159,79 @@ export class AdminReportingComponent implements OnInit {
     });
   }
 
+  // --- Drill-down Modal State ---
+  isDetailsModalOpen = signal<boolean>(false);
+  detailsModalTitle = signal<string>('');
+  detailsData = signal<any[]>([]);
+  isLoadingDetails = signal<boolean>(false);
+
+  openDetailsModal(type: 'new_students' | 'dropped_students' | 'new_teachers' | 'resigned_teachers' | 'new_classes' | 'closed_classes') {
+    const report = this.dailySnapshot();
+    if (!report) return;
+
+    let ids: number[] = [];
+    let title = '';
+    let fetchFn: (ids: number[]) => import('rxjs').Observable<any[]>;
+
+    switch (type) {
+      case 'new_students':
+        ids = report.newStudentIds || [];
+        title = 'Học viên mới';
+        fetchFn = this.reportsService.getStudentDetails.bind(this.reportsService);
+        break;
+      case 'dropped_students':
+        ids = report.droppedStudentIds || [];
+        title = 'Học viên đã nghỉ';
+        fetchFn = this.reportsService.getStudentDetails.bind(this.reportsService);
+        break;
+      case 'new_teachers':
+        ids = report.newTeacherIds || [];
+        title = 'Giảng viên mới';
+        fetchFn = this.reportsService.getStaffDetails.bind(this.reportsService);
+        break;
+      case 'resigned_teachers':
+        ids = report.resignedTeacherIds || [];
+        title = 'Giảng viên nghỉ việc';
+        fetchFn = this.reportsService.getStaffDetails.bind(this.reportsService);
+        break;
+      case 'new_classes':
+        ids = report.newClassIds || [];
+        title = 'Lớp học mới khai giảng';
+        fetchFn = this.reportsService.getClassDetails.bind(this.reportsService);
+        break;
+      case 'closed_classes':
+        ids = report.closedClassIds || [];
+        title = 'Lớp học đã kết thúc';
+        fetchFn = this.reportsService.getClassDetails.bind(this.reportsService);
+        break;
+    }
+
+    this.detailsModalTitle.set(title);
+    this.isDetailsModalOpen.set(true);
+    this.isLoadingDetails.set(true);
+    this.detailsData.set([]);
+
+    if (ids.length === 0) {
+      this.isLoadingDetails.set(false);
+      return;
+    }
+
+    fetchFn(ids).subscribe({
+      next: (data) => {
+        this.detailsData.set(data);
+        this.isLoadingDetails.set(false);
+      },
+      error: () => {
+        this.toastService.error('Lỗi', 'Không thể lấy dữ liệu chi tiết');
+        this.isLoadingDetails.set(false);
+      }
+    });
+  }
+
+  closeDetailsModal() {
+    this.isDetailsModalOpen.set(false);
+  }
+
   formatDateVn(dateStr?: string): string {
     if (!dateStr) return '';
     const parts = dateStr.split('-');

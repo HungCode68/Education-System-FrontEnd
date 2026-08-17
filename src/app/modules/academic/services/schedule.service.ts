@@ -64,6 +64,18 @@ export class ScheduleService {
     return this.http.get<any[]>(`${this.apiUrl}/my-timetable`, { params });
   }
 
+  getTimetable(startDate: string, endDate: string, classId?: number | null): Observable<any[]> {
+    let params = new HttpParams()
+      .set('startDate', startDate)
+      .set('endDate', endDate);
+    
+    if (classId) {
+      params = params.set('classId', classId.toString());
+    }
+    
+    return this.http.get<any[]>(`${this.apiUrl}/timetable`, { params });
+  }
+
   getTeacherTimetable(teacherId: number | string, startDate: string, endDate: string): Observable<any[]> {
     const params = new HttpParams()
       .set('startDate', startDate)

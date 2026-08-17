@@ -60,7 +60,6 @@ export class RoomComponent implements OnInit {
   private initForm() {
     this.roomForm = this.fb.group({
       name: ['', [Validators.required, Validators.maxLength(100)]],
-      roomType: ['PHYSICAL', [Validators.required]],
       capacity: [30, [Validators.required, Validators.min(1)]]
     });
   }
@@ -110,7 +109,6 @@ export class RoomComponent implements OnInit {
       this.currentId.set(room.id);
       this.roomForm.patchValue({
         name: room.name,
-        roomType: room.roomType || 'PHYSICAL',
         capacity: room.capacity || 30
       });
     } else {
@@ -129,7 +127,6 @@ export class RoomComponent implements OnInit {
   resetAddForm() {
     this.roomForm.reset({
       name: '',
-      roomType: 'PHYSICAL',
       capacity: 30
     });
   }
@@ -148,7 +145,6 @@ export class RoomComponent implements OnInit {
     const formValues = this.roomForm.value;
     const roomData: Partial<Room> = {
       name: formValues.name,
-      roomType: formValues.roomType,
       capacity: Number(formValues.capacity)
     };
 

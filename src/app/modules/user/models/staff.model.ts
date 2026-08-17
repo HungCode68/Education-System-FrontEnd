@@ -1,5 +1,5 @@
 // Khớp đúng StaffDto thật của backend (module user, StaffController -> /api/v1/staffs)
-export type StaffType = 'TEACHER' | 'TEACHING_ASSISTANT' | 'CONSULTANT' | 'MANAGER';
+export type StaffType = 'TEACHER' | 'TEACHING_ASSISTANT' | 'CONSULTANT' | 'MANAGER' | 'STAFF' | 'ADMIN';
 export type StaffContractType = 'FULLTIME' | 'PARTTIME' | 'VISITING';
 
 export interface Staff {
@@ -10,6 +10,7 @@ export interface Staff {
   departmentName?: string;
   staffCode?: string;
   staffType: StaffType;
+  jobTitle?: string;
   fullName: string;
   phone?: string;
   hireDate?: string; // yyyy-MM-dd
@@ -17,6 +18,11 @@ export interface Staff {
   baseSalary?: number;
   status?: string;
   createdAt?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  nationality?: string;
+  identityNumber?: string;
 }
 
 export interface SpringPage<T> {

@@ -11,19 +11,19 @@ export class RoomService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/api/v1/rooms`;
 
-  getAll(page: any = 1, size: any = 10, keyword?: string, roomType?: string): Observable<SpringPage<Room>> {
+  getAll(page: any = 1, size: any = 10, keyword?: string): Observable<SpringPage<Room>> {
     let params = new HttpParams();
     if (typeof page === 'object' && page !== null) {
       const pageIndex = page.page != null ? Math.max(0, Number(page.page) - 1) : 0;
       params = params.set('page', pageIndex.toString());
       if (page.size !== undefined) params = params.set('size', page.size.toString());
       if (page.keyword) params = params.set('keyword', page.keyword);
-      if (page.roomType) params = params.set('roomType', page.roomType);
+
     } else {
       const pageIndex = Math.max(0, Number(page) - 1);
       params = params.set('page', pageIndex.toString()).set('size', (size || 10).toString());
       if (keyword) params = params.set('keyword', keyword);
-      if (roomType) params = params.set('roomType', roomType);
+
     }
 
     return this.http.get<SpringPage<Room>>(this.apiUrl, { params });
@@ -47,5 +47,17 @@ export class RoomService {
 
   delete(id: number | string): Observable<any> {
     return this.http.delete(`${this.apiUrl}/${id}`);
+  }
+
+  getAvailableRooms(classId: number, dayOfWeek: number, startTime: string, endTime: string, excludeScheduleId?: number): Observable<Room[]> {
+    let params = new HttpParams()
+      .set('classId', classId.toString())
+      .set('dayOfWeek', dayOfWeek.toString())
+      .set('startTime', startTime)
+      .set('endTime', endTime);
+    if (excludeScheduleId) {
+      params = params.set('excludeScheduleId', excludeScheduleId.toString());
+    }
+    return this.http.get<Room[]>(`${this.apiUrl}/available`, { params });
   }
 }

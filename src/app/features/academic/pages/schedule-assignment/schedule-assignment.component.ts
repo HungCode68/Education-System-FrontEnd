@@ -58,6 +58,33 @@ export class ScheduleAssignmentComponent implements OnInit {
   isDeleteModalOpen = signal(false);
   idToDelete = signal<number | string | null>(null);
 
+  // --- VIEW MODE & CALENDAR STATE ---
+  viewMode = signal<'TABLE' | 'CALENDAR'>('TABLE');
+
+  currentWeekStart = signal<Date>(this.getStartOfWeek(new Date()));
+  currentWeekEnd = computed(() => {
+    const end = new Date(this.currentWeekStart());
+    end.setDate(end.getDate() + 6);
+    return end;
+  });
+  
+  calendarTimetable = signal<any[]>([]);
+  dynamicTimeSlots = signal<any[]>([]);
+  
+  daysOfWeek = computed(() => {
+    const days = [];
+    let current = new Date(this.currentWeekStart());
+    for (let i = 0; i < 7; i++) {
+      days.push({
+        date: new Date(current),
+        dayName: ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'][current.getDay()],
+        dateStr: this.formatDateIso(current)
+      });
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  });
+
   // Computed signals
   totalPages = computed(() => Math.max(1, Math.ceil(this.totalElements() / this.pageSize())));
   
@@ -180,7 +207,11 @@ export class ScheduleAssignmentComponent implements OnInit {
     const val = (event.target as HTMLSelectElement).value;
     this.selectedFilterClassId.set(val ? Number(val) : null);
     this.currentPage.set(1);
-    this.loadData();
+    if (this.viewMode() === 'CALENDAR') {
+      this.fetchTimetable();
+    } else {
+      this.loadData();
+    }
   }
 
   changePage(page: number) {
@@ -337,5 +368,126 @@ export class ScheduleAssignmentComponent implements OnInit {
       return { label, bgClass: 'bg-amber-50', textClass: 'text-amber-700', borderClass: 'border-amber-200' };
     }
     return { label, bgClass: 'bg-blue-50', textClass: 'text-blue-700', borderClass: 'border-blue-200' };
+  }
+
+  // --- CALENDAR LOGIC ---
+
+  getStartOfWeek(date: Date): Date {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  private formatDateIso(date: Date): string {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  previousWeek() {
+    const d = new Date(this.currentWeekStart());
+    d.setDate(d.getDate() - 7);
+    this.currentWeekStart.set(d);
+    if (this.viewMode() === 'CALENDAR') {
+      this.fetchTimetable();
+    }
+  }
+
+  nextWeek() {
+    const d = new Date(this.currentWeekStart());
+    d.setDate(d.getDate() + 7);
+    this.currentWeekStart.set(d);
+    if (this.viewMode() === 'CALENDAR') {
+      this.fetchTimetable();
+    }
+  }
+
+  goToCurrentWeek() {
+    this.currentWeekStart.set(this.getStartOfWeek(new Date()));
+    if (this.viewMode() === 'CALENDAR') {
+      this.fetchTimetable();
+    }
+  }
+
+  toggleViewMode(mode: 'TABLE' | 'CALENDAR') {
+    this.viewMode.set(mode);
+    if (mode === 'CALENDAR') {
+      this.fetchTimetable();
+    } else {
+      this.loadData();
+    }
+  }
+
+  fetchTimetable() {
+    this.isLoading.set(true);
+    const startDate = this.formatDateIso(this.currentWeekStart());
+    const endDate = this.formatDateIso(this.currentWeekEnd());
+    const classId = this.selectedFilterClassId();
+
+    this.scheduleService.getTimetable(startDate, endDate, classId).subscribe({
+      next: (res) => {
+        this.calendarTimetable.set(res || []);
+        
+        const slotMap = new Map<string, any>();
+        res.forEach(item => {
+          if (item.startTime && item.endTime) {
+            const key = `${item.startTime}-${item.endTime}`;
+            if (!slotMap.has(key)) {
+              const startFormatted = item.startTime.substring(0, 5);
+              const endFormatted = item.endTime.substring(0, 5);
+              const startHour = parseInt(startFormatted.split(':')[0], 10);
+              let periodLabel = 'Sáng';
+              let bgBadge = 'bg-amber-100 text-amber-800 border-amber-200';
+              if (startHour >= 12 && startHour < 18) {
+                periodLabel = 'Chiều';
+                bgBadge = 'bg-blue-100 text-blue-800 border-blue-200';
+              } else if (startHour >= 18) {
+                periodLabel = 'Tối';
+                bgBadge = 'bg-purple-100 text-purple-800 border-purple-200';
+              }
+              slotMap.set(key, {
+                startTime: item.startTime,
+                endTime: item.endTime,
+                shortTimeLabel: `${startFormatted} - ${endFormatted}`,
+                periodLabel: periodLabel,
+                bgBadge: bgBadge
+              });
+            }
+          }
+        });
+        const sortedSlots = Array.from(slotMap.values()).sort((a, b) => a.startTime.localeCompare(b.startTime));
+        this.dynamicTimeSlots.set(sortedSlots);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        this.toastService.error('Lỗi', 'Lỗi khi tải lịch học: ' + (err.error?.message || err.message));
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  getEventsForCell(dateStr: string, slot: any): any[] {
+    return this.calendarTimetable().filter(item => 
+      item.date === dateStr && 
+      (item.startTime === slot.startTime || item.startTime?.substring(0, 5) === slot.startTime.substring(0, 5))
+    );
+  }
+
+  onCalendarCellClick(session: any, event: Event) {
+    event.stopPropagation();
+    if (!session || !session.assignmentId) return;
+
+    this.assignmentService.getById(session.assignmentId).subscribe({
+      next: (assignment) => {
+        this.openModal(assignment);
+      },
+      error: (err) => {
+         this.toastService.error('Lỗi', 'Lỗi tải phân công: ' + (err.error?.message || err.message));
+      }
+    });
   }
 }

@@ -201,6 +201,36 @@ export class ClassesComponent implements OnInit {
         name: `Lớp ${course.name} - Đợt ${randomSuffix}`
       });
     }
+    
+    // Recalculate end date if start date is already selected
+    const startDate = this.classForm.get('startDate')?.value;
+    if (startDate) {
+      this.calculateEstimatedEndDate(startDate);
+    }
+  }
+
+  private calculateEstimatedEndDate(startDateStr: string) {
+    if (!startDateStr) {
+      this.endDateDisplay.set('');
+      this.classForm.get('endDate')?.setValue('');
+      return;
+    }
+
+    const courseId = this.classForm.get('courseId')?.value;
+    if (!courseId) return;
+
+    const course = this.availableCourses().find(c => c.id === Number(courseId));
+    if (!course || !course.totalSessions || !course.sessionsPerWeek || course.sessionsPerWeek <= 0) return;
+
+    const weeks = Math.ceil(course.totalSessions / course.sessionsPerWeek);
+    const startDate = new Date(startDateStr);
+    
+    // Ước tính số tuần
+    startDate.setDate(startDate.getDate() + (weeks * 7));
+    
+    const isoDate = startDate.toISOString().split('T')[0];
+    this.classForm.get('endDate')?.setValue(isoDate);
+    this.endDateDisplay.set(this.formatDateVN(isoDate));
   }
 
   openPicker(pickerInput: any) {
@@ -248,6 +278,9 @@ export class ClassesComponent implements OnInit {
       const year = parts[2];
       const isoDate = `${year}-${month}-${day}`;
       this.classForm.get(field)?.setValue(isoDate);
+      if (field === 'startDate') {
+        this.calculateEstimatedEndDate(isoDate);
+      }
     } else {
       this.classForm.get(field)?.setValue('');
     }
@@ -261,6 +294,7 @@ export class ClassesComponent implements OnInit {
       const formatted = this.formatDateVN(isoDate);
       if (field === 'startDate') {
         this.startDateDisplay.set(formatted);
+        this.calculateEstimatedEndDate(isoDate);
       } else {
         this.endDateDisplay.set(formatted);
       }
@@ -276,11 +310,7 @@ export class ClassesComponent implements OnInit {
 
     const formValues = this.classForm.value;
 
-    // Validate ngày kết thúc > ngày bắt đầu nếu có
-    if (formValues.startDate && formValues.endDate && formValues.startDate > formValues.endDate) {
-      this.toastService.error('Lỗi ngày tháng', 'Ngày kết thúc phải sau hoặc bằng ngày bắt đầu');
-      return;
-    }
+    // endDate is calculated automatically on backend
 
     const classData: Partial<ClassEntity> = {
       courseId: Number(formValues.courseId),
