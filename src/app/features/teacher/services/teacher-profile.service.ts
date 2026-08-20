@@ -6,7 +6,7 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class TeacherProfileService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/v1/teachers`;
+  private apiUrl = `${environment.apiUrl}/api/v1/staffs`;
 
   // Gọi API lấy hồ sơ cá nhân vừa tạo
   getMyProfile(): Observable<any> {

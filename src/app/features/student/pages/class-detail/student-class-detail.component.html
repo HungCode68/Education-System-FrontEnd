@@ -1,205 +1,525 @@
-<div class="max-w-6xl mx-auto space-y-6 pb-10">
+<div class="space-y-6 max-w-7xl mx-auto">
 
-  <div *ngIf="isLoading()" class="py-20 flex justify-center">
-    <svg class="animate-spin h-10 w-10 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+  <div class="flex items-center space-x-2 text-sm text-gray-500 mb-2">
+    <a routerLink="/student/my-classes" class="hover:text-blue-600 transition flex items-center">
+      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+      </svg>
+      Lớp học của tôi
+    </a>
+    <span>/</span>
+    <span class="text-gray-900 font-medium">{{ classInfo()?.name || 'Đang tải...' }}</span>
   </div>
 
-  <ng-container *ngIf="!isLoading() && classDetail()">
-    <div class="relative bg-gradient-to-r from-indigo-600 to-blue-700 rounded-3xl p-8 sm:p-10 text-white shadow-lg overflow-hidden">
-      <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
-      <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
-      
-      <div class="relative z-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">{{ classDetail().subjectName || classDetail().name }}</h1>
-          <div class="flex items-center space-x-4 text-indigo-100 font-medium text-sm">
-            <span class="bg-white/20 px-3 py-1 rounded-full backdrop-blur-sm">Lớp: {{ classDetail().physicalClassName }}</span>
+  <div *ngIf="isLoading()" class="flex justify-center py-20">
+    <svg class="animate-spin h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+      </path>
+    </svg>
+  </div>
+
+  <ng-container *ngIf="!isLoading() && classInfo()">
+
+    <div
+      class="bg-gradient-to-r from-blue-700 to-indigo-800 rounded-3xl p-8 sm:p-10 shadow-lg text-white relative overflow-hidden">
+      <div class="absolute -top-24 -right-24 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-white opacity-10 rounded-full blur-xl"></div>
+
+      <div class="relative z-10">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2">{{ classInfo()?.name }}</h1>
+        <div class="flex flex-wrap items-center gap-4 text-blue-100 mt-4">
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-1.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253">
+              </path>
+            </svg>
+            {{ classInfo()?.subjectName }}
+          </div>
+          <div class="flex items-center">
+            <svg class="w-5 h-5 mr-1.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+              </path>
+            </svg>
+            Mã lớp: {{ classInfo()?.code || classInfo()?.physicalClassName }}
           </div>
         </div>
       </div>
     </div>
 
-    <div class="border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8 px-4" aria-label="Tabs">
-        <button (click)="changeTab('materials')" [ngClass]="{'border-indigo-500 text-indigo-600': activeTab() === 'materials', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab() !== 'materials'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition">
-            Tài liệu
+    <div
+      class="flex flex-col sm:flex-row justify-between items-center bg-white p-2 rounded-2xl shadow-sm border border-gray-100 gap-4">
+      <div class="flex space-x-1 p-1 bg-gray-50 rounded-xl w-full sm:w-auto">
+        <button (click)="switchTab('lessons')"
+          [ngClass]="activeTab() === 'lessons' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+          class="px-6 py-2.5 text-sm font-bold rounded-lg w-full sm:w-auto transition">
+          Bài học
         </button>
-        <button (click)="changeTab('assignments')" [ngClass]="{'border-indigo-500 text-indigo-600': activeTab() === 'assignments', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab() !== 'assignments'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition">
-          Bài tập
+        <button (click)="switchTab('students')"
+          [ngClass]="activeTab() === 'students' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+          class="px-6 py-2.5 text-sm font-bold rounded-lg w-full sm:w-auto transition">
+          Danh sách Học viên
         </button>
-        <button (click)="changeTab('members')" [ngClass]="{'border-indigo-500 text-indigo-600': activeTab() === 'members', 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300': activeTab() !== 'members'}" class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition">
-          Mọi người
+        <button (click)="switchTab('materials')"
+          [ngClass]="activeTab() === 'materials' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+          class="px-6 py-2.5 text-sm font-bold rounded-lg w-full sm:w-auto transition">
+          Tài liệu chung khóa học
         </button>
-      </nav>
-    </div>
-
-    <div *ngIf="activeTab() === 'members'" class="max-w-4xl mx-auto space-y-10 py-6 animate-[fadeIn_0.3s_ease-out]">
-      
-      <section>
-        <h2 class="text-2xl font-extrabold text-indigo-700 border-b-2 border-indigo-100 pb-3 mb-6">Giáo viên giảng dạy</h2>
-        <div class="flex items-center p-4 rounded-2xl hover:bg-gray-50 transition cursor-pointer">
-          <div class="h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg shadow-sm border border-indigo-200">
-            {{ getInitials(classDetail().teacherName) }}
-          </div>
-          <div class="ml-4 flex-1">
-            <h3 class="text-lg font-bold text-gray-900">{{ classDetail().teacherName }}</h3>
-            <p class="text-sm text-gray-500">Mã GV: {{ classDetail().teacherCode }}</p>
-          </div>
-        </div>
-      </section>
-
-      <section>
-        <div class="flex items-end justify-between border-b-2 border-indigo-100 pb-3 mb-6">
-          <h2 class="text-2xl font-extrabold text-indigo-700">Thành viên lớp</h2>
-          <span class="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">{{ classmates().length }} học sinh</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div *ngFor="let student of classmates()" class="flex items-center p-4 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition">
-            <div class="h-10 w-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center font-bold shadow-inner">
-              {{ getInitials(student.studentName) }}
-            </div>
-            <div class="ml-4 flex-1 overflow-hidden">
-              <h3 class="text-sm font-bold text-gray-900 truncate">{{ student.studentName }}</h3>
-              <p class="text-xs text-gray-500 truncate">{{ student.studentCode }}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div *ngIf="classmates().length === 0" class="text-center py-10 text-gray-500">
-          Chưa có học sinh nào trong lớp này.
-        </div>
-      </section>
-
-    </div>
-
-    <div *ngIf="activeTab() === 'materials'" class="max-w-4xl mx-auto space-y-6 py-6 animate-[fadeIn_0.3s_ease-out]">
-      
-      <div class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex items-start gap-4">
-        <div class="h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0">
-          {{ getInitials(classDetail().teacherName) }}
-        </div>
-        <div class="flex-1">
-          <p class="text-gray-900 font-medium mt-1">
-            Chào mừng các bạn đến với lớp học <span class="font-bold text-indigo-600">{{ classDetail().subjectName }}</span>. 
-            Tất cả tài liệu bài giảng, video hướng dẫn và tham khảo sẽ được thầy/cô đăng tải tại đây nhé!
-          </p>
-          <p class="text-xs text-gray-400 mt-2">Đăng tự động bởi Hệ thống</p>
-        </div>
+        <button (click)="switchTab('announcements')"
+          [ngClass]="activeTab() === 'announcements' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'"
+          class="px-6 py-2.5 text-sm font-bold rounded-lg w-full sm:w-auto transition flex items-center gap-2">
+          Thông báo
+          <span *ngIf="unreadAnnouncementsCount() > 0"
+                class="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-full bg-rose-500 text-white shadow-sm ring-2 ring-white">
+            {{ unreadAnnouncementsCount() }}
+          </span>
+        </button>
       </div>
 
-      <div *ngIf="materials().length === 0" class="text-center py-16 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
-        <div class="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-          <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
+      <div *ngIf="activeTab() === 'students'" class="relative w-full sm:w-80 px-2 sm:px-0">
+        <div class="absolute inset-y-0 left-0 flex items-center pl-5 sm:pl-3 pointer-events-none">
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
         </div>
-        <h3 class="text-lg font-bold text-gray-900">Chưa có tài liệu nào</h3>
-        <p class="text-sm text-gray-500 mt-1">Giáo viên của bạn chưa đăng tải tài liệu học tập nào cho lớp này.</p>
+        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="onSearchChange($event)"
+          placeholder="Tìm học sinh theo tên, mã HS..."
+          class="bg-gray-50 border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-full pl-10 p-2.5 outline-none transition">
+      </div>
+    </div>
+
+    <!-- TAB BÀI HỌC (LESSONS) - ACCORDION TIMELINE -->
+    <div *ngIf="activeTab() === 'lessons'" class="space-y-4">
+      <div *ngIf="isLoadingLessons()" class="flex justify-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <svg class="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
       </div>
 
-      <div class="space-y-4">
-        <div *ngFor="let item of materials()" 
-             (click)="openMaterial(item.id)"
-             class="group flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative">
+      <div *ngIf="!isLoadingLessons() && lessons().length === 0" class="bg-white rounded-2xl border border-dashed border-gray-200 p-12 text-center shadow-sm">
+        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-1">Chưa có bài học nào</h3>
+        <p class="text-sm text-gray-500">Chưa có nội dung bài học được đăng tải cho lớp học này.</p>
+      </div>
+
+      <div *ngIf="!isLoadingLessons() && lessons().length > 0" class="space-y-4">
+        <div *ngFor="let les of lessons(); let i = index" 
+             class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden transition-all duration-200">
           
-          <div *ngIf="isOpeningFile() === item.id" class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
-            <svg class="animate-spin h-6 w-6 text-indigo-600" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <span class="ml-2 text-sm font-bold text-indigo-600">Đang mở tài liệu...</span>
-          </div>
+          <!-- Lesson Card Header -->
+          <div (click)="toggleLessonExpand(les.id)" 
+               class="p-5 flex items-center justify-between cursor-pointer hover:bg-gray-50/80 transition select-none">
+            <div class="flex items-center space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 font-extrabold flex items-center justify-center shrink-0 text-sm shadow-inner">
+                #{{ les.orderNumber || (i + 1) }}
+              </div>
+              <div>
+                <h4 class="text-base font-bold text-gray-900 leading-snug">{{ les.name }}</h4>
+                <p class="text-xs text-gray-500 mt-0.5 line-clamp-1" *ngIf="les.description">{{ les.description }}</p>
+              </div>
+            </div>
 
-          <div class="flex items-start gap-4 flex-1 min-w-0">
-            <div [class]="'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ' + getFileIcon(item.fileType).bg">
-              <svg [class]="'w-6 h-6 ' + getFileIcon(item.fileType).color" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getFileIcon(item.fileType).icon"></path>
+            <div class="flex items-center space-x-3">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                📄 {{ (lessonMaterialsMap()[les.id] || []).length }} Tài liệu
+              </span>
+              <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">
+                ✏️ {{ (lessonAssignmentsMap()[les.id] || []).length }} Bài tập
+              </span>
+              <svg class="w-5 h-5 text-gray-400 transform transition-transform duration-200" 
+                   [class.rotate-180]="isLessonExpanded(les.id)" 
+                   fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
               </svg>
             </div>
+          </div>
+
+          <!-- Expanded Accordion Content -->
+          <div *ngIf="isLessonExpanded(les.id)" class="border-t border-gray-100 bg-gray-50/50 p-6 space-y-6">
             
-            <div class="flex-1 min-w-0 pr-4">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-xs font-bold uppercase tracking-wider text-gray-500">{{ item.uploadedByName || 'Giáo viên' }}</span>
-                <span class="text-gray-300">•</span>
-                <span class="text-xs text-gray-500">{{ item.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
-              </div>
-              <h3 class="text-base font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">{{ item.title }}</h3>
-              <p *ngIf="item.description" class="text-sm text-gray-500 line-clamp-2 mt-1">{{ item.description }}</p>
-              
-              <div class="mt-2 flex sm:hidden gap-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600">{{ item.fileType }}</span>
-                <span *ngIf="item.fileSize" class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-600">{{ formatBytes(item.fileSize) }}</span>
-              </div>
-            </div>
-          </div>
+            <!-- SECTION 1: TÀI LIỆU HỌC TẬP OF LESSON -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h5 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                  Tài liệu học tập
+                </h5>
 
-          <div class="hidden sm:flex items-center gap-4 shrink-0 pl-4 border-l border-gray-100 ml-4">
-            <div class="text-right">
-              <p class="text-xs font-bold text-gray-900 uppercase">{{ item.fileType }}</p>
-              <p *ngIf="item.fileSize" class="text-xs text-gray-500 mt-0.5">{{ formatBytes(item.fileSize) }}</p>
-              <p *ngIf="!item.fileSize && item.fileType === 'link'" class="text-xs text-gray-500 mt-0.5">Liên kết ngoài</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-               <svg class="w-5 h-5 text-gray-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-            </div>
-          </div>
+                <div class="flex items-center space-x-2">
+                  
 
+                  
+                </div>
+              </div>
+
+              <div *ngIf="(lessonMaterialsMap()[les.id] || []).length === 0" class="text-xs text-gray-400 italic py-2">
+                Bài học này chưa có tài liệu đi kèm.
+              </div>
+
+              <div *ngIf="(lessonMaterialsMap()[les.id] || []).length > 0" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div *ngFor="let m of lessonMaterialsMap()[les.id]" class="bg-white p-3.5 rounded-xl border border-gray-200 flex items-center justify-between shadow-2xs hover:shadow-xs transition">
+                  <div class="flex items-center space-x-3 overflow-hidden cursor-pointer" (click)="openPreview(m)">
+                    <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 01-2-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <div class="truncate">
+                      <p class="text-xs font-bold text-gray-900 truncate hover:text-blue-600 transition">{{ m.title }}</p>
+                      <p class="text-[11px] text-gray-400 mt-0.5">{{ m.materialType || m.fileType || 'Document' }}</p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center space-x-1 shrink-0 ml-2">
+                    <button (click)="openPreview(m)" class="text-xs font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg transition">
+                      Xem
+                    </button>
+                    <!-- Nút thao tác (Chỉ hiện khi ở Chế độ Sửa) -->
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: BÀI TẬP & KIỂM TRA OF LESSON -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h5 class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center">
+                  <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5h6m-6 4h6m-9 4h12M7 3h10a2 2 0 012 2v16a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"></path></svg>
+                  Bài tập & Đánh giá
+                </h5>
+
+                <div class="flex items-center space-x-2">
+                  
+
+                  
+                </div>
+              </div>
+
+              <div *ngIf="(lessonAssignmentsMap()[les.id] || []).length === 0" class="text-xs text-gray-400 italic py-2">
+                Bài học này chưa có bài tập nào.
+              </div>
+
+              <div *ngIf="(lessonAssignmentsMap()[les.id] || []).length > 0" class="space-y-2.5">
+                <div *ngFor="let ass of lessonAssignmentsMap()[les.id]"
+                     (click)="navigateToAssignmentDetail(ass.id, $event)"
+                     class="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs hover:shadow-md hover:border-indigo-300 transition cursor-pointer group">
+                  <div>
+                    <div class="flex items-center space-x-2 mb-1">
+                      <h6 class="text-xs font-bold text-gray-900 group-hover:text-indigo-600 transition">{{ ass.title }}</h6>
+                      <span class="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-semibold text-[10px]">{{ ass.assignmentType || 'HOMEWORK' }}</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3 text-[11px] text-gray-500">
+                      <span *ngIf="ass.dueDate">Hạn nộp: {{ ass.dueDate | date:'dd/MM/yyyy HH:mm' }}</span>
+                      <span *ngIf="ass.timeLimitMinutes">Thời gian: {{ ass.timeLimitMinutes }} phút</span>
+                      <span *ngIf="ass.maxAttempts">Tối đa: {{ ass.maxAttempts }} lần làm</span>
+                    </div>
+                  </div>
+
+                  <!-- Nút thao tác (Chỉ hiện khi ở Chế độ Sửa) -->
+                  </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
 
-    <div *ngIf="activeTab() === 'assignments'" class="max-w-4xl mx-auto space-y-6 py-6 animate-[fadeIn_0.3s_ease-out]">
-      
-      <div *ngIf="isAssignmentsLoading()" class="py-12 flex justify-center">
-        <svg class="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+    <ng-container *ngIf="activeTab() === 'students'">
+
+      <div *ngIf="isLoadingStudents()" class="py-12 text-center text-indigo-500">
+        <svg class="animate-spin inline-block h-8 w-8" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
+        </svg>
       </div>
 
-      <div *ngIf="!isAssignmentsLoading() && assignments().length === 0" class="text-center py-16 bg-white rounded-3xl border border-gray-100 shadow-sm">
-        <div class="mx-auto w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-4">
-          <svg class="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+      <div *ngIf="!isLoadingStudents()" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm text-left text-gray-500">
+            <thead class="text-xs text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100 font-semibold">
+              <tr>
+                <th scope="col" class="px-6 py-4 w-16 text-center">STT</th>
+                <th scope="col" class="px-6 py-4">Thông tin Học sinh</th>
+                <th scope="col" class="px-6 py-4">Mã Học sinh</th>
+                <th scope="col" class="px-6 py-4">Ngày nhập học</th>
+                <th scope="col" class="px-6 py-4 text-center">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr *ngIf="paginatedStudents().length === 0">
+                <td colspan="5" class="px-6 py-12 text-center text-gray-500">Chưa có học sinh nào trong lớp học này.</td>
+              </tr>
+
+              <tr *ngFor="let student of paginatedStudents(); let i = index"
+                class="hover:bg-blue-50/30 transition duration-150">
+                <td class="px-6 py-4 text-center font-medium text-gray-400">{{ (currentPage() - 1) * pageSize() + i + 1 }}</td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center">
+                    <div class="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold text-sm flex items-center justify-center mr-3 uppercase shrink-0">
+                      {{ (student.studentName || 'H').charAt(0) }}
+                    </div>
+                    <div>
+                      <div class="font-bold text-gray-900">{{ student.studentName || 'Học viên' }}</div>
+                      <div class="text-xs text-gray-500 mt-0.5">
+                        <span *ngIf="student.studentEmail">{{ student.studentEmail }}</span>
+                        <span *ngIf="student.studentEmail && student.studentPhone"> • </span>
+                        <span *ngIf="student.studentPhone">{{ student.studentPhone }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4">
+                  <span class="font-mono text-gray-700 bg-gray-100 px-2.5 py-1 rounded-lg border border-gray-200 text-xs font-bold">{{ student.studentCode || 'N/A' }}</span>
+                </td>
+                <td class="px-6 py-4 text-gray-600 text-xs font-medium">
+                  {{ student.enrollmentDate ? (student.enrollmentDate | date:'dd/MM/yyyy') : '—' }}
+                </td>
+                <td class="px-6 py-4 text-center">
+                  <span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md border"
+                    [ngClass]="student.status === 'ACTIVE' || student.status === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
+                    {{ student.status === 'ACTIVE' || student.status === 'active' ? '🟢 Đang học' : (student.status || 'Đã đăng ký') }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <h3 class="text-lg font-bold text-gray-900">Tuyệt vời! Bạn chưa có bài tập nào.</h3>
-        <p class="text-sm text-gray-500 mt-1">Hãy theo dõi bảng tin thường xuyên để không bỏ lỡ bài tập mới nhé.</p>
+
+        <div
+          class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-100 rounded-b-2xl gap-4">
+          <div class="text-sm text-gray-500">Hiển thị <span class="font-semibold text-gray-900">{{ startIndex() }}</span> - <span class="font-semibold text-gray-900">{{ endIndex() }}</span> trong số <span class="font-semibold text-gray-900">{{ filteredStudents().length }}</span> học sinh</div>
+          <div class="flex space-x-2">
+            <button (click)="changePage(currentPage() - 1)" [disabled]="currentPage() === 1"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">Trước</button>
+            <div
+              class="flex items-center justify-center px-4 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg border border-gray-200">
+              Trang {{ currentPage() }} / {{ totalPages() }}</div>
+            <button (click)="changePage(currentPage() + 1)" [disabled]="currentPage() === totalPages()"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition shadow-sm">Sau</button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="activeTab() === 'materials'">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-bold text-gray-800">Tài liệu chung khóa học {{ classInfo()?.courseName ? '(' + classInfo()?.courseName + ')' : '' }}</h3>
       </div>
 
-      <div *ngIf="!isAssignmentsLoading() && assignments().length > 0" class="space-y-4">
-        
-        <div *ngFor="let item of assignments()" 
-             routerLink="/student/assignment/{{item.id}}"
-             class="group flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white rounded-2xl border shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden border-l-4"
-             [ngClass]="isOverdue(item.dueTime) ? 'border-l-red-500 border-gray-200' : 'border-l-indigo-500 border-indigo-50'">
-          
-          <div class="flex items-start gap-4 flex-1 min-w-0">
-            <div [class]="'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ' + getAssignmentTypeUI(item.assignmentType).bg">
-              <svg [class]="'w-6 h-6 ' + getAssignmentTypeUI(item.assignmentType).text" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="getAssignmentTypeUI(item.assignmentType).icon"></path>
-              </svg>
-            </div>
-            
-            <div class="flex-1 min-w-0 pr-4">
-              <h3 class="text-base font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">{{ item.title }}</h3>
-              
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1.5 text-xs text-gray-500">
-                <span class="flex items-center">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                  Đăng ngày: {{ item.createdAt | date:'dd/MM/yyyy' }}
-                </span>
-                
-                <span class="flex items-center font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px]">
-                  Điểm: {{ item.maxScore }}
-                </span>
+      <div *ngIf="isLoadingMaterials()" class="py-12 text-center text-blue-500">
+        <svg class="animate-spin inline-block h-8 w-8" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
+        </svg>
+      </div>
 
-                <span *ngIf="item.dueTime" class="flex items-center font-bold" [ngClass]="isOverdue(item.dueTime) ? 'text-red-500' : 'text-emerald-600'">
-                  <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                  Hạn nộp: {{ item.dueTime | date:'HH:mm dd/MM/yyyy' }}
-                  <span *ngIf="isOverdue(item.dueTime)" class="ml-1 text-[10px] uppercase bg-red-100 text-red-700 px-1.5 rounded">(Đã quá hạn)</span>
-                </span>
-                <span *ngIf="!item.dueTime" class="flex items-center text-emerald-600 font-bold">Không có hạn nộp</span>
+      <div *ngIf="!isLoadingMaterials() && materials().length === 0"
+        class="bg-gray-50 border border-dashed border-gray-300 rounded-2xl p-12 text-center">
+        <p class="text-gray-500">Chưa có tài liệu chung nào được tải lên cho khóa học này.</p>
+      </div>
+
+      <div *ngIf="!isLoadingMaterials() && materials().length > 0"
+        class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+        <div class="bg-gray-50/80 px-5 py-3 border-b border-gray-200 flex items-center">
+          <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+          </svg>
+          <span class="font-bold text-gray-800">Tất cả tài liệu</span>
+        </div>
+
+        <ul class="divide-y divide-gray-100">
+          <li *ngFor="let m of materials()"
+            class="group hover:bg-blue-50/30 transition-colors duration-200 flex items-center justify-between p-4 sm:px-6">
+
+            <div class="flex items-center flex-1 min-w-0 cursor-pointer" (click)="openPreview(m)">
+              <div
+                class="w-10 h-10 rounded bg-gray-50 flex items-center justify-center mr-4 shrink-0 shadow-sm border border-gray-100 text-gray-500 group-hover:text-blue-600 transition"
+                [ngClass]="{'!text-blue-600': m.fileType === 'document', '!text-orange-500': m.fileType === 'slide', '!text-red-500': m.fileType === 'video', '!text-emerald-600': m.fileType === 'link'}">
+                <svg *ngIf="m.fileType === 'document' || m.fileType === 'slide'" class="w-5 h-5" fill="none"
+                  stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                  </path>
+                </svg>
+                <svg *ngIf="m.fileType === 'video'" class="w-5 h-5" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                  </path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <svg *ngIf="m.fileType === 'link'" class="w-5 h-5" fill="none" stroke="currentColor"
+                  viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                  </path>
+                </svg>
+              </div>
+
+              <div class="truncate pr-4">
+                <div class="flex items-center">
+                  <h4 class="font-medium text-gray-900 text-base truncate group-hover:text-blue-700 transition">{{
+                    m.title }}</h4>
+                  <svg *ngIf="m.fileType === 'link'" class="w-3.5 h-3.5 text-gray-400 ml-2 shrink-0" fill="none"
+                    stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                  </svg>
+                </div>
+
+                <div class="flex items-center text-xs text-gray-500 mt-1.5 space-x-3">
+                  <span *ngIf="m.fileType === 'link'" class="flex items-center text-emerald-600 font-medium">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1">
+                      </path>
+                    </svg>
+                    Liên kết ngoài
+                  </span>
+                  <span *ngIf="m.fileType !== 'link'" class="flex items-center">
+                    Tệp tin • {{ formatBytes(m.fileSize) }}
+                  </span>
+
+                  <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+
+                  <span class="flex items-center text-gray-400">
+                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Đăng lúc: {{ m.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                  </span>
+                </div>
               </div>
             </div>
+
+            <div class="flex items-center space-x-2 shrink-0">
+              <button (click)="openPreview(m)"
+                class="px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-600 hover:text-white transition">
+                Xem
+              </button>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </ng-container>
+
+
+
+    <!-- TAB THÔNG BÁO LỚP HỌC -->
+    <div *ngIf="activeTab() === 'announcements'" class="space-y-4">
+
+      <!-- Loading -->
+      <div *ngIf="isLoadingAnnouncements()" class="flex justify-center py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <svg class="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!isLoadingAnnouncements() && announcements().length === 0"
+           class="bg-white rounded-2xl border border-dashed border-gray-200 p-16 text-center shadow-sm">
+        <div class="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+            </path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-bold text-gray-900 mb-1">Chưa có thông báo nào</h3>
+        <p class="text-sm text-gray-500">Giảng viên chưa gửi thông báo nào đến lớp học này.</p>
+      </div>
+
+      <div *ngIf="!isLoadingAnnouncements() && announcements().length > 0" class="space-y-4">
+        <div *ngFor="let ann of announcements()"
+             class="rounded-2xl border shadow-sm overflow-hidden transition-all duration-200"
+             [ngClass]="[
+                ann.isPinned ? 'border-amber-200 ring-1 ring-amber-100' : 'border-gray-100',
+                !ann.isRead ? 'bg-blue-50/40' : 'bg-white'
+             ]">
+
+          <!-- Card Header -->
+          <div (click)="toggleAnnouncementExpand(ann.id)"
+               class="p-5 flex items-start justify-between cursor-pointer hover:bg-gray-50/60 transition select-none gap-4">
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+              <!-- Pin Icon or Bell Icon -->
+              <div class="shrink-0 mt-0.5"
+                   [ngClass]="ann.isPinned ? 'w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center' : 'w-9 h-9 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center'">
+                <!-- Bookmark Icon (Pinned) -->
+                <svg *ngIf="ann.isPinned" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+                <!-- Bell Icon (Default) -->
+                <svg *ngIf="!ann.isPinned" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                  </path>
+                </svg>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <!-- Pinned Badge + Title -->
+                <div class="flex items-center gap-2 flex-wrap mb-1">
+                  <span *ngIf="ann.isPinned"
+                        class="px-2 py-0.5 text-xs font-bold rounded-md bg-amber-100 text-amber-700">
+                    📌 ĐÃ GHIM
+                  </span>
+                  <span *ngIf="!ann.isRead" class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-500 text-white animate-pulse">
+                    MỚI
+                  </span>
+                  <h4 class="text-sm font-bold text-gray-900 leading-snug"
+                      [ngClass]="!ann.isRead ? 'text-gray-900' : 'text-gray-700 font-medium'">
+                    {{ ann.title }}
+                  </h4>
+                </div>
+                <!-- Meta info -->
+                <p class="text-xs text-gray-400">
+                  {{ ann.createdByName || 'Giảng viên' }} · {{ ann.createdAt | date:'dd/MM/yyyy HH:mm' }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Expand chevron -->
+            <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform duration-200 mt-1"
+                 [class]="expandedAnnouncementIds().has(ann.id) ? 'rotate-180' : ''"
+                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
           </div>
 
-          <div class="hidden sm:flex items-center shrink-0 pl-4">
-            <span class="text-sm font-bold text-indigo-600 group-hover:text-indigo-800 transition-colors flex items-center">
-              Làm bài
-              <svg class="w-4 h-4 ml-1 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-            </span>
+          <!-- Expanded Content -->
+          <div *ngIf="expandedAnnouncementIds().has(ann.id)"
+               class="px-5 pb-5 border-t border-gray-100">
+            <div class="pt-4 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{{ ann.content }}</div>
+
+            <!-- Attachment -->
+            <div *ngIf="ann.hasAttachment && ann.attachmentUrl" class="mt-4">
+              <button (click)="openAnnouncementPreview(ann)"
+                 class="inline-flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-4 py-2 rounded-xl transition">
+                <!-- Eye Icon -->
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                Xem tệp đính kèm
+              </button>
+            </div>
           </div>
 
         </div>
@@ -208,3 +528,91 @@
 
   </ng-container>
 </div>
+
+<div *ngIf="isPreviewModalOpen()" class="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 lg:p-12">
+  <div class="absolute inset-0 bg-gray-900/90 backdrop-blur-md transition-opacity" (click)="closePreview()"></div>
+
+  <div class="relative bg-white rounded-2xl shadow-2xl w-full h-full max-w-6xl flex flex-col overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
+      <div class="flex items-center overflow-hidden">
+        <span
+          class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-100 px-2 py-1 rounded mr-3 shrink-0">Xem
+          trước</span>
+        <h3 class="text-lg font-bold text-gray-900 truncate" [title]="previewData().title">{{ previewData().title }}
+        </h3>
+      </div>
+      <div class="flex items-center space-x-2 shrink-0 ml-4">
+        <button *ngIf="previewData().rawUrl && previewData().sourceType !== 'EXTERNAL' && previewData().type !== 'EXTERNAL_LINK' && previewData().type !== 'link'"
+           (click)="forceDownload(previewData().rawUrl, previewData().title, $event)"
+           class="inline-flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-2 rounded-xl transition shadow-2xs">
+          <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Tải xuống
+        </button>
+        <button (click)="closePreview()"
+          class="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-full transition shrink-0">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex-1 bg-gray-100 flex items-center justify-center relative w-full h-full overflow-hidden">
+
+      <div *ngIf="isPreviewLoading()" class="flex flex-col items-center justify-center">
+        <svg class="animate-spin h-10 w-10 text-blue-500 mb-3" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
+        </svg>
+        <p class="text-sm font-medium text-gray-500">Đang tải tệp an toàn từ hệ thống...</p>
+      </div>
+
+      <!-- Image Preview -->
+      <img *ngIf="!isPreviewLoading() && previewData().rawUrl && (previewData().type === 'IMAGE' || previewData().type === 'image')"
+        [src]="previewData().rawUrl" class="max-w-full max-h-full object-contain p-4 rounded-xl" alt="Preview">
+
+      <!-- Video Preview -->
+      <video *ngIf="!isPreviewLoading() && previewData().rawUrl && (previewData().type === 'VIDEO' || previewData().type === 'video')" controls autoplay
+        class="w-full max-h-full bg-black">
+        <source [src]="previewData().rawUrl" type="video/mp4">
+        Trình duyệt của bạn không hỗ trợ phát video.
+      </video>
+
+      <!-- Audio Preview -->
+      <div *ngIf="!isPreviewLoading() && previewData().rawUrl && (previewData().type === 'AUDIO' || previewData().type === 'audio')" class="p-8 bg-white rounded-2xl shadow-md text-center space-y-4">
+        <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zm12 0c0 1.105-1.343 2-3 2s-3-.895-3-2 .895-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
+        </div>
+        <audio controls autoplay class="w-72 sm:w-96">
+          <source [src]="previewData().rawUrl">
+          Trình duyệt của bạn không hỗ trợ phát âm thanh.
+        </audio>
+      </div>
+
+      <!-- Iframe for PDF, External Link, Youtube Embed -->
+      <iframe *ngIf="!isPreviewLoading() && previewData().url && previewData().type !== 'VIDEO' && previewData().type !== 'video' && previewData().type !== 'IMAGE' && previewData().type !== 'image' && previewData().type !== 'AUDIO' && previewData().type !== 'audio' && previewData().type !== 'UNSUPPORTED'"
+        [src]="previewData().url" class="w-full h-full border-0" allowfullscreen>
+      </iframe>
+
+      <!-- Unsupported Preview Fallback -->
+      <div *ngIf="!isPreviewLoading() && previewData().type === 'UNSUPPORTED'" class="flex flex-col items-center justify-center space-y-4 p-8 text-center h-full w-full">
+        <div class="w-20 h-20 bg-gray-200 text-gray-500 rounded-full flex items-center justify-center mx-auto shadow-inner">
+          <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+        </div>
+        <div>
+          <h4 class="text-xl font-bold text-gray-800">Không thể xem trước tệp này</h4>
+          <p class="text-sm text-gray-500 max-w-sm mx-auto mt-2">Định dạng tệp này không được hỗ trợ hiển thị trực tiếp trên trình duyệt. Vui lòng tải xuống để xem nội dung.</p>
+        </div>
+        <button (click)="forceDownload(previewData().rawUrl, previewData().title, $event)"
+           class="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition flex items-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+          Tải xuống ngay
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

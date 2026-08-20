@@ -62,6 +62,7 @@ export class AssignmentFormComponent implements OnInit {
       dueDate: [this.getDefaultDueDate(), Validators.required],
       timeLimitMinutes: [0, [Validators.min(0)]],
       maxAttempts: [1, [Validators.min(1)]],
+      showCorrectAnswers: [true],
       description: [''],
       status: ['PUBLISHED', Validators.required]
     });
@@ -97,6 +98,7 @@ export class AssignmentFormComponent implements OnInit {
           dueDate: this.formatToDateTimeLocal(res.dueDate),
           timeLimitMinutes: res.timeLimitMinutes || 0,
           maxAttempts: res.maxAttempts || 1,
+          showCorrectAnswers: res.showCorrectAnswers !== false,
           description: res.description || '',
           status: res.status || 'PUBLISHED'
         });

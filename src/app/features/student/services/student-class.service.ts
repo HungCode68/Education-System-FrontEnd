@@ -7,12 +7,11 @@ import { environment } from '../../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class StudentClassService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/api/v1/online-classes`;
+  private apiUrl = `${environment.apiUrl}/api/v1/classes`;
   
-
   // Gọi API lấy danh sách lớp học của Học sinh đang đăng nhập
   getMyClasses(): Observable<any> {
-    return this.http.get(`${this.apiUrl}/student/my-classes`);
+    return this.http.get(`${this.apiUrl}/my-classes`);
   }
 
   // Lấy chi tiết thông tin Lớp học (Tên lớp, Tên GV)

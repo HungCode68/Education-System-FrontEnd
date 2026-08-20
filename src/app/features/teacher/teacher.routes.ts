@@ -12,6 +12,7 @@ import { TeacherLayoutComponent } from './layout/teacher-layout/teacher-layout.c
 import { AssignmentFormComponent } from './pages/assignment/assignment-form.component';
 import { AssignmentDetailComponent } from './pages/assignment-detail/assignment-detail.component';
 import { AssignmentSubmissionsComponent } from './pages/assignment-submission/assignment-submissions.component';
+import { SubmissionDetailComponent } from './pages/submission-detail/submission-detail.component';
 import { TeacherProfileComponent } from './pages/teacher-profile/teacher-profile.component';
 import { HomeroomAnnouncementComponent } from './pages/homeroom/homeroom-announcement.component';
 import { DepartmentMembersComponent } from './pages/department-member/department-members.component';
@@ -35,6 +36,7 @@ export const teacherRoutes: Routes = [
       { path: 'assignments/:id', component: AssignmentDetailComponent },
       { path: 'assignments/edit/:id', component: AssignmentFormComponent },
       { path: 'assignments/:id/submissions', component: AssignmentSubmissionsComponent },
+      { path: 'submissions/:id/grade', component: SubmissionDetailComponent },
       { path: 'profile', component: TeacherProfileComponent },  
       { path: 'homeroom', component: HomeroomAnnouncementComponent },
       { path: 'department-member', component: DepartmentMembersComponent },

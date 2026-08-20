@@ -1,172 +1,513 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { StudentClassService } from '../../services/student-class.service';
+import { LearningMaterialService } from '../../../teacher/services/learning-material.service';
 import { ToastService } from '../../../../core/services/toast.service';
+import { AssignmentService } from '../../../teacher/services/assignment.service';
+import { EnrollmentService } from '../../../../modules/academic/services/enrollment.service';
+import { ClassAnnouncementService } from '../../../../modules/academic/services/class-announcement.service';
+import { SecureStorageService } from '../../../../core/services/secure-storage.service';
 
 @Component({
   selector: 'app-student-class-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './student-class-detail.component.html'
 })
 export class StudentClassDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  public router = inject(Router);
   private classService = inject(StudentClassService);
+  private materialService = inject(LearningMaterialService);
   private toastService = inject(ToastService);
+  private sanitizer = inject(DomSanitizer);
+  private assignmentService = inject(AssignmentService);
+  private enrollmentService = inject(EnrollmentService);
+  private announcementService = inject(ClassAnnouncementService);
+  private secureStorage = inject(SecureStorageService);
 
-  classId = signal<string>('');
-  classDetail = signal<any>(null);
-  classmates = signal<any[]>([]);
-  
+  classId = signal<string | null>(null);
+  classInfo = signal<any | null>(null);
   isLoading = signal(true);
-
-  // KHAI BÁO THÊM STATE Ở TRÊN CÙNG
-  materials = signal<any[]>([]);
-  isOpeningFile = signal<string | null>(null);
-
-  assignments = signal<any[]>([]);
-  isAssignmentsLoading = signal(false);
   
-  // Quản lý Tab đang mở (mặc định mở tab "Thành viên")
-  activeTab = signal('members'); 
+  // --- STATE TABS ---
+  activeTab = signal<'lessons' | 'students' | 'materials' | 'announcements'>('lessons');
+
+  // --- STATE BÀI HỌC (LESSONS) ---
+  lessons = signal<any[]>([]);
+  isLoadingLessons = signal(false);
+  expandedLessonIds = signal<Set<number>>(new Set());
+  lessonMaterialsMap = signal<{ [lessonId: number]: any[] }>({});
+  lessonAssignmentsMap = signal<{ [lessonId: number]: any[] }>({});
+  isLoadingLessonDetailsMap = signal<{ [lessonId: number]: boolean }>({});
+
+  // --- STATE HỌC SINH ---
+  students = signal<any[]>([]);
+  isLoadingStudents = signal(false);
+  searchQuery = signal('');
+  currentPage = signal(1);
+  pageSize = signal(10);
+  
+  filteredStudents = computed(() => {
+    const query = this.searchQuery().toLowerCase().trim();
+    if (!query) return this.students();
+    return this.students().filter(s => 
+      s.studentName.toLowerCase().includes(query) || 
+      s.studentCode.toLowerCase().includes(query)
+    );
+  });
+
+  totalPages = computed(() => Math.ceil(this.filteredStudents().length / this.pageSize()) || 1);
+  startIndex = computed(() => this.filteredStudents().length === 0 ? 0 : (this.currentPage() - 1) * this.pageSize() + 1);
+  endIndex = computed(() => Math.min(this.currentPage() * this.pageSize(), this.filteredStudents().length));
+  
+  paginatedStudents = computed(() => {
+    const start = (this.currentPage() - 1) * this.pageSize();
+    return this.filteredStudents().slice(start, start + this.pageSize());
+  });
+
+  // --- STATE TÀI LIỆU ---
+  materials = signal<any[]>([]);
+  isLoadingMaterials = signal(false);
+
+  // --- STATE THÔNG BÁO ---
+  announcements = signal<any[]>([]);
+  isLoadingAnnouncements = signal(false);
+  expandedAnnouncementIds = signal<Set<number>>(new Set());
+  unreadAnnouncementsCount = signal(0);
+
+  // --- STATE PREVIEW TÀI LIỆU ---
+  isPreviewModalOpen = signal(false);
+  isPreviewLoading = signal(false);
+  previewData = signal<{ url: SafeResourceUrl | null, rawUrl: string, type: string, sourceType: string, title: string }>({
+    url: null,
+    rawUrl: '',
+    type: '',
+    sourceType: '',
+    title: ''
+  });
+
+  // --- STATE BÀI TẬP ---
+  assignments = signal<any[]>([]);
+  isLoadingAssignments = signal(false);
+  assignmentPage = signal(0);
+  assignmentTotalPages = signal(1);
 
   ngOnInit() {
     this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.classId.set(id);
-        this.loadClassData();
+      this.classId.set(params.get('id'));
+      if (this.classId()) {
+        this.restoreState();
+        this.loadClassDetails();
       }
     });
   }
-  
 
-  loadClassData() {
-    this.isLoading.set(true);
+  private restoreState() {
+    const cid = this.classId();
+    if (!cid) return;
     
-    // Gọi API lấy thông tin Lớp học (Để làm Banner và lấy thông tin GV)
-    this.classService.getClassDetail(this.classId()).subscribe({
-      next: (detailRes) => {
-        this.classDetail.set(detailRes);
+    const savedTab = sessionStorage.getItem(`student_class_${cid}_tab`) as 'lessons' | 'students' | 'materials' | 'announcements';
+    if (savedTab && ['lessons', 'students', 'materials', 'announcements'].includes(savedTab)) {
+      this.activeTab.set(savedTab);
+    }
 
-        // 2. Gọi API lấy danh sách Sinh viên cùng lớp
-        this.classService.getClassStudents(this.classId()).subscribe({
-          next: (studentsRes) => {
-            this.classmates.set(studentsRes || []);
-            this.isLoading.set(false);
-          },
-          error: () => {
-            this.toastService.error('Lỗi', 'Không thể tải danh sách lớp.');
-            this.isLoading.set(false);
-          }
-        });
+    const savedLessonsStr = sessionStorage.getItem(`student_class_${cid}_expanded_lessons`);
+    if (savedLessonsStr) {
+      try {
+        const arr = JSON.parse(savedLessonsStr);
+        if (Array.isArray(arr)) {
+          this.expandedLessonIds.set(new Set(arr));
+        }
+      } catch (e) {}
+    }
+  }
 
-        // Gọi API lấy danh sách Tài liệu học tập
-        this.classService.getClassMaterials(this.classId()).subscribe({
-          next: (materialsRes) => {
-            this.materials.set(materialsRes || []);
-            this.isLoading.set(false);
-          },
-          error: () => this.isLoading.set(false)
+  private saveTabState(tab: string) {
+    const cid = this.classId();
+    if (cid) sessionStorage.setItem(`student_class_${cid}_tab`, tab);
+  }
+
+  private saveExpandedLessonsState() {
+    const cid = this.classId();
+    if (cid) {
+      sessionStorage.setItem(
+        `student_class_${cid}_expanded_lessons`,
+        JSON.stringify(Array.from(this.expandedLessonIds()))
+      );
+    }
+  }
+
+  switchTab(tab: 'lessons' | 'students' | 'materials' | 'announcements') {
+    this.activeTab.set(tab);
+    this.saveTabState(tab);
+    
+    if (tab === 'lessons' && this.lessons().length === 0) {
+      this.loadLessons(this.classId()!);
+    }
+    if (tab === 'students' && this.students().length === 0) {
+      this.loadStudents(this.classId()!);
+    }
+    if (tab === 'materials' && this.materials().length === 0 && this.classInfo()?.courseId) {
+      this.loadMaterials(this.classInfo().courseId);
+    }
+    if (tab === 'announcements' && this.announcements().length === 0) {
+      this.loadAnnouncements(this.classId()!);
+    }
+  }
+
+  // --- LOGIC HỌC SINH ---
+  loadStudents(targetClassId?: string) {
+    const id = targetClassId || this.classId();
+    if (!id) return;
+    this.isLoadingStudents.set(true);
+    this.enrollmentService.getByClassId(id).subscribe({
+      next: (res: any[]) => {
+        this.students.set(res || []);
+        this.isLoadingStudents.set(false);
+      },
+      error: (err: any) => {
+        console.error('Lỗi khi tải danh sách học viên:', err);
+        this.isLoadingStudents.set(false);
+      }
+    });
+  }
+
+  // --- LOGIC THÔNG BÁO LỚP HỌC ---
+  loadAnnouncements(targetClassId?: string) {
+    const id = targetClassId || this.classId();
+    if (!id) return;
+    this.isLoadingAnnouncements.set(true);
+    this.announcementService.getAnnouncementsByClassId(id).subscribe({
+      next: (res: any[]) => {
+        const storageKey = `read_announcements_class_${id}`;
+        const readIdsArray = this.secureStorage.getItem<number[]>(storageKey) || [];
+        const readIds = new Set(readIdsArray);
+        
+        const mapped = (res || []).map(ann => ({
+          ...ann,
+          isRead: readIds.has(ann.id)
+        }));
+        
+        this.announcements.set(mapped);
+        this.updateUnreadCount(mapped);
+        this.isLoadingAnnouncements.set(false);
+      },
+      error: (err: any) => {
+        console.error('Lỗi khi tải thông báo lớp học:', err);
+        this.isLoadingAnnouncements.set(false);
+      }
+    });
+  }
+
+  private updateUnreadCount(anns: any[]) {
+    this.unreadAnnouncementsCount.set(anns.filter(a => !a.isRead).length);
+  }
+
+  toggleAnnouncementExpand(id: number) {
+    const current = new Set(this.expandedAnnouncementIds());
+    if (current.has(id)) {
+      current.delete(id);
+    } else {
+      current.add(id);
+      
+      // Đánh dấu là đã đọc
+      this.markAnnouncementAsRead(id);
+    }
+    this.expandedAnnouncementIds.set(current);
+  }
+
+  private markAnnouncementAsRead(annId: number) {
+    const classId = this.classId();
+    if (!classId) return;
+
+    const storageKey = `read_announcements_class_${classId}`;
+    const readIdsArray = this.secureStorage.getItem<number[]>(storageKey) || [];
+    const readIds = new Set(readIdsArray);
+
+    if (!readIds.has(annId)) {
+      readIds.add(annId);
+      this.secureStorage.setItem(storageKey, Array.from(readIds));
+      
+      // Update local state
+      const currentAnns = this.announcements().map(a => 
+        a.id === annId ? { ...a, isRead: true } : a
+      );
+      this.announcements.set(currentAnns);
+      this.updateUnreadCount(currentAnns);
+    }
+  }
+
+  // --- LOGIC TÀI LIỆU CHUNG KHÓA HỌC ---
+  loadMaterials(targetCourseId?: number | string) {
+    const courseId = targetCourseId || this.classInfo()?.courseId;
+    if (!courseId) return;
+    this.isLoadingMaterials.set(true);
+    this.materialService.getMaterialsByCourseId(courseId).subscribe({
+      next: (res: any) => {
+        this.materials.set(res || []);
+        this.isLoadingMaterials.set(false);
+      },
+      error: (err: any) => {
+        console.error('Lỗi khi tải danh sách tài liệu khóa học:', err);
+        this.isLoadingMaterials.set(false);
+      }
+    });
+  }
+
+  // --- LOGIC BÀI HỌC (LESSON) ---
+  loadLessons(targetClassId?: string) {
+    const id = targetClassId || this.classId();
+    if (!id) return;
+    this.isLoadingLessons.set(true);
+    this.materialService.getLessonsByClassId(id).subscribe({
+      next: (res: any) => {
+        this.lessons.set(res || []);
+        this.isLoadingLessons.set(false);
+        // Sau khi tải lessons xong, nạp lại dữ liệu cho các bài học đã được mở
+        this.expandedLessonIds().forEach(lessonId => {
+          this.loadLessonDetails(lessonId);
         });
       },
-      error: () => {
-        this.toastService.error('Lỗi', 'Không thể tải thông tin lớp học.');
+      error: (err: any) => {
+        console.error('Lỗi khi tải danh sách bài học:', err);
+        this.isLoadingLessons.set(false);
+      }
+    });
+  }
+
+  toggleLessonExpand(lessonId: number) {
+    const currentSet = new Set(this.expandedLessonIds());
+    if (currentSet.has(lessonId)) {
+      currentSet.delete(lessonId);
+    } else {
+      currentSet.add(lessonId);
+      this.loadLessonDetails(lessonId);
+    }
+    this.expandedLessonIds.set(currentSet);
+    this.saveExpandedLessonsState();
+  }
+
+  loadLessonDetails(lessonId: number) {
+    const loadingMap = { ...this.isLoadingLessonDetailsMap(), [lessonId]: true };
+    this.isLoadingLessonDetailsMap.set(loadingMap);
+
+    // Tải tài liệu của Lesson
+    this.materialService.getMaterialsByLessonId(lessonId).subscribe({
+      next: (materials: any) => {
+        const matList = Array.isArray(materials) ? materials : (materials.content || []);
+        const matMap = { ...this.lessonMaterialsMap(), [lessonId]: matList };
+        this.lessonMaterialsMap.set(matMap);
+        this.finishLessonLoading(lessonId);
+      },
+      error: () => this.finishLessonLoading(lessonId)
+    });
+
+    // Tải bài tập của Lesson
+    this.assignmentService.getAssignmentsByLessonId(lessonId).subscribe({
+      next: (assignments: any) => {
+        const assignList = Array.isArray(assignments) ? assignments : (assignments.content || []);
+        const assignMap = { ...this.lessonAssignmentsMap(), [lessonId]: assignList };
+        this.lessonAssignmentsMap.set(assignMap);
+        this.finishLessonLoading(lessonId);
+      },
+      error: () => this.finishLessonLoading(lessonId)
+    });
+  }
+
+  private finishLessonLoading(lessonId: number) {
+    const loadingMap = { ...this.isLoadingLessonDetailsMap(), [lessonId]: false };
+    this.isLoadingLessonDetailsMap.set(loadingMap);
+  }
+
+  isLessonExpanded(lessonId: number): boolean {
+    return this.expandedLessonIds().has(lessonId);
+  }
+
+  // --- LOGIC BÀI TẬP ---
+  navigateToAssignmentDetail(assignmentId: number | string, event?: Event) {
+    if (event) event.stopPropagation();
+    // Chuyển hướng đến giao diện học viên làm bài tập
+    this.router.navigate(['/student/assignment', assignmentId]);
+  }
+
+  loadAssignments() {
+    this.isLoadingAssignments.set(true);
+    this.assignmentService.getAssignmentsByClass(this.classId()!, this.assignmentPage(), 10).subscribe({
+      next: (res) => {
+        this.assignments.set(res.content || []);
+        this.assignmentTotalPages.set(res.totalPages || 1);
+        this.isLoadingAssignments.set(false);
+      },
+      error: () => this.isLoadingAssignments.set(false)
+    });
+  }
+
+  getAssignmentTypeName(type: string): string {
+    const map: any = {
+      'multiple_choice': 'Trắc nghiệm',
+      'essay': 'Tự luận',
+      'file_upload': 'Nộp File',
+      'mixed': 'Hỗn hợp'
+    };
+    return map[type] || 'Không xác định';
+  }
+
+  // --- LOGIC HỌC SINH & LỚP HỌC ---
+  private loadClassDetails() {
+    this.isLoading.set(true);
+    this.classService.getClassDetail(this.classId()!).subscribe({
+      next: (res) => { 
+        this.classInfo.set(res); 
+        this.isLoading.set(false);
+        this.loadLessons(res.id);
+        this.loadStudents(res.id); 
+        if (res?.courseId) {
+          this.loadMaterials(res.courseId);
+        }
+      },
+      error: (err) => {
+        console.error('Lỗi khi tải thông tin lớp:', err);
         this.isLoading.set(false);
       }
     });
   }
 
-  // Hàm tạo Avatar chữ cái đầu (VD: Nguyễn Văn A -> A)
-  getInitials(name: string): string {
-    if (!name) return '?';
-    const parts = name.trim().split(' ');
-    return parts[parts.length - 1].charAt(0).toUpperCase();
+  onSearchChange(query: string) {
+    this.searchQuery.set(query);
+    this.currentPage.set(1);
   }
 
-  // Hành động khi học sinh click vào tài liệu
-  openMaterial(materialId: string) {
-    this.isOpeningFile.set(materialId);
-    
-    this.classService.getMaterialDownloadUrl(materialId).subscribe({
-      next: (res) => {
-        this.isOpeningFile.set(null);
-        if (res && res.url) {
-          window.open(res.url, '_blank'); // Mở link tải/xem trong tab mới
-        }
-      },
-      error: (err) => {
-        this.isOpeningFile.set(null);
-        this.toastService.error('Lỗi', err.error?.message || 'Không thể mở tài liệu này.');
-      }
-    });
-  }
-
-  getFileIcon(fileType: string) {
-    switch (fileType) {
-      case 'slide': return { icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z', color: 'text-amber-500', bg: 'bg-amber-100' };
-      case 'video': return { icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'text-rose-500', bg: 'bg-rose-100' };
-      case 'document': return { icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'text-blue-500', bg: 'bg-blue-100' };
-      case 'link': return { icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1', color: 'text-emerald-500', bg: 'bg-emerald-100' };
-      default: return { icon: 'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z', color: 'text-gray-500', bg: 'bg-gray-100' };
+  changePage(page: number) {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
     }
   }
 
+  downloadMaterial(m: any, event: Event) {
+    event.stopPropagation();
+    const targetUrl = m.downloadUrl || m.resourceUrl;
+    if (targetUrl) {
+      window.open(targetUrl, '_blank');
+    } else {
+      this.toastService.error('Lỗi', 'Không tìm thấy đường dẫn tài liệu');
+    }
+  }
+
+  // --- LOGIC XEM TRƯỚC (PREVIEW) ---
+  openPreview(m: any) {
+    const rawUrl = m.downloadUrl || m.resourceUrl || '';
+    const srcType = m.sourceType || (rawUrl.startsWith('http') ? 'EXTERNAL' : 'MINIO');
+    let matType = m.materialType || m.fileType || 'DOCUMENT';
+
+    if (matType === 'DOCUMENT' && rawUrl && srcType === 'MINIO') {
+      const lowerUrl = rawUrl.toLowerCase().split('?')[0];
+      if (lowerUrl.match(/\.(doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|tar|gz)$/)) {
+        matType = 'UNSUPPORTED';
+      }
+    }
+
+    let safeUrl: SafeResourceUrl | null = null;
+
+    if (srcType === 'EXTERNAL' || matType === 'EXTERNAL_LINK' || matType === 'link') {
+      let embedUrl = rawUrl;
+      if (embedUrl.includes('youtube.com/watch?v=')) {
+        embedUrl = embedUrl.replace('watch?v=', 'embed/');
+      } else if (embedUrl.includes('youtu.be/')) {
+        embedUrl = embedUrl.replace('youtu.be/', 'youtube.com/embed/');
+      }
+      safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+    } else if (rawUrl) {
+      safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
+    }
+
+    this.previewData.set({
+      url: safeUrl,
+      rawUrl: rawUrl,
+      type: matType,
+      sourceType: srcType,
+      title: m.title || 'Tài liệu'
+    });
+    this.isPreviewModalOpen.set(true);
+  }
+
+  openAnnouncementPreview(ann: any) {
+    const rawUrl = ann.attachmentUrl || '';
+    
+    // Fallback file type logic based on extension
+    let matType = 'UNSUPPORTED';
+    if (rawUrl) {
+      const lowerUrl = rawUrl.toLowerCase();
+      // Remove query params to check extension safely
+      const urlWithoutQuery = lowerUrl.split('?')[0];
+
+      if (urlWithoutQuery.match(/\.(jpg|jpeg|png|gif|webp)$/)) matType = 'IMAGE';
+      else if (urlWithoutQuery.match(/\.(mp4|webm|ogg)$/)) matType = 'VIDEO';
+      else if (urlWithoutQuery.match(/\.(mp3|wav|ogg)$/)) matType = 'AUDIO';
+      else if (urlWithoutQuery.match(/\.(pdf)$/)) matType = 'DOCUMENT';
+    }
+
+    let safeUrl: SafeResourceUrl | null = null;
+    if (rawUrl) {
+      safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
+    }
+
+    this.previewData.set({
+      url: safeUrl,
+      rawUrl: rawUrl,
+      type: matType,
+      sourceType: 'MINIO',
+      title: 'Tệp đính kèm: ' + ann.title
+    });
+    this.isPreviewModalOpen.set(true);
+  }
+
+  closePreview() {
+    this.isPreviewModalOpen.set(false);
+    this.previewData.set({ url: null, rawUrl: '', type: '', sourceType: '', title: '' });
+    this.isPreviewLoading.set(false);
+  }
+
+  forceDownload(url: string, title: string, event: Event) {
+    event.preventDefault();
+    this.toastService.info('Đang tải xuống', 'Vui lòng chờ trong giây lát...');
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        
+        let filename = title;
+        if (url.includes('/')) {
+          const parts = url.split('/');
+          let lastPart = parts[parts.length - 1];
+          if (lastPart.includes('?')) lastPart = lastPart.split('?')[0];
+          filename = decodeURIComponent(lastPart);
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        console.error('Lỗi khi tải file qua fetch:', err);
+        window.open(url, '_blank');
+      });
+  }
+
+  // --- HÀM TIỆN ÍCH ---
   formatBytes(bytes: number, decimals = 2) {
-    if (!bytes || bytes === 0) return '0 Bytes';
+    if (!+bytes) return '0 Bytes';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-  }
-
-  changeTab(tabName: string) {
-    this.activeTab.set(tabName);
-    
-    // Nếu bấm sang tab Bài tập thì mới gọi API (Lazy load cho nhẹ)
-    if (tabName === 'assignments' && this.assignments().length === 0) {
-      this.loadAssignments();
-    }
-  }
-
-  // THÊM HÀM LOAD BÀI TẬP
-  loadAssignments() {
-    this.isAssignmentsLoading.set(true);
-    this.classService.getClassAssignments(this.classId()).subscribe({
-      next: (res) => {
-        // Chỉ lấy những bài tập có trạng thái là 'published' (Bỏ qua 'unpublished' và 'draft')
-        const allAssignments = res.content || [];
-        const publishedOnly = allAssignments.filter((item: any) => 
-          item.status && item.status.toString().toLowerCase() === 'published'
-        );
-
-        // Gán mảng đã lọc vào State để hiển thị ra UI
-        this.assignments.set(publishedOnly); 
-        this.isAssignmentsLoading.set(false);
-      },
-      error: () => {
-        this.toastService.error('Lỗi', 'Không thể tải danh sách bài tập.');
-        this.isAssignmentsLoading.set(false);
-      }
-    });
-  }
-
-  // HÀM TIỆN ÍCH CHO UI BÀI TẬP
-  getAssignmentTypeUI(type: string) {
-    switch (type) {
-      case 'multiple_choice': return { label: 'Trắc nghiệm', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', bg: 'bg-blue-100', text: 'text-blue-700' };
-      case 'essay': return { label: 'Tự luận', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z', bg: 'bg-amber-100', text: 'text-amber-700' };
-      case 'file_upload': return { label: 'Nộp File', icon: 'M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12', bg: 'bg-emerald-100', text: 'text-emerald-700' };
-      case 'mixed': return { label: 'Hỗn hợp', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10', bg: 'bg-purple-100', text: 'text-purple-700' };
-      default: return { label: 'Khác', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', bg: 'bg-gray-100', text: 'text-gray-700' };
-    }
-  }
-
-  // Hàm kiểm tra trạng thái quá hạn
-  isOverdue(dueTime: string): boolean {
-    if (!dueTime) return false;
-    return new Date(dueTime).getTime() < new Date().getTime();
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   }
 }

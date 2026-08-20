@@ -22,34 +22,37 @@ export class StudentAssignmentService {
     return this.http.get<any[]>(`${environment.apiUrl}/api/v1/questions/${questionId}/options`);
   }
 
-  // Lưu nháp (isSubmit = false) hoặc Nộp bài chính thức (isSubmit = true)
-  submitAssignment(assignmentId: string, isSubmit: boolean, studentNote: string = ''): Observable<any> {
-    return this.http.post(`${environment.apiUrl}/api/v1/assignment-submissions/submit`, {
-      assignmentId,
-      studentNote,
-      isSubmit
-    });
+  // Khởi tạo phiên làm bài
+  startSubmission(assignmentId: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/v1/submissions/start/${assignmentId}`, {});
+  }
+
+  // Nộp bài chính thức
+  submitAssignment(submissionId: string): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/v1/submissions/submit/${submissionId}`, {});
   }
 
   // Lưu đáp án cho từng câu hỏi
-  saveAnswer(submissionId: string, questionId: string, payload: any): Observable<any> {
-    return this.http.put(`${environment.apiUrl}/api/v1/submission-answers/submission/${submissionId}/question/${questionId}`, payload);
+  saveAnswer(submissionId: string, payload: any): Observable<any> {
+    return this.http.post(`${environment.apiUrl}/api/v1/submission-answers/submission/${submissionId}`, payload);
   }
 
-  // Upload file đính kèm cho bài nộp (Dùng FormData)
-  uploadAttachment(submissionId: string, file: File): Observable<any> {
-    const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post(`${environment.apiUrl}/api/v1/submission-attachments/submission/${submissionId}`, formData);
-  }
-
-  // Xóa file đính kèm
-  deleteAttachment(attachmentId: string): Observable<any> {
-    return this.http.delete(`${environment.apiUrl}/api/v1/submission-attachments/${attachmentId}`);
+  // Lưu hàng loạt đáp án cùng lúc
+  batchSaveAnswers(submissionId: string, payloads: any[]): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/api/v1/submission-answers/submission/${submissionId}/batch`, payloads);
   }
 
   // Lấy lịch sử nộp bài của mình cho 1 bài tập cụ thể
   getMySubmission(assignmentId: string): Observable<any> {
-    return this.http.get(`${environment.apiUrl}/api/v1/assignment-submissions/assignment/${assignmentId}/my-submission`);
+    return this.http.get(`${environment.apiUrl}/api/v1/submissions/my-submission/${assignmentId}`);
+  }
+
+  getMySubmissionHistory(assignmentId: string): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/api/v1/submissions/my-history/${assignmentId}`);
+  }
+
+  // Lấy chi tiết các câu trả lời của 1 lần nộp
+  getSubmissionAnswers(submissionId: string): Observable<any[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/api/v1/submission-answers/submission/${submissionId}`);
   }
 }

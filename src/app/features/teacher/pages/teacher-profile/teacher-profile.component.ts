@@ -30,8 +30,12 @@ export class TeacherProfileComponent implements OnInit {
         this.profile.set(res);
         this.isLoading.set(false);
       },
-      error: () => {
-        this.toastService.error('Lỗi', 'Không thể tải thông tin hồ sơ');
+      error: (err) => {
+        if (err.status === 404) {
+          this.toastService.warning('Chưa liên kết', 'Tài khoản của bạn chưa được liên kết với hồ sơ nhân sự nào.');
+        } else {
+          this.toastService.error('Lỗi', 'Không thể tải thông tin hồ sơ.');
+        }
         this.isLoading.set(false);
       }
     });
