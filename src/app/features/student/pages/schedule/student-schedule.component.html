@@ -10,8 +10,8 @@
           </svg>
         </div>
         <div>
-          <h1 class="text-xl font-bold text-gray-900 tracking-tight">Lịch Dạy Học</h1>
-          <p class="text-xs text-gray-500 font-medium mt-0.5">Bấm vào ca dạy để xem Thông tin Giảng viên & Điểm danh học viên</p>
+          <h1 class="text-xl font-bold text-gray-900 tracking-tight">Lịch Học</h1>
+          <p class="text-xs text-gray-500 font-medium mt-0.5">Bấm vào ca học để xem thông tin lớp và trạng thái điểm danh</p>
         </div>
       </div>
     </div>
@@ -45,7 +45,7 @@
       <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
       <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
     </svg>
-    <p class="text-sm font-medium text-gray-500">Đang tải lịch dạy học...</p>
+    <p class="text-sm font-medium text-gray-500">Đang tải lịch học...</p>
   </div>
 
   <!-- EMPTY STATE WHEN NO SCHEDULE FOR THE ENTIRE WEEK -->
@@ -55,9 +55,9 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
       </svg>
     </div>
-    <h3 class="text-lg font-bold text-gray-900 mb-1">Không Có Lịch Dạy Học Trong Tuần Này</h3>
+    <h3 class="text-lg font-bold text-gray-900 mb-1">Không Có Lịch Học Trong Tuần Này</h3>
     <p class="text-sm text-gray-500 max-w-md mx-auto mb-6">
-      Không tìm thấy ca giảng dạy nào từ ngày <strong>{{ startDateStr() | date:'dd/MM/yyyy' }}</strong> đến <strong>{{ endDateStr() | date:'dd/MM/yyyy' }}</strong>.
+      Không tìm thấy ca học nào từ ngày <strong>{{ startDateStr() | date:'dd/MM/yyyy' }}</strong> đến <strong>{{ endDateStr() | date:'dd/MM/yyyy' }}</strong>.
     </p>
     <div class="flex items-center justify-center space-x-3">
       <button (click)="prevWeek()" class="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition flex items-center">
@@ -78,7 +78,7 @@
           <tr class="bg-gray-50/80 border-b border-gray-200">
             <!-- Header Column: Khung giờ linh hoạt -->
             <th class="p-4 w-40 text-center text-xs font-extrabold text-gray-500 uppercase tracking-wider border-r border-gray-200">
-              Khung Giờ Dạy
+              Khung Giờ Học
             </th>
 
             <!-- Header Columns: Thứ 2 -> Chủ Nhật -->
@@ -125,10 +125,7 @@
 
                       <div class="pl-1">
                         <!-- Badge Row -->
-                        <div class="flex items-center justify-between gap-1 mb-1">
-                          <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-indigo-50 text-indigo-700 border border-indigo-100 truncate">
-                            {{ ev.classCode }}
-                          </span>
+                        <div class="flex items-center justify-end gap-1 mb-1">
                           <span *ngIf="ev.isSubstituted" class="px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
                             Dạy thay
                           </span>
@@ -140,13 +137,16 @@
                         </h4>
                       </div>
 
-                      <!-- Room & Role Footer -->
-                      <div class="pl-1 pt-2 border-t border-gray-100 mt-2 flex items-center justify-between text-[11px] text-gray-500">
+                      <!-- Room & Status Footer -->
+                      <div class="pl-1 pt-2 border-t border-gray-100 mt-2 flex flex-col gap-1 text-[11px] text-gray-500">
                         <span class="font-semibold text-gray-700 flex items-center">
                           📍 {{ ev.roomName || 'Phòng học' }}
                         </span>
-                        <span class="text-[10px] font-bold text-indigo-600">
-                          📋 Điểm danh
+                        <span *ngIf="ev.attendanceStatus" class="font-bold text-[10px]">
+                          <span *ngIf="ev.attendanceStatus === 'PRESENT'" class="text-emerald-600">Có mặt</span>
+                          <span *ngIf="ev.attendanceStatus === 'ABSENT'" class="text-red-600">Vắng mặt</span>
+                          <span *ngIf="ev.attendanceStatus === 'LATE'" class="text-amber-600">Đi muộn</span>
+                          <span *ngIf="ev.attendanceStatus === 'EXCUSED'" class="text-blue-600">Có phép</span>
                         </span>
                       </div>
                     </div>
@@ -197,13 +197,13 @@
 
 </div>
 
-<!-- MODAL ĐIỂM DANH & CHI TIẾT CA DẠY (THIẾT KẾ TỐI GIẢN & ELEGANT) -->
+<!-- MODAL ĐIỂM DANH & CHI TIẾT CA HỌC (THIẾT KẾ TỐI GIẢN & ELEGANT) -->
 <div *ngIf="isAttendanceModalOpen()" class="fixed inset-0 z-[80] flex items-center justify-center p-4 sm:p-6 lg:p-10 overflow-y-auto">
   <!-- Backdrop -->
   <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" (click)="closeAttendanceModal()"></div>
 
   <!-- Dialog Box -->
-  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden z-10">
+  <div class="relative bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden z-10">
     
     <!-- MODAL HEADER -->
     <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-white shrink-0">
@@ -214,7 +214,7 @@
         </div>
         <p class="text-xs text-gray-500 mt-0.5">
           📅 {{ selectedSession()?.date | date:'dd/MM/yyyy' }} • ⏱️ {{ selectedSession()?.startTime }} - {{ selectedSession()?.endTime }}
-          <span *ngIf="selectedSession()?.isSubstituted" class="ml-2 font-bold text-amber-600">(Ca dạy thay)</span>
+          <span *ngIf="selectedSession()?.isSubstituted" class="ml-2 font-bold text-amber-600">(Giáo viên dạy thay)</span>
         </p>
       </div>
 
@@ -235,7 +235,6 @@
           <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Giảng viên phụ trách</p>
           <div class="flex items-center space-x-2 mt-0.5">
             <h4 class="text-sm font-bold text-gray-900">{{ selectedSession()?.teacherName || 'Giáo viên phụ trách' }}</h4>
-            <span class="text-xs text-gray-400">(Mã: {{ selectedSession()?.teacherCode || 'N/A' }})</span>
             <span class="text-xs font-medium px-2 py-0.5 rounded border"
               [ngClass]="selectedSession()?.isSubstituted ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'">
               {{ selectedSession()?.isSubstituted ? 'Dạy thay' : 'Giảng chính' }}
@@ -262,31 +261,10 @@
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
           <div>
             <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2">
-              <span>Danh sách học viên điểm danh</span>
+              <span>Danh sách học viên</span>
               <span class="text-xs font-medium text-gray-500">({{ attendanceSheet().length }} học viên)</span>
             </h3>
           </div>
-
-          <!-- Quick Action Buttons -->
-          <div class="flex items-center space-x-2">
-            <button (click)="setAllStatus('PRESENT')"
-              class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-medium rounded-lg transition">
-              Tất cả Có mặt
-            </button>
-            <button (click)="setAllStatus('ABSENT')"
-              class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-medium rounded-lg transition">
-              Tất cả Vắng mặt
-            </button>
-          </div>
-        </div>
-
-        <!-- Summary Bar -->
-        <div class="flex items-center space-x-4 bg-gray-50 border border-gray-200 p-2.5 rounded-xl text-xs mb-3">
-          <span class="text-gray-700 font-semibold">Thống kê:</span>
-          <span class="text-emerald-700 font-bold">Có mặt: {{ presentCount() }}</span>
-          <span class="text-red-700 font-bold">Vắng mặt: {{ absentCount() }}</span>
-          <span class="text-amber-700 font-bold">Đi muộn: {{ lateCount() }}</span>
-          <span class="text-blue-700 font-bold">Có phép: {{ excusedCount() }}</span>
         </div>
 
         <!-- Search Student Bar -->
@@ -325,31 +303,23 @@
                 </div>
               </div>
 
-              <!-- Status Selector Pill Buttons -->
-              <div class="flex items-center space-x-1.5 shrink-0">
-                <button (click)="setStudentStatus(item.studentId, 'PRESENT')"
-                  [ngClass]="item.status === 'PRESENT' ? 'bg-emerald-600 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                  class="px-2.5 py-1 rounded-lg text-xs transition">
+              <!-- Status Selector Pill Buttons (Read-only) -->
+              <div class="flex items-center shrink-0">
+                <span *ngIf="item.status === 'PRESENT'" class="px-2.5 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold rounded-lg text-xs">
                   Có mặt
-                </button>
-
-                <button (click)="setStudentStatus(item.studentId, 'ABSENT')"
-                  [ngClass]="item.status === 'ABSENT' ? 'bg-red-600 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                </span>
+                <span *ngIf="item.status === 'ABSENT'" class="px-2.5 py-1 bg-red-100 text-red-700 border border-red-200 font-bold rounded-lg text-xs">
                   Vắng mặt
-                </button>
-
-                <button (click)="setStudentStatus(item.studentId, 'LATE')"
-                  [ngClass]="item.status === 'LATE' ? 'bg-amber-500 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                </span>
+                <span *ngIf="item.status === 'LATE'" class="px-2.5 py-1 bg-amber-100 text-amber-700 border border-amber-200 font-bold rounded-lg text-xs">
                   Đi muộn
-                </button>
-
-                <button (click)="setStudentStatus(item.studentId, 'EXCUSED')"
-                  [ngClass]="item.status === 'EXCUSED' ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                  class="px-2.5 py-1 rounded-lg text-xs transition">
+                </span>
+                <span *ngIf="item.status === 'EXCUSED'" class="px-2.5 py-1 bg-blue-100 text-blue-700 border border-blue-200 font-bold rounded-lg text-xs">
                   Có phép
-                </button>
+                </span>
+                <span *ngIf="!item.status" class="px-2.5 py-1 bg-gray-100 text-gray-500 border border-gray-200 font-medium rounded-lg text-xs">
+                  Chưa điểm danh
+                </span>
               </div>
 
             </div>
@@ -361,14 +331,9 @@
     </div>
 
     <!-- MODAL FOOTER -->
-    <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-between items-center shrink-0">
-      <button (click)="closeAttendanceModal()" class="px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 rounded-lg transition">
-        Hủy / Đóng
-      </button>
-
-      <button (click)="saveAttendanceSheet()" [disabled]="isSavingAttendance()"
-        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center disabled:opacity-50">
-        {{ isSavingAttendance() ? 'Đang lưu...' : 'Lưu Điểm Danh' }}
+    <div class="px-6 py-3 border-t border-gray-200 bg-gray-50 flex justify-end items-center shrink-0">
+      <button (click)="closeAttendanceModal()" class="px-5 py-2 text-xs font-bold bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 rounded-lg shadow-sm transition">
+        Đóng
       </button>
     </div>
 

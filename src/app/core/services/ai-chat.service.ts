@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
@@ -42,7 +42,14 @@ export interface AiChatMessageDto {
 })
 export class AiChatService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/ai/chat`;
+  private apiUrl = `${environment.apiUrl}/api/v1/ai/chat`;
+
+  // Global state for chat widget visibility
+  isChatVisible = signal<boolean>(true);
+
+  setChatVisibility(visible: boolean) {
+    this.isChatVisible.set(visible);
+  }
 
   chat(request: ChatRequest): Observable<ChatResponse> {
     return this.http.post<ChatResponse>(this.apiUrl, request);
@@ -54,5 +61,9 @@ export class AiChatService {
 
   getSessionMessages(sessionId: number): Observable<AiChatMessageDto[]> {
     return this.http.get<AiChatMessageDto[]>(`${this.apiUrl}/sessions/${sessionId}/messages`);
+  }
+
+  deleteSession(sessionId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/sessions/${sessionId}`);
   }
 }

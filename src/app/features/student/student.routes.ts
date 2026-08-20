@@ -3,6 +3,7 @@ import { StudentLayoutComponent } from './layout/student-layout/student-layout.c
 import { roleGuard } from '../../core/guards/auth.guard';
 import { StudentComponent } from './student.component';
 import { StudentMyClassesComponent } from './pages/my-classes/student-my-classes.component';
+import { StudentScheduleComponent } from './pages/schedule/student-schedule.component';
 
 export const studentRoutes: Routes = [
     {
@@ -22,9 +23,13 @@ export const studentRoutes: Routes = [
             },
             {
                 path: 'my-classes',
-                component: StudentMyClassesComponent,
-                canActivate: [roleGuard(['STUDENT'])],
+                component: StudentMyClassesComponent
             },
+            {
+                path: 'schedule',
+                component: StudentScheduleComponent
+            },
+
             {
                 path: 'class/:id',
                 loadComponent: () => import('./pages/class-detail/student-class-detail.component').then(m => m.StudentClassDetailComponent),

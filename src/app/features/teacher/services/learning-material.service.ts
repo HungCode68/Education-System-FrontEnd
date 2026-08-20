@@ -70,6 +70,21 @@ export class LearningMaterialService {
     return this.http.get<any[]>(`${environment.apiUrl}/api/v1/lessons/class/${classId}`);
   }
 
+  // Thêm mới bài học
+  createLesson(data: any): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/api/v1/lessons`, data);
+  }
+
+  // Cập nhật bài học
+  updateLesson(id: string | number, data: any): Observable<any> {
+    return this.http.put<any>(`${environment.apiUrl}/api/v1/lessons/${id}`, data);
+  }
+
+  // Xóa bài học
+  deleteLesson(id: string | number): Observable<any> {
+    return this.http.delete<any>(`${environment.apiUrl}/api/v1/lessons/${id}`);
+  }
+
   // Lấy tài liệu thuộc về bài học cụ thể (lessonId)
   getMaterialsByLessonId(lessonId: string | number): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/lesson/${lessonId}`);

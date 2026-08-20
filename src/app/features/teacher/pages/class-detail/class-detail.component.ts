@@ -8,6 +8,8 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AssignmentService } from '../../services/assignment.service';
 import { EnrollmentService } from '../../../../modules/academic/services/enrollment.service';
+import { ClassAnnouncementService } from '../../../../modules/academic/services/class-announcement.service';
+import { AuthService } from '../../../../core/services/auth.service';
 
 @Component({
   selector: 'app-class-detail',
@@ -25,13 +27,23 @@ export class ClassDetailComponent implements OnInit {
   private sanitizer = inject(DomSanitizer);
   private assignmentService = inject(AssignmentService);
   private enrollmentService = inject(EnrollmentService);
+  private announcementService = inject(ClassAnnouncementService);
+  public authService = inject(AuthService);
+
+  canCreateAnnouncement = computed(() => this.authService.hasPermission('ANNOUNCEMENT_CREATE'));
+  canUpdateAnnouncement = computed(() => this.authService.hasPermission('ANNOUNCEMENT_UPDATE'));
+  canDeleteAnnouncement = computed(() => this.authService.hasPermission('ANNOUNCEMENT_DELETE'));
+
+  canCreateLesson = computed(() => this.authService.hasPermission('LESSON_CREATE'));
+  canUpdateLesson = computed(() => this.authService.hasPermission('LESSON_UPDATE'));
+  canDeleteLesson = computed(() => this.authService.hasPermission('LESSON_DELETE'));
 
   classId = signal<string | null>(null);
   classInfo = signal<any | null>(null);
   isLoading = signal(true);
   
   // --- STATE TABS ---
-  activeTab = signal<'lessons' | 'students' | 'materials'>('lessons');
+  activeTab = signal<'lessons' | 'students' | 'materials' | 'announcements'>('lessons');
 
   // --- STATE BÀI HỌC (LESSONS) ---
   lessons = signal<any[]>([]);
@@ -40,6 +52,12 @@ export class ClassDetailComponent implements OnInit {
   lessonMaterialsMap = signal<{ [lessonId: number]: any[] }>({});
   lessonAssignmentsMap = signal<{ [lessonId: number]: any[] }>({});
   isLoadingLessonDetailsMap = signal<{ [lessonId: number]: boolean }>({});
+  isLessonManageMode = signal(false);
+  isLessonModalOpen = signal(false);
+  isEditLessonMode = signal(false);
+  editingLessonId = signal<number | null>(null);
+  isSavingLesson = signal(false);
+  lessonForm!: FormGroup;
 
   // --- STATE HỌC SINH ---
   students = signal<any[]>([]);
@@ -132,16 +150,33 @@ export class ClassDetailComponent implements OnInit {
     this.router.navigate(['/teacher/assignments', assignmentId]);
   }
 
-  // --- STATE BÀI TẬP MODAL ---
+  // --- STATE BÀI TẬP ---
+  assignmentForm!: FormGroup;
   isAssignmentModalOpen = signal(false);
   isEditAssignmentMode = signal(false);
+  isSubmittingAssignment = signal(false);
   editingAssignmentId = signal<number | null>(null);
-  isSavingAssignment = signal(false);
-  assignmentForm!: FormGroup;
 
-  // --- STATE XÓA BÀI TẬP ---
+  // --- STATE THÔNG BÁO ---
+  announcements = signal<any[]>([]);
+  isLoadingAnnouncements = signal(false);
+  expandedAnnouncementIds = signal<Set<number>>(new Set());
+  isAnnouncementEditMode = signal(false);
+
+  isAnnouncementModalOpen = signal(false);
+  isSubmittingAnnouncement = signal(false);
+  editingAnnouncementId = signal<number | null>(null);
+  selectedAttachmentFile = signal<File | null>(null);
+  currentAttachmentUrl = signal<string | null>(null);
+  currentAttachmentName = signal<string | null>(null);
+  isRemovingAttachment = signal(false);
+  announcementForm!: FormGroup;
+  isSavingAssignment = signal(false);
+
+  // --- STATE MODAL XÓA CHUNG ---
   isDeleteModalOpen = signal(false);
-  assignmentToDelete = signal<string | null>(null);
+  itemToDelete = signal<string | number | null>(null);
+  deleteTarget = signal<'assignment' | 'announcement' | 'lesson'>('assignment');
   isDeleting = signal(false);
 
   ngOnInit() {
@@ -149,19 +184,61 @@ export class ClassDetailComponent implements OnInit {
     this.route.paramMap.subscribe(params => {
       this.classId.set(params.get('id'));
       if (this.classId()) {
+        this.restoreState();
         this.loadClassDetails();
       }
     });
   }
 
+  // --- STATE PERSISTENCE ---
+  private saveState() {
+    if (!this.classId()) return;
+    const state = {
+      activeTab: this.activeTab(),
+      expandedLessonIds: Array.from(this.expandedLessonIds())
+    };
+    sessionStorage.setItem(`teacher_class_state_${this.classId()}`, JSON.stringify(state));
+  }
+
+  private restoreState() {
+    if (!this.classId()) return;
+    const saved = sessionStorage.getItem(`teacher_class_state_${this.classId()}`);
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (state.activeTab) {
+          this.activeTab.set(state.activeTab);
+        }
+        if (state.expandedLessonIds && Array.isArray(state.expandedLessonIds)) {
+          this.expandedLessonIds.set(new Set(state.expandedLessonIds));
+          // Preload nội dung các bài học đang được mở
+          state.expandedLessonIds.forEach((id: number) => {
+            this.loadLessonDetails(id);
+          });
+        }
+      } catch (e) {
+        console.error('Lỗi khi khôi phục trạng thái:', e);
+      }
+    }
+  }
+
   private initForms() {
     this.materialForm = this.fb.group({
       title: ['', Validators.required],
-      sourceType: ['MINIO', Validators.required],
-      materialType: ['DOCUMENT', Validators.required],
-      resourceUrl: [''],
-      displayOrder: [0],
-      status: ['published']
+      description: [''],
+      materialType: ['DOCUMENT']
+    });
+
+    this.lessonForm = this.fb.group({
+      name: ['', Validators.required],
+      orderNumber: [1, [Validators.required, Validators.min(1)]],
+      description: ['']
+    });
+
+    this.announcementForm = this.fb.group({
+      title: ['', Validators.required],
+      content: ['', Validators.required],
+      isPinned: [false]
     });
 
     this.assignmentForm = this.fb.group({
@@ -176,8 +253,9 @@ export class ClassDetailComponent implements OnInit {
     });
   }
 
-  switchTab(tab: 'lessons' | 'students' | 'materials') {
+  switchTab(tab: 'lessons' | 'students' | 'materials' | 'announcements') {
     this.activeTab.set(tab);
+    this.saveState();
     if (tab === 'lessons' && this.lessons().length === 0) {
       this.loadLessons();
     }
@@ -186,6 +264,9 @@ export class ClassDetailComponent implements OnInit {
     }
     if (tab === 'materials') {
       this.loadMaterials();
+    }
+    if (tab === 'announcements') {
+      this.loadAnnouncements();
     }
   }
 
@@ -217,8 +298,183 @@ export class ClassDetailComponent implements OnInit {
         this.isLoadingMaterials.set(false);
       },
       error: (err: any) => {
-        console.error('Lỗi khi tải danh sách tài liệu khóa học:', err);
+        console.error('Lỗi khi tải tài liệu khóa học:', err);
         this.isLoadingMaterials.set(false);
+      }
+    });
+  }
+
+  // --- LOGIC THÔNG BÁO ---
+  loadAnnouncements(targetClassId?: string) {
+    const id = targetClassId || this.classId();
+    if (!id) return;
+    this.isLoadingAnnouncements.set(true);
+    this.announcementService.getAnnouncementsByClassId(id).subscribe({
+      next: (res: any[]) => {
+        this.announcements.set(res || []);
+        this.isLoadingAnnouncements.set(false);
+      },
+      error: (err: any) => {
+        console.error('Lỗi khi tải thông báo:', err);
+        this.isLoadingAnnouncements.set(false);
+      }
+    });
+  }
+
+  toggleAnnouncementExpand(announcementId: number) {
+    const current = this.expandedAnnouncementIds();
+    if (current.has(announcementId)) {
+      current.delete(announcementId);
+    } else {
+      current.add(announcementId);
+    }
+    this.expandedAnnouncementIds.set(current);
+  }
+
+  toggleAnnouncementEditMode() {
+    this.isAnnouncementEditMode.set(!this.isAnnouncementEditMode());
+  }
+
+  openCreateAnnouncementModal() {
+    if (!this.canCreateAnnouncement()) return;
+    this.announcementForm.reset({ isPinned: false });
+    this.editingAnnouncementId.set(null);
+    this.selectedAttachmentFile.set(null);
+    this.isAnnouncementModalOpen.set(true);
+  }
+
+  openEditAnnouncementModal(ann: any) {
+    if (!this.canUpdateAnnouncement()) return;
+    this.editingAnnouncementId.set(ann.id);
+    this.announcementForm.patchValue({
+      title: ann.title,
+      content: ann.content,
+      isPinned: ann.isPinned
+    });
+    this.currentAttachmentUrl.set(ann.attachmentUrl || null);
+    if (ann.attachmentUrl) {
+      const parts = ann.attachmentUrl.split('/');
+      this.currentAttachmentName.set(parts[parts.length - 1]);
+    } else {
+      this.currentAttachmentName.set(null);
+    }
+    this.isRemovingAttachment.set(false);
+    this.selectedAttachmentFile.set(null);
+    this.isAnnouncementModalOpen.set(true);
+  }
+
+  closeAnnouncementModal() {
+    this.isAnnouncementModalOpen.set(false);
+    this.announcementForm.reset();
+    this.editingAnnouncementId.set(null);
+    this.selectedAttachmentFile.set(null);
+    this.currentAttachmentUrl.set(null);
+    this.currentAttachmentName.set(null);
+    this.isRemovingAttachment.set(false);
+  }
+
+  removeCurrentAttachment() {
+    this.isRemovingAttachment.set(true);
+    this.currentAttachmentUrl.set(null);
+    this.currentAttachmentName.set(null);
+  }
+
+  onAttachmentFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedAttachmentFile.set(input.files[0]);
+    }
+  }
+
+  saveAnnouncement() {
+    if (this.announcementForm.invalid || !this.classId()) {
+      Object.keys(this.announcementForm.controls).forEach(key => {
+        this.announcementForm.controls[key].markAsTouched();
+      });
+      return;
+    }
+
+    this.isSubmittingAnnouncement.set(true);
+    const formValue = this.announcementForm.value;
+    const editingId = this.editingAnnouncementId();
+    const file = this.selectedAttachmentFile();
+
+    if (editingId) {
+      this.announcementService.updateAnnouncementWithFile(
+        editingId,
+        formValue.title,
+        formValue.content,
+        formValue.isPinned,
+        this.isRemovingAttachment(),
+        file
+      ).subscribe({
+        next: () => {
+          this.toastService.success('Thành công', 'Đã cập nhật thông báo');
+          this.loadAnnouncements();
+          this.closeAnnouncementModal();
+          this.isSubmittingAnnouncement.set(false);
+        },
+        error: () => {
+          this.toastService.error('Lỗi', 'Không thể cập nhật thông báo');
+          this.isSubmittingAnnouncement.set(false);
+        }
+      });
+    } else {
+      // Thêm mới thông báo
+      if (file) {
+        this.announcementService.createAnnouncementWithFile(this.classId()!, formValue.title, formValue.content, formValue.isPinned, file).subscribe({
+          next: () => {
+            this.toastService.success('Thành công', 'Đã tạo thông báo');
+            this.loadAnnouncements();
+            this.closeAnnouncementModal();
+            this.isSubmittingAnnouncement.set(false);
+          },
+          error: () => {
+            this.toastService.error('Lỗi', 'Không thể tạo thông báo');
+            this.isSubmittingAnnouncement.set(false);
+          }
+        });
+      } else {
+        const payload = {
+          classId: this.classId()!,
+          title: formValue.title,
+          content: formValue.content,
+          isPinned: formValue.isPinned
+        };
+        this.announcementService.createAnnouncement(payload).subscribe({
+          next: () => {
+            this.toastService.success('Thành công', 'Đã tạo thông báo');
+            this.loadAnnouncements();
+            this.closeAnnouncementModal();
+            this.isSubmittingAnnouncement.set(false);
+          },
+          error: () => {
+            this.toastService.error('Lỗi', 'Không thể tạo thông báo');
+            this.isSubmittingAnnouncement.set(false);
+          }
+        });
+      }
+    }
+  }
+
+  deleteAnnouncement(id: number, event: Event) {
+    event.stopPropagation();
+    if (!this.canDeleteAnnouncement()) return;
+    this.itemToDelete.set(id);
+    this.deleteTarget.set('announcement');
+    this.isDeleteModalOpen.set(true);
+  }
+
+  toggleAnnouncementPin(id: number, currentPinned: boolean, event: Event) {
+    event.stopPropagation();
+    if (!this.canUpdateAnnouncement()) return;
+    this.announcementService.togglePin(id, !currentPinned).subscribe({
+      next: () => {
+        this.toastService.success('Thành công', !currentPinned ? 'Đã ghim thông báo' : 'Đã bỏ ghim thông báo');
+        this.loadAnnouncements();
+      },
+      error: () => {
+        this.toastService.error('Lỗi', 'Không thể thao tác ghim thông báo');
       }
     });
   }
@@ -249,6 +505,7 @@ export class ClassDetailComponent implements OnInit {
       this.loadLessonDetails(lessonId);
     }
     this.expandedLessonIds.set(currentSet);
+    this.saveState();
   }
 
   loadLessonDetails(lessonId: number) {
@@ -302,7 +559,8 @@ export class ClassDetailComponent implements OnInit {
 
   deleteAssignment(id: string, event: Event) {
     event.stopPropagation();
-    this.assignmentToDelete.set(id);
+    this.itemToDelete.set(id);
+    this.deleteTarget.set('assignment');
     this.isDeleteModalOpen.set(true);
   }
 
@@ -337,8 +595,6 @@ export class ClassDetailComponent implements OnInit {
     });
   }
 
-
-
   onSearchChange(query: string) {
     this.searchQuery.set(query);
     this.currentPage.set(1);
@@ -350,8 +606,84 @@ export class ClassDetailComponent implements OnInit {
     }
   }
 
+  // -------------------------
+  // QUẢN LÝ BÀI HỌC (LESSON)
+  // -------------------------
+  toggleLessonManageMode() {
+    this.isLessonManageMode.set(!this.isLessonManageMode());
+  }
 
+  openAddLessonModal() {
+    this.isEditLessonMode.set(false);
+    this.editingLessonId.set(null);
+    this.lessonForm.reset({ orderNumber: this.lessons().length + 1 });
+    this.isLessonModalOpen.set(true);
+  }
 
+  openEditLessonModal(lesson: any, event: Event) {
+    event.stopPropagation();
+    this.isEditLessonMode.set(true);
+    this.editingLessonId.set(lesson.id);
+    this.lessonForm.patchValue({
+      name: lesson.name,
+      orderNumber: lesson.orderNumber,
+      description: lesson.description
+    });
+    this.isLessonModalOpen.set(true);
+  }
+
+  closeLessonModal() {
+    this.isLessonModalOpen.set(false);
+  }
+
+  saveLesson() {
+    if (this.lessonForm.invalid || !this.classId()) return;
+
+    this.isSavingLesson.set(true);
+    const payload = {
+      ...this.lessonForm.value,
+      classId: this.classId()
+    };
+
+    if (this.isEditLessonMode() && this.editingLessonId()) {
+      this.materialService.updateLesson(this.editingLessonId()!, payload).subscribe({
+        next: () => {
+          this.toastService.success('Thành công', 'Cập nhật buổi học thành công');
+          this.closeLessonModal();
+          this.loadLessons(this.classId()!);
+          this.isSavingLesson.set(false);
+        },
+        error: (err) => {
+          this.toastService.error('Lỗi', err.error?.message || 'Không thể cập nhật buổi học');
+          this.isSavingLesson.set(false);
+        }
+      });
+    } else {
+      this.materialService.createLesson(payload).subscribe({
+        next: () => {
+          this.toastService.success('Thành công', 'Thêm buổi học thành công');
+          this.closeLessonModal();
+          this.loadLessons(this.classId()!);
+          this.isSavingLesson.set(false);
+        },
+        error: (err) => {
+          this.toastService.error('Lỗi', err.error?.message || 'Không thể thêm buổi học');
+          this.isSavingLesson.set(false);
+        }
+      });
+    }
+  }
+
+  deleteLessonItem(id: number, event: Event) {
+    event.stopPropagation();
+    this.itemToDelete.set(id);
+    this.deleteTarget.set('lesson' as any);
+    this.isDeleteModalOpen.set(true);
+  }
+
+  // -------------------------
+  // QUẢN LÝ TÀI LIỆU
+  // -------------------------
   openAddMaterialModal(lessonId?: number, event?: Event) {
     if (event) event.stopPropagation();
     this.isEditMaterialMode.set(false);
@@ -559,7 +891,14 @@ export class ClassDetailComponent implements OnInit {
   openPreview(m: any) {
     const rawUrl = m.downloadUrl || m.resourceUrl || '';
     const srcType = m.sourceType || (rawUrl.startsWith('http') ? 'EXTERNAL' : 'MINIO');
-    const matType = m.materialType || m.fileType || 'DOCUMENT';
+    let matType = m.materialType || m.fileType || 'DOCUMENT';
+
+    if (matType === 'DOCUMENT' && rawUrl && srcType === 'MINIO') {
+      const lowerUrl = rawUrl.toLowerCase().split('?')[0];
+      if (lowerUrl.match(/\.(doc|docx|xls|xlsx|ppt|pptx|zip|rar|7z|tar|gz)$/)) {
+        matType = 'UNSUPPORTED';
+      }
+    }
 
     let safeUrl: SafeResourceUrl | null = null;
 
@@ -585,37 +924,72 @@ export class ClassDetailComponent implements OnInit {
     this.isPreviewModalOpen.set(true);
   }
 
+  openAnnouncementPreview(ann: any) {
+    const rawUrl = ann.attachmentUrl || '';
+    
+    // Fallback file type logic based on extension
+    let matType = 'UNSUPPORTED';
+    if (rawUrl) {
+      const lowerUrl = rawUrl.toLowerCase();
+      // Remove query params to check extension safely
+      const urlWithoutQuery = lowerUrl.split('?')[0];
+
+      if (urlWithoutQuery.match(/\.(jpg|jpeg|png|gif|webp)$/)) matType = 'IMAGE';
+      else if (urlWithoutQuery.match(/\.(mp4|webm|ogg)$/)) matType = 'VIDEO';
+      else if (urlWithoutQuery.match(/\.(mp3|wav|ogg)$/)) matType = 'AUDIO';
+      else if (urlWithoutQuery.match(/\.(pdf)$/)) matType = 'DOCUMENT'; // PDF can be previewed in iframe
+    }
+
+    let safeUrl: SafeResourceUrl | null = null;
+    if (rawUrl) {
+      safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(rawUrl);
+    }
+
+    this.previewData.set({
+      url: safeUrl,
+      rawUrl: rawUrl,
+      type: matType,
+      sourceType: 'MINIO',
+      title: 'Tệp đính kèm: ' + ann.title
+    });
+    this.isPreviewModalOpen.set(true);
+  }
+
   closePreview() {
     this.isPreviewModalOpen.set(false);
     this.previewData.set({ url: null, rawUrl: '', type: '', sourceType: '', title: '' });
     this.isPreviewLoading.set(false);
   }
 
-  // Đóng Modal Xóa
-  closeDeleteModal() {
-    this.isDeleteModalOpen.set(false);
-    this.assignmentToDelete.set(null);
-  }
-
-  // Hàm gọi API xóa thực sự khi người dùng ấn nút Xác nhận trên Modal
-  confirmDeleteAssignment() {
-    const id = this.assignmentToDelete();
-    if (!id) return;
-
-    this.isDeleting.set(true);
-    this.assignmentService.deleteAssignment(id).subscribe({
-      next: () => {
-        this.toastService.success('Thành công', 'Đã xóa bài tập khỏi hệ thống!');
-        this.isDeleting.set(false);
-        this.closeDeleteModal();
-        this.loadAssignments(); // Tải lại danh sách
-      },
-      error: (err) => {
-        this.toastService.error('Lỗi', err.error?.message || 'Xóa bài tập thất bại');
-        this.isDeleting.set(false);
-        this.closeDeleteModal();
-      }
-    });
+  forceDownload(url: string, title: string, event: Event) {
+    event.preventDefault();
+    this.toastService.info('Đang tải xuống', 'Vui lòng chờ trong giây lát...');
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        
+        // Extract filename from URL or title
+        let filename = title;
+        if (url.includes('/')) {
+          const parts = url.split('/');
+          let lastPart = parts[parts.length - 1];
+          if (lastPart.includes('?')) lastPart = lastPart.split('?')[0];
+          filename = decodeURIComponent(lastPart);
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(blobUrl);
+      })
+      .catch(err => {
+        console.error('Lỗi khi tải file qua fetch:', err);
+        window.open(url, '_blank');
+      });
   }
 
   // --- LOGIC BÀI TẬP MODAL ---
@@ -726,18 +1100,61 @@ export class ClassDetailComponent implements OnInit {
 
   deleteAssignmentItem(id: number | string, event?: Event, lessonId?: number) {
     if (event) event.stopPropagation();
-    if (!confirm('Bạn có chắc chắn muốn xóa bài tập này không?')) return;
+    this.itemToDelete.set(id);
+    this.deleteTarget.set('assignment');
+    this.isDeleteModalOpen.set(true);
+  }
 
-    this.assignmentService.deleteAssignment(id.toString()).subscribe({
-      next: () => {
-        this.toastService.success('Thành công', 'Đã xóa bài tập!');
-        this.refreshAssignmentsData(lessonId);
-      },
-      error: (err: any) => {
-        console.error('Lỗi xóa bài tập:', err);
-        this.toastService.error('Lỗi', err.error?.message || 'Không thể xóa bài tập này');
-      }
-    });
+  closeDeleteModal() {
+    this.isDeleteModalOpen.set(false);
+    this.itemToDelete.set(null);
+    this.isDeleting.set(false);
+  }
+
+  confirmDelete() {
+    const id = this.itemToDelete();
+    const target = this.deleteTarget();
+    if (!id) return;
+    
+    this.isDeleting.set(true);
+    if (target === 'assignment') {
+      this.assignmentService.deleteAssignment(id.toString()).subscribe({
+        next: () => {
+          this.toastService.success('Thành công', 'Đã xóa bài tập!');
+          this.refreshAssignmentsData();
+          this.closeDeleteModal();
+        },
+        error: (err: any) => {
+          console.error('Lỗi xóa bài tập:', err);
+          this.toastService.error('Lỗi', err.error?.message || 'Không thể xóa bài tập này');
+          this.isDeleting.set(false);
+        }
+      });
+    } else if (target === 'announcement') {
+      this.announcementService.deleteAnnouncement(id).subscribe({
+        next: () => {
+          this.toastService.success('Thành công', 'Đã xóa thông báo');
+          this.loadAnnouncements();
+          this.closeDeleteModal();
+        },
+        error: () => {
+          this.toastService.error('Lỗi', 'Không thể xóa thông báo');
+          this.isDeleting.set(false);
+        }
+      });
+    } else if (target === 'lesson') {
+      this.materialService.deleteLesson(id).subscribe({
+        next: () => {
+          this.toastService.success('Thành công', 'Đã xóa bài học');
+          this.loadLessons(this.classId()!);
+          this.closeDeleteModal();
+        },
+        error: (err: any) => {
+          this.toastService.error('Lỗi', err.error?.message || 'Không thể xóa bài học');
+          this.isDeleting.set(false);
+        }
+      });
+    }
   }
 
   private refreshAssignmentsData(lessonId?: number) {

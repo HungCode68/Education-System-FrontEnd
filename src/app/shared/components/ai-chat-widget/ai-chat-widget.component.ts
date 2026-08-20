@@ -1,4 +1,4 @@
-import { Component, signal, inject, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
+import { Component, signal, inject, ElementRef, ViewChild, AfterViewChecked, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AiChatService, ChatRequest, ChatResponse, AiChatSessionDto, AiChatMessageDto } from '../../../core/services/ai-chat.service';
@@ -44,6 +44,11 @@ export class AiChatWidgetComponent implements AfterViewChecked {
   // History state
   sessions = signal<AiChatSessionDto[]>([]);
   isSidebarOpen = signal(false);
+
+  // Context menu state
+  contextMenuVisible = signal(false);
+  contextMenuPosition = signal({ x: 0, y: 0 });
+  selectedSessionForDelete = signal<AiChatSessionDto | null>(null);
 
   @ViewChild('chatScrollContainer') private chatScrollContainer!: ElementRef;
 
@@ -141,5 +146,35 @@ export class AiChatWidgetComponent implements AfterViewChecked {
         this.chatScrollContainer.nativeElement.scrollTop = this.chatScrollContainer.nativeElement.scrollHeight;
       }
     } catch(err) { }
+  }
+
+  onContextMenu(event: MouseEvent, session: AiChatSessionDto) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.contextMenuPosition.set({ x: event.clientX, y: event.clientY });
+    this.selectedSessionForDelete.set(session);
+    this.contextMenuVisible.set(true);
+  }
+
+  @HostListener('document:click')
+  @HostListener('document:contextmenu')
+  closeContextMenu() {
+    this.contextMenuVisible.set(false);
+  }
+
+  confirmDelete() {
+    const session = this.selectedSessionForDelete();
+    if (session) {
+      this.chatService.deleteSession(session.id).subscribe({
+        next: () => {
+          if (this.sessionId() === session.id) {
+            this.startNewChat();
+          }
+          this.loadSessions();
+          this.contextMenuVisible.set(false);
+        },
+        error: (err: any) => console.error('Error deleting session', err)
+      });
+    }
   }
 }

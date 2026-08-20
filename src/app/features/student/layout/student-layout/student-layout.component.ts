@@ -19,7 +19,7 @@ export class StudentLayoutComponent  {
   public announcementService = inject(StudentAnnouncementService);
 
   // Lấy email/tên học sinh từ Token
-  studentName = computed(() => this.authService.authState().email || 'Học sinh');
+  studentName = computed(() => this.authService.authState().fullName || this.authService.authState().email || 'Học sinh');
 
   // State đóng/mở sidebar trên mobile
   isSidebarOpen = signal(false);
