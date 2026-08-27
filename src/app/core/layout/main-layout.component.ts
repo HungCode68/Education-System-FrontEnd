@@ -15,13 +15,13 @@ import { ToastComponent } from '../../shared/components/toast/toast.component';
       <app-sidebar [isSidebarVisible]="isSidebarVisible"></app-sidebar>
 
       <div 
-        class="main-content flex-1 flex flex-col transition-all duration-300 ease-in-out"
+        class="main-content flex-1 flex flex-col transition-all duration-300 ease-in-out min-w-0"
         [ngStyle]="{ 'margin-left': isSidebarVisible ? '256px' : '0px' }"
       >
         
         <app-header (toggleSidebar)="toggleSidebar()"></app-header>
 
-        <main class="content-area flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6 md:p-8 scrollbar-thin">
+        <main class="content-area flex-1 overflow-x-auto overflow-y-auto bg-gray-50 p-6 md:p-8 scrollbar-thin">
             <router-outlet></router-outlet>
         </main>
       </div>

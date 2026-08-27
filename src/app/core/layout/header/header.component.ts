@@ -1,11 +1,12 @@
 import { Component, Output, EventEmitter, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   template: `
     <header class="header bg-white border-b border-gray-100 flex items-center justify-between px-6 shadow-sm z-30">
       
@@ -44,6 +45,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class HeaderComponent {
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   @Output() toggleSidebar = new EventEmitter<void>();
 

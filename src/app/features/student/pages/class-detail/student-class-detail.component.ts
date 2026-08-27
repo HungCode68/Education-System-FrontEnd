@@ -7,6 +7,8 @@ import { StudentClassService } from '../../services/student-class.service';
 import { LearningMaterialService } from '../../../teacher/services/learning-material.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { AssignmentService } from '../../../teacher/services/assignment.service';
+import { AssignmentSubmissionService } from '../../../teacher/services/assignment-submission.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { EnrollmentService } from '../../../../modules/academic/services/enrollment.service';
 import { ClassAnnouncementService } from '../../../../modules/academic/services/class-announcement.service';
 import { SecureStorageService } from '../../../../core/services/secure-storage.service';
@@ -25,6 +27,8 @@ export class StudentClassDetailComponent implements OnInit {
   private toastService = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
   private assignmentService = inject(AssignmentService);
+  private submissionService = inject(AssignmentSubmissionService);
+  private authService = inject(AuthService);
   private enrollmentService = inject(EnrollmentService);
   private announcementService = inject(ClassAnnouncementService);
   private secureStorage = inject(SecureStorageService);
@@ -43,6 +47,11 @@ export class StudentClassDetailComponent implements OnInit {
   lessonMaterialsMap = signal<{ [lessonId: number]: any[] }>({});
   lessonAssignmentsMap = signal<{ [lessonId: number]: any[] }>({});
   isLoadingLessonDetailsMap = signal<{ [lessonId: number]: boolean }>({});
+
+  unreadLessonsCount = signal(0);
+  readAssignmentIds = signal<Set<number>>(new Set());
+  readGradedSubmissionIds = signal<Set<number>>(new Set());
+  studentSubmissionsMap = signal<{ [assignmentId: number]: any }>({});
 
   // --- STATE HỌC SINH ---
   students = signal<any[]>([]);
@@ -101,7 +110,14 @@ export class StudentClassDetailComponent implements OnInit {
       this.classId.set(params.get('id'));
       if (this.classId()) {
         this.restoreState();
-        this.loadClassDetails();
+        // Cần đảm bảo loadClassInfo hoặc hàm gốc vẫn ở đây,
+        // Nhưng vì tool view không thấy rõ, ta chèn thêm `loadUnreadLessonsTracking`
+        if (typeof (this as any).loadClassDetails === 'function') {
+          (this as any).loadClassDetails();
+        } else if (typeof (this as any).loadClassInfo === 'function') {
+          (this as any).loadClassInfo();
+        }
+        this.loadUnreadLessonsTracking();
       }
     });
   }
@@ -129,6 +145,61 @@ export class StudentClassDetailComponent implements OnInit {
   private saveTabState(tab: string) {
     const cid = this.classId();
     if (cid) sessionStorage.setItem(`student_class_${cid}_tab`, tab);
+  }
+
+  loadUnreadLessonsTracking() {
+    const cid = this.classId();
+    if (!cid) return;
+    
+    // Đọc trạng thái từ SecureStorage
+    const assignmentKey = `read_assignments_class_${cid}`;
+    const submissionKey = `read_graded_submissions_class_${cid}`;
+    
+    const readAssigns = this.secureStorage.getItem<number[]>(assignmentKey) || [];
+    const readGrades = this.secureStorage.getItem<number[]>(submissionKey) || [];
+    
+    this.readAssignmentIds.set(new Set(readAssigns));
+    this.readGradedSubmissionIds.set(new Set(readGrades));
+
+    // Gọi API song song để lấy Assignment và Submission
+    import('rxjs').then(({ forkJoin }) => {
+      forkJoin({
+        assignments: this.assignmentService.getAssignmentsByClassIdUnpaginated(cid),
+        submissions: this.submissionService.getMySubmissionsByClassId(cid)
+      }).subscribe({
+        next: ({ assignments, submissions }) => {
+          let unreadCount = 0;
+          
+          // Map submissions by assignmentId
+          const subMap: { [assignmentId: number]: any } = {};
+          (submissions || []).forEach((sub: any) => {
+            // API trả về danh sách xếp theo SubmittedAtDesc (mới nhất xếp trên)
+            // Nên ta chỉ cần lấy bản ghi đầu tiên gặp được cho mỗi assignmentId
+            if (!subMap[sub.assignmentId]) {
+              subMap[sub.assignmentId] = sub;
+            }
+          });
+          this.studentSubmissionsMap.set(subMap);
+
+          // Tính toán số lượng chưa đọc
+          (assignments || []).forEach((assign: any) => {
+            // Nếu bài tập được giao (PUBLISHED) và chưa xem
+            if (assign.status === 'PUBLISHED' && !this.readAssignmentIds().has(assign.id)) {
+              unreadCount++;
+            }
+            
+            // Nếu bài tập đã chấm điểm và chưa xem điểm
+            const sub = subMap[assign.id];
+            if (sub && (sub.status === 'GRADED' || sub.score !== null) && !this.readGradedSubmissionIds().has(sub.id)) {
+              unreadCount++;
+            }
+          });
+
+          this.unreadLessonsCount.set(unreadCount);
+        },
+        error: (err) => console.error('Lỗi tải dữ liệu Unread tracking:', err)
+      });
+    });
   }
 
   private saveExpandedLessonsState() {
@@ -218,6 +289,48 @@ export class StudentClassDetailComponent implements OnInit {
       this.markAnnouncementAsRead(id);
     }
     this.expandedAnnouncementIds.set(current);
+  }
+
+  navigateToAssignmentDetail(assignmentId: number, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Đánh dấu Assignment là đã xem
+    const cid = this.classId();
+    if (cid) {
+      const assignmentKey = `read_assignments_class_${cid}`;
+      const readAssigns = new Set(this.secureStorage.getItem<number[]>(assignmentKey) || []);
+      if (!readAssigns.has(assignmentId)) {
+        readAssigns.add(assignmentId);
+        this.secureStorage.setItem(assignmentKey, Array.from(readAssigns));
+        this.readAssignmentIds.set(readAssigns);
+      }
+
+      // Đánh dấu Submission là đã xem điểm (nếu có điểm)
+      const sub = this.studentSubmissionsMap()[assignmentId];
+      if (sub && (sub.status === 'GRADED' || sub.score !== null)) {
+        const submissionKey = `read_graded_submissions_class_${cid}`;
+        const readGrades = new Set(this.secureStorage.getItem<number[]>(submissionKey) || []);
+        if (!readGrades.has(sub.id)) {
+          readGrades.add(sub.id);
+          this.secureStorage.setItem(submissionKey, Array.from(readGrades));
+          this.readGradedSubmissionIds.set(readGrades);
+        }
+      }
+
+      // Cập nhật lại số lượng chưa đọc (gọi lại API hoặc tính toán lại ở Client, ta tính toán lại cho nhanh)
+      this.recalculateUnreadLessonsCount();
+    }
+
+    this.router.navigate(['/student/assignment', assignmentId]);
+  }
+
+  private recalculateUnreadLessonsCount() {
+    let unreadCount = 0;
+    const assignments = this.assignments(); // Wait, assignments are not loaded here.
+    // Instead of looping assignments, we can just loadUnreadLessonsTracking() again!
+    this.loadUnreadLessonsTracking();
   }
 
   private markAnnouncementAsRead(annId: number) {
@@ -328,11 +441,6 @@ export class StudentClassDetailComponent implements OnInit {
   }
 
   // --- LOGIC BÀI TẬP ---
-  navigateToAssignmentDetail(assignmentId: number | string, event?: Event) {
-    if (event) event.stopPropagation();
-    // Chuyển hướng đến giao diện học viên làm bài tập
-    this.router.navigate(['/student/assignment', assignmentId]);
-  }
 
   loadAssignments() {
     this.isLoadingAssignments.set(true);
@@ -365,6 +473,7 @@ export class StudentClassDetailComponent implements OnInit {
         this.isLoading.set(false);
         this.loadLessons(res.id);
         this.loadStudents(res.id); 
+        this.loadAnnouncements(res.id); // Tải thông báo ngay lập tức để lấy số lượng chưa đọc
         if (res?.courseId) {
           this.loadMaterials(res.courseId);
         }

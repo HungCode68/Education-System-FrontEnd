@@ -143,6 +143,11 @@ export const adminRoutes: Routes = [
     canActivate: [authGuard, permissionGuard(['LOG_VIEW', 'LOG_READ', 'ROLE_VIEW'])]
   },
   {
+    path: 'profile',
+    loadComponent: () => import('../teacher/pages/teacher-profile/teacher-profile.component').then(m => m.TeacherProfileComponent),
+    canActivate: [authGuard]
+  },
+  {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full'

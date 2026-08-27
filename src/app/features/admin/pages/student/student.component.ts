@@ -10,6 +10,7 @@ import { ToastService } from '../../../../core/services/toast.service';
 import { Student, StudentStatus } from '../../../../modules/user/models/student.model';
 import { RoleService } from '../../../../modules/user/services/role.service';
 import { Role } from '../../../../modules/user/models/role.model';
+import { AuthService } from '../../../../core/services/auth.service';
 
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
@@ -27,6 +28,7 @@ export class StudentComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private router = inject(Router);
   private roleService = inject(RoleService);
+  private authService = inject(AuthService);
 
   isReadOnly = signal(false);
   isAcademic = signal(false);
@@ -75,7 +77,9 @@ export class StudentComponent implements OnInit {
     this.initForms();
     this.setupFilters();
     this.loadData();
-    this.loadRoles();
+    if (this.authService.hasPermission('ROLE_VIEW')) {
+      this.loadRoles();
+    }
   }
 
   private loadRoles() {

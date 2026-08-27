@@ -11,6 +11,7 @@ import { Department } from '../../../../modules/user/models/department.model';
 import { ToastService } from '../../../../core/services/toast.service';
 import { RoleService } from '../../../../modules/user/services/role.service';
 import { Role } from '../../../../modules/user/models/role.model';
+import { AuthService } from '../../../../core/services/auth.service';
 
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
@@ -28,6 +29,7 @@ export class StaffComponent implements OnInit {
   private toastService = inject(ToastService);
   private router = inject(Router);
   private roleService = inject(RoleService);
+  private authService = inject(AuthService);
 
   isReadOnly = signal(false);
   isAcademic = signal(false);
@@ -101,7 +103,9 @@ export class StaffComponent implements OnInit {
     this.loadDepartments();
     this.setupFilters();
     this.loadData();
-    this.loadRoles();
+    if (this.authService.hasPermission('ROLE_VIEW')) {
+      this.loadRoles();
+    }
   }
 
   private loadRoles() {

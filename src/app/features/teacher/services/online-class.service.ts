@@ -16,7 +16,7 @@ export class TeacherClassService {
   }
 
   // Lấy chi tiết lớp học
-  getClassById(classId: string): Observable<any> {
+  getClassDetail(classId: string): Observable<any> {
     return this.http.get<any>(`${this.classesApiUrl}/${classId}`);
   }
 

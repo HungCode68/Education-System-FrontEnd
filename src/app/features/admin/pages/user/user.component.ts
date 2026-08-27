@@ -9,6 +9,7 @@ import { RoleService } from '../../../../modules/user/services/role.service';
 import { ToastService } from '../../../../core/services/toast.service';
 import { User, UserStatus } from '../../../../modules/user/models/user.model';
 import { Role } from '../../../../modules/user/models/role.model';
+import { AuthService } from '../../../../core/services/auth.service';
 
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
@@ -24,6 +25,7 @@ export class UserComponent implements OnInit {
   private toastService = inject(ToastService);
   private fb = inject(FormBuilder);
   private destroyRef = inject(DestroyRef);
+  private authService = inject(AuthService);
 
   users = signal<User[]>([]);
   roles = signal<Role[]>([]);
@@ -83,7 +85,9 @@ export class UserComponent implements OnInit {
       status: ['ACTIVE', [Validators.required]],
       roleNames: [[], [Validators.required]]
     });
-    this.loadRoles();
+    if (this.authService.hasPermission('ROLE_VIEW')) {
+      this.loadRoles();
+    }
     this.setupFilters();
     this.loadData();
   }

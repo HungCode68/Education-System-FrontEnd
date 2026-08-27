@@ -18,6 +18,11 @@ export class AssignmentService {
     return this.http.get<any>(`${this.apiUrl}/class/${classId}`, { params });
   }
 
+  // Lấy danh sách bài tập của 1 lớp (không phân trang)
+  getAssignmentsByClassIdUnpaginated(classId: number | string): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/class/${classId}`);
+  }
+
   // Lấy chi tiết 1 bài tập
   getAssignmentById(id: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/${id}`);

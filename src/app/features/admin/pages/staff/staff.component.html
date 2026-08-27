@@ -70,12 +70,10 @@
                 <input type="checkbox" (change)="toggleAll($event)" [checked]="selectedStaffIds().length > 0 && selectedStaffIds().length === staffs().length" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
               </th>
             }
-            <th class="px-6 py-3.5 font-semibold">{{ isAcademic() ? 'Mã giảng viên' : 'Mã nhân sự' }}</th>
-            <th class="px-6 py-3.5 font-semibold">Họ và tên</th>
+            <th class="px-6 py-3.5 font-semibold">{{ isAcademic() ? 'Giảng viên' : 'Nhân sự' }}</th>
             <th class="px-6 py-3.5 font-semibold">Thông tin cá nhân</th>
             <th class="px-6 py-3.5 font-semibold">Vị trí</th>
             <th class="px-6 py-3.5 font-semibold">Phòng ban</th>
-            <th class="px-6 py-3.5 font-semibold">Số điện thoại</th>
             <th class="px-6 py-3.5 font-semibold">Hợp đồng</th>
             <th class="px-6 py-3.5 font-semibold">Trạng thái</th>
             @if (!isReadOnly()) {
@@ -111,11 +109,14 @@
                            class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
                   </td>
                 }
-                <td class="px-6 py-4 font-mono font-medium text-blue-600 dark:text-blue-400">{{ staff.staffCode }}</td>
-                <td class="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                  <div>{{ staff.fullName }}</div>
+                <td class="px-6 py-4">
+                  <div class="font-medium text-gray-900 dark:text-white">{{ staff.fullName }}</div>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="font-mono text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">{{ staff.staffCode }}</span>
+                    <span class="text-xs text-gray-500">ĐT: {{ staff.phone || '---' }}</span>
+                  </div>
                   @if (staff.userEmail) {
-                    <div class="text-xs text-gray-400 font-normal">{{ staff.userEmail }}</div>
+                    <div class="text-xs text-gray-400 mt-1">{{ staff.userEmail }}</div>
                   }
                 </td>
                 <td class="px-6 py-4">
@@ -129,7 +130,6 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 text-gray-600 dark:text-gray-300">{{ staff.departmentName || '—' }}</td>
-                <td class="px-6 py-4 font-mono">{{ staff.phone || '—' }}</td>
                 <td class="px-6 py-4 text-xs">{{ contractTypeLabels[staff.contractType || 'FULLTIME'] }}</td>
                 <td class="px-6 py-4">
                   @if (staff.status === 'ACTIVE') {

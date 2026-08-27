@@ -17,9 +17,25 @@
           type="text" 
           [formControl]="searchControl" 
           placeholder="Tìm mã hoặc tên lớp..." 
-          class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-64 pl-10 p-2.5 outline-none transition shadow-sm"
+          class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-56 pl-10 p-2.5 outline-none transition shadow-sm"
         >
       </div>
+
+      <!-- Course Filter -->
+      <select [formControl]="courseFilter" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-48 p-2.5 outline-none transition shadow-sm">
+        <option value="">Tất cả khóa học</option>
+        @for (c of availableCourses(); track c.id) {
+          <option [value]="c.id">{{ c.code }} - {{ c.name }}</option>
+        }
+      </select>
+
+      <!-- Term Filter -->
+      <select [formControl]="termFilter" class="bg-white border border-gray-200 text-gray-900 text-sm rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-500 block w-40 p-2.5 outline-none transition shadow-sm">
+        <option value="">Tất cả kỳ học</option>
+        @for (t of availableTerms(); track t.id) {
+          <option [value]="t.id">{{ t.code }}</option>
+        }
+      </select>
 
       <!-- Add Button -->
       <button 

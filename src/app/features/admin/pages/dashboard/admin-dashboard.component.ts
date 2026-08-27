@@ -28,7 +28,7 @@ export class AdminDashboardComponent implements OnInit {
   private logService = inject(ActivityLogService); 
 
   // Lấy tên Admin từ AuthService
-  adminName = computed(() => this.authService.authState().email || 'System Admin');
+  adminName = computed(() => this.authService.authState().fullName || this.authService.authState().email || 'System Admin');
 
   // Khai báo ngày hiện tại dùng signal
   currentDate = signal(new Date());

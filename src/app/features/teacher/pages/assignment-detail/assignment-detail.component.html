@@ -223,14 +223,14 @@
   
   <div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
     
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-700 px-6 py-4 flex justify-between items-center shrink-0">
-      <div class="flex items-center text-white">
-        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center mr-3"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></div>
-        <h3 class="text-xl font-bold tracking-wide">
+    <div class="bg-white border-b border-gray-100 px-6 py-4 flex justify-between items-center shrink-0">
+      <div class="flex items-center text-gray-900">
+        <div class="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mr-3"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></div>
+        <h3 class="text-xl font-extrabold tracking-tight">
           {{ editingQuestion() ? 'Chỉnh sửa câu hỏi' : 'Soạn câu hỏi mới' }}
         </h3>
       </div>
-      <button (click)="closeQuestionModal()" class="text-indigo-100 hover:text-white p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+      <button type="button" (click)="closeQuestionModal()" class="text-gray-400 hover:text-gray-600 hover:bg-gray-100 p-2 rounded-full transition"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
     </div>
 
     <form [formGroup]="questionForm" (ngSubmit)="submitQuestion()" class="flex-1 overflow-y-auto p-6 sm:p-8 space-y-5 custom-scrollbar">

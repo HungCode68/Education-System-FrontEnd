@@ -8,7 +8,6 @@ import { AssignmentsTabComponent } from './components/assignments-tab/assignment
 import { ProgressTabComponent } from './components/progress-tab/progress-tab.component';
 import { GradesTabComponent } from './components/grades-tab/grades-tab.component';
 import { MyClassesComponent } from './pages/online-class/my-classes.component';
-import { TeacherLayoutComponent } from './layout/teacher-layout/teacher-layout.component';
 import { AssignmentFormComponent } from './pages/assignment/assignment-form.component';
 import { AssignmentDetailComponent } from './pages/assignment-detail/assignment-detail.component';
 import { AssignmentSubmissionsComponent } from './pages/assignment-submission/assignment-submissions.component';
@@ -23,27 +22,20 @@ import { AssignmentHistoryComponent } from './pages/assignment-history/assignmen
 import { TeacherScheduleComponent } from './pages/schedule/teacher-schedule.component';
 
 export const teacherRoutes: Routes = [
-  {
-    path: '',
-    component: TeacherLayoutComponent, // Khung Layout bọc ngoài cùng
-    children: [
-      { path: '', redirectTo: 'my-classes', pathMatch: 'full' },
-      // Tạm thời chưa làm Dashboard, mình trỏ thẳng vào my-classes
-      { path: 'my-classes', component: MyClassesComponent },
-      { path: 'classes/:id', component: ClassDetailComponent },
-      { path: 'schedule', component: TeacherScheduleComponent },
-      { path: 'assignments/create', component: AssignmentFormComponent },
-      { path: 'assignments/:id', component: AssignmentDetailComponent },
-      { path: 'assignments/edit/:id', component: AssignmentFormComponent },
-      { path: 'assignments/:id/submissions', component: AssignmentSubmissionsComponent },
-      { path: 'submissions/:id/grade', component: SubmissionDetailComponent },
-      { path: 'profile', component: TeacherProfileComponent },  
-      { path: 'homeroom', component: HomeroomAnnouncementComponent },
-      { path: 'department-member', component: DepartmentMembersComponent },
-      { path: 'teacher-assignment', component: DepartmentAssignmentComponent },
-      { path: 'teacher-assignment-list', component: DepartmentAssignmentListComponent },
-      { path: 'teacher-substitution', component: DepartmentSubstitutionComponent },
-      { path: 'teacher-history', component: AssignmentHistoryComponent }
-    ]
-  }
+  { path: '', redirectTo: 'my-classes', pathMatch: 'full' },
+  { path: 'my-classes', component: MyClassesComponent },
+  { path: 'classes/:id', component: ClassDetailComponent },
+  { path: 'schedule', component: TeacherScheduleComponent },
+  { path: 'assignments/create', component: AssignmentFormComponent },
+  { path: 'assignments/:id', component: AssignmentDetailComponent },
+  { path: 'assignments/edit/:id', component: AssignmentFormComponent },
+  { path: 'assignments/:id/submissions', component: AssignmentSubmissionsComponent },
+  { path: 'submissions/:id/grade', component: SubmissionDetailComponent },
+  { path: 'profile', component: TeacherProfileComponent },  
+  { path: 'homeroom', component: HomeroomAnnouncementComponent },
+  { path: 'department-member', component: DepartmentMembersComponent },
+  { path: 'teacher-assignment', component: DepartmentAssignmentComponent },
+  { path: 'teacher-assignment-list', component: DepartmentAssignmentListComponent },
+  { path: 'teacher-substitution', component: DepartmentSubstitutionComponent },
+  { path: 'teacher-history', component: AssignmentHistoryComponent }
 ];
