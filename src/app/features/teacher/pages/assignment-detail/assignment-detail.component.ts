@@ -294,7 +294,10 @@ export class AssignmentDetailComponent implements OnInit {
             scoreWeight: formValues.scoreWeight
           }).subscribe({
             next: () => this.finalizeSubmit('Đã cập nhật câu hỏi thành công!'),
-            error: () => this.finalizeSubmit('Đã cập nhật câu hỏi!')
+            error: (err: any) => {
+              this.toastService.error('Lỗi', err.error?.message || 'Không thể cập nhật trọng số câu hỏi vào bài tập');
+              this.isSavingQuestion.set(false);
+            }
           });
         },
         error: (err: any) => {
@@ -314,7 +317,10 @@ export class AssignmentDetailComponent implements OnInit {
               scoreWeight: formValues.scoreWeight
             }).subscribe({
               next: () => this.finalizeSubmit('Đã thêm câu hỏi vào bài tập thành công!'),
-              error: () => this.finalizeSubmit('Đã tạo câu hỏi!')
+              error: (err: any) => {
+                this.toastService.error('Lỗi', err.error?.message || 'Không thể thêm câu hỏi vào bài tập');
+                this.isSavingQuestion.set(false);
+              }
             });
           } else {
             this.finalizeSubmit('Đã tạo câu hỏi!');

@@ -17,4 +17,8 @@ export class TeacherProfileService {
   updateProfile(id: string, data: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, data);
   }
+
+  changePassword(data: any): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/api/v1/users/me/change-password`, data);
+  }
 }

@@ -68,13 +68,21 @@ export class LoginComponent implements OnInit {
   }
 
   private navigateByRole(roles: string[]): void {
+    console.log('Navigating by roles:', roles);
     const hasRole = (role: string) => roles.some(r => r === role || r === `ROLE_${role}` || r.endsWith(`_${role}`) || r.includes(role));
     const isTeacher = roles.some(r => r.includes('TEACHER'));
 
     if (hasRole('ADMIN') || hasRole('SYSTEM') || hasRole('ADMIN_SYSTEM')) {
       this.router.navigate(['/admin']);
+    } else if (hasRole('HR') || hasRole('NHAN_SU')) {
+      this.router.navigate(['/hr']);
     } else if (hasRole('ACADEMIC') || hasRole('TRAINING') || hasRole('MANAGER')) {
-      this.router.navigate(['/academic']);
+      console.log('Triggering navigate to /academic');
+      this.router.navigate(['/academic']).then(success => {
+        console.log('Navigation success:', success);
+      }).catch(err => {
+        console.error('Navigation error:', err);
+      });
     } else if (isTeacher) {
       this.router.navigate(['/teacher']);
     } else if (hasRole('STUDENT')) {

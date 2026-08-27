@@ -33,7 +33,19 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'hr',
+    component: MainLayoutComponent,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        loadChildren: () => import('./features/hr/hr.routes').then(m => m.hrRoutes)
+      }
+    ]
+  },
+  {
     path: 'teacher',
+    component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
       {
@@ -44,6 +56,7 @@ export const routes: Routes = [
   },
   {
     path: 'student',
+    component: MainLayoutComponent,
     canActivate: [authGuard, roleGuard(['STUDENT'])],
     children: [
       {

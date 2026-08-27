@@ -21,12 +21,12 @@ export class StudentClassService {
 
   // Lấy danh sách thành viên trong lớp (Học sinh)
   getClassStudents(classId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${classId}/students?status=active`);
+    return this.http.get(`${environment.apiUrl}/api/v1/enrollments/class/${classId}`);
   }
 
   // Lấy danh sách tài liệu của lớp (Chỉ lấy những tài liệu đã Published)
   getClassMaterials(classId: string): Observable<any> {
-    return this.http.get(`${this.apiUrl}/../learning-materials/student/class/${classId}`);
+    return this.http.get(`${environment.apiUrl}/api/v1/learning-materials/class/${classId}`);
   }
 
   // Lấy link tải file thực tế (MinIO Presigned URL hoặc External Link)

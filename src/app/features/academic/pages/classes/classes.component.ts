@@ -39,6 +39,9 @@ export class ClassesComponent implements OnInit {
   availableCourses = signal<Course[]>([]);
   availableTerms = signal<Term[]>([]);
 
+  courseFilter = new FormControl('');
+  termFilter = new FormControl('');
+
   // --- STATE MODAL THÊM / SỬA ---
   isModalOpen = signal(false);
   isEditing = signal(false);
@@ -94,6 +97,16 @@ export class ClassesComponent implements OnInit {
       this.currentPage.set(1);
       this.loadData();
     });
+
+    this.courseFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.currentPage.set(1);
+      this.loadData();
+    });
+
+    this.termFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.currentPage.set(1);
+      this.loadData();
+    });
   }
 
   private loadDropdownOptions() {
@@ -113,7 +126,9 @@ export class ClassesComponent implements OnInit {
     this.classesService.getClasses({
       page: this.currentPage(),
       size: this.pageSize(),
-      keyword: this.searchControl.value || ''
+      keyword: this.searchControl.value || '',
+      courseId: this.courseFilter.value || undefined,
+      termId: this.termFilter.value || undefined
     }).subscribe({
       next: (response) => {
         this.classes.set(response.content || []);

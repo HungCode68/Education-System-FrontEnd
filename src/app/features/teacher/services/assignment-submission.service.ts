@@ -55,4 +55,9 @@ export class AssignmentSubmissionService {
   getSubmissionById(submissionId: string): Observable<any> {
     return this.http.get<any>(`${this.submissionUrl}/${submissionId}`);
   }
+
+  // Lấy tất cả bài nộp của học viên hiện tại trong 1 lớp học
+  getMySubmissionsByClassId(classId: string | number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.submissionUrl}/my-submissions/class/${classId}`);
+  }
 }

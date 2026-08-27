@@ -10,6 +10,7 @@ import { AssignmentService } from '../../services/assignment.service';
 import { EnrollmentService } from '../../../../modules/academic/services/enrollment.service';
 import { ClassAnnouncementService } from '../../../../modules/academic/services/class-announcement.service';
 import { AuthService } from '../../../../core/services/auth.service';
+import { SecureStorageService } from '../../../../core/services/secure-storage.service';
 
 @Component({
   selector: 'app-class-detail',
@@ -29,14 +30,15 @@ export class ClassDetailComponent implements OnInit {
   private enrollmentService = inject(EnrollmentService);
   private announcementService = inject(ClassAnnouncementService);
   public authService = inject(AuthService);
+  private secureStorage = inject(SecureStorageService);
 
-  canCreateAnnouncement = computed(() => this.authService.hasPermission('ANNOUNCEMENT_CREATE'));
-  canUpdateAnnouncement = computed(() => this.authService.hasPermission('ANNOUNCEMENT_UPDATE'));
-  canDeleteAnnouncement = computed(() => this.authService.hasPermission('ANNOUNCEMENT_DELETE'));
+  canCreateAnnouncement = signal(true);
+  canUpdateAnnouncement = signal(true);
+  canDeleteAnnouncement = signal(true);
 
-  canCreateLesson = computed(() => this.authService.hasPermission('LESSON_CREATE'));
-  canUpdateLesson = computed(() => this.authService.hasPermission('LESSON_UPDATE'));
-  canDeleteLesson = computed(() => this.authService.hasPermission('LESSON_DELETE'));
+  canCreateLesson = signal(true);
+  canUpdateLesson = signal(true);
+  canDeleteLesson = signal(true);
 
   classId = signal<string | null>(null);
   classInfo = signal<any | null>(null);
@@ -145,9 +147,69 @@ export class ClassDetailComponent implements OnInit {
     }));
   }
 
+  // --- STATE THEO DÕI BÀI TẬP ĐẾN HẠN (GIẢNG VIÊN) ---
+  unreadOverdueCount = signal(0);
+  readOverdueAssignmentIds = signal<Set<number>>(new Set());
+
+  loadUnreadOverdueTracking() {
+    const cid = this.classId();
+    if (!cid) return;
+    
+    // Đọc trạng thái từ SecureStorage
+    const overdueKey = `teacher_read_overdue_assignments_class_${cid}`;
+    const readOverdues = this.secureStorage.getItem<number[]>(overdueKey) || [];
+    this.readOverdueAssignmentIds.set(new Set(readOverdues));
+
+    // Lấy danh sách assignment để tính toán
+    this.assignmentService.getAssignmentsByClassIdUnpaginated(cid).subscribe({
+      next: (assignments: any[]) => {
+        let unreadCount = 0;
+        const now = new Date().getTime();
+        
+        (assignments || []).forEach(assign => {
+          // Chỉ tính những bài tập đã Giao (PUBLISHED) và CÓ dueDate
+          if (assign.status === 'PUBLISHED' && assign.dueDate) {
+            const dueDate = new Date(assign.dueDate).getTime();
+            // Nếu đã quá hạn và chưa xem
+            if (now > dueDate && !this.readOverdueAssignmentIds().has(assign.id)) {
+              unreadCount++;
+            }
+          }
+        });
+        
+        this.unreadOverdueCount.set(unreadCount);
+      },
+      error: (err) => console.error('Lỗi tải dữ liệu Overdue tracking:', err)
+    });
+  }
+
   navigateToAssignmentDetail(assignmentId: number | string, event?: Event) {
     if (event) event.stopPropagation();
+    
+    // Đánh dấu Assignment quá hạn là đã xem
+    const cid = this.classId();
+    if (cid && typeof assignmentId === 'number') {
+      const overdueKey = `teacher_read_overdue_assignments_class_${cid}`;
+      const readOverdues = new Set(this.secureStorage.getItem<number[]>(overdueKey) || []);
+      
+      if (!readOverdues.has(assignmentId)) {
+        readOverdues.add(assignmentId);
+        this.secureStorage.setItem(overdueKey, Array.from(readOverdues));
+        this.readOverdueAssignmentIds.set(readOverdues);
+        
+        // Tính lại local state để khỏi phải call API
+        this.loadUnreadOverdueTracking();
+      }
+    }
+
     this.router.navigate(['/teacher/assignments', assignmentId]);
+  }
+
+  isAssignmentOverdueAndUnread(assignment: any): boolean {
+    if (!assignment || !assignment.dueDate || assignment.status !== 'PUBLISHED') return false;
+    const dueDate = new Date(assignment.dueDate).getTime();
+    const now = new Date().getTime();
+    return now > dueDate && !this.readOverdueAssignmentIds().has(assignment.id);
   }
 
   // --- STATE BÀI TẬP ---
@@ -226,7 +288,22 @@ export class ClassDetailComponent implements OnInit {
     this.materialForm = this.fb.group({
       title: ['', Validators.required],
       description: [''],
-      materialType: ['DOCUMENT']
+      materialType: ['DOCUMENT'],
+      sourceType: ['MINIO'],
+      resourceUrl: [''],
+      displayOrder: [0]
+    });
+
+    // Tự động đổi materialType khi chuyển nguồn tài liệu
+    this.materialForm.get('sourceType')?.valueChanges.subscribe((sourceType: string) => {
+      if (sourceType === 'EXTERNAL') {
+        this.materialForm.get('materialType')?.setValue('EXTERNAL_LINK');
+      } else if (sourceType === 'MINIO') {
+        const currentType = this.materialForm.get('materialType')?.value;
+        if (currentType === 'EXTERNAL_LINK') {
+          this.materialForm.get('materialType')?.setValue('DOCUMENT');
+        }
+      }
     });
 
     this.lessonForm = this.fb.group({
@@ -578,17 +655,19 @@ export class ClassDetailComponent implements OnInit {
   // --- LOGIC HỌC SINH & LỚP HỌC ---
   private loadClassDetails() {
     this.isLoading.set(true);
-    this.classService.getClassById(this.classId()!).subscribe({
-      next: (res) => { 
+    this.classService.getClassDetail(this.classId()!).subscribe({
+      next: (res: any) => { 
         this.classInfo.set(res); 
         this.isLoading.set(false);
         this.loadLessons(res.id);
         this.loadStudents(res.id); 
+        this.loadAnnouncements(res.id); // Tải thông báo ngay lập tức để lấy số lượng chưa đọc
+        this.loadUnreadOverdueTracking(); // Lấy số lượng bài tập overdue
         if (res?.courseId) {
           this.loadMaterials(res.courseId);
         }
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Lỗi khi tải thông tin lớp:', err);
         this.isLoading.set(false);
       }

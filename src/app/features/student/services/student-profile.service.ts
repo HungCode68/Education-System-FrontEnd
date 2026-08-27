@@ -12,4 +12,8 @@ export class StudentProfileService {
   getMyProfile(): Observable<any> {
     return this.http.get(`${this.apiUrl}/my-profile`);
   }
+
+  changePassword(data: any): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/api/v1/users/me/change-password`, data);
+  }
 }

@@ -127,5 +127,10 @@ export const academicRoutes: Routes = [
     path: 'activity-logs',
     component: ActivityLogComponent,
     canActivate: [authGuard, permissionGuard(['LOG_VIEW', 'LOG_READ', 'ROLE_VIEW'])]
+  },
+  {
+    path: 'profile',
+    loadComponent: () => import('../teacher/pages/teacher-profile/teacher-profile.component').then(m => m.TeacherProfileComponent),
+    canActivate: [authGuard]
   }
 ];
