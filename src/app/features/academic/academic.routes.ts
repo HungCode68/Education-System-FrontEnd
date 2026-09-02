@@ -43,7 +43,7 @@ export const academicRoutes: Routes = [
     canActivate: [authGuard, permissionGuard(['CLASS_VIEW', 'CLASS_READ', 'CLASS_MANAGE', 'CLASS_CREATE', 'CLASS_UPDATE', 'CLASS_DELETE'])]
   },
   {
-    path: 'schedules',
+    path: 'class-schedules',
     component: ScheduleComponent,
     canActivate: [authGuard, permissionGuard(['SCHEDULE_VIEW', 'SCHEDULE_READ', 'SCHEDULE_MANAGE', 'SCHEDULE_CREATE'])]
   },

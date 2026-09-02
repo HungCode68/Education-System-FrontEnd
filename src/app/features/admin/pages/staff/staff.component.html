@@ -6,7 +6,13 @@
       <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ isAcademic() ? 'Danh sách giảng viên giảng dạy tại trung tâm' : 'Danh sách nhân sự thuộc trung tâm (Giáo viên, Trợ giảng, Tư vấn viên, Quản lý)' }}</p>
     </div>
     <div class="flex items-center gap-3">
-      @if (selectedStaffIds().length > 0 && canProvisionAccount()) {
+      @if (selectedStaffIds().length > 0) {
+        <button *hasPermission="'STAFF_DELETE'" (click)="openBatchDeleteModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50 text-sm font-medium rounded-xl transition-colors border border-rose-200 dark:border-rose-800">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Xóa hàng loạt ({{ selectedStaffIds().length }})
+        </button>
         <button *hasPermission="'STAFF_PROVISION'" (click)="openBatchAccountModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:hover:bg-emerald-900/50 text-sm font-medium rounded-xl transition-colors border border-emerald-200 dark:border-emerald-800">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
@@ -65,11 +71,9 @@
       <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
         <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
           <tr>
-            @if (canProvisionAccount()) {
-              <th class="px-6 py-3.5 w-12 text-center">
-                <input type="checkbox" (change)="toggleAll($event)" [checked]="selectedStaffIds().length > 0 && selectedStaffIds().length === staffs().length" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
-              </th>
-            }
+            <th *hasAnyPermission="['STAFF_PROVISION', 'STAFF_DELETE']" class="px-6 py-3.5 w-12 text-center">
+              <input type="checkbox" (change)="toggleAll($event)" [checked]="selectedStaffIds().length > 0 && selectedStaffIds().length === staffs().length" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+            </th>
             <th class="px-6 py-3.5 font-semibold">{{ isAcademic() ? 'Giảng viên' : 'Nhân sự' }}</th>
             <th class="px-6 py-3.5 font-semibold">Thông tin cá nhân</th>
             <th class="px-6 py-3.5 font-semibold">Vị trí</th>
@@ -101,14 +105,12 @@
           } @else {
             @for (staff of staffs(); track staff.id) {
               <tr class="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors">
-                @if (canProvisionAccount()) {
-                  <td class="px-6 py-4 text-center">
-                    <input type="checkbox"
-                           [checked]="selectedStaffIds().includes(staff.id)"
-                           (change)="toggleSelection(staff.id)"
-                           class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
-                  </td>
-                }
+                <td *hasAnyPermission="['STAFF_PROVISION', 'STAFF_DELETE']" class="px-6 py-4 text-center">
+                  <input type="checkbox"
+                         [checked]="selectedStaffIds().includes(staff.id)"
+                         (change)="toggleSelection(staff.id)"
+                         class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
+                </td>
                 <td class="px-6 py-4">
                   <div class="font-medium text-gray-900 dark:text-white">{{ staff.fullName }}</div>
                   <div class="flex items-center gap-2 mt-1">
@@ -399,6 +401,20 @@
             <button type="submit" [disabled]="isLoading() || batchAccountForm.invalid" class="px-4 py-2 text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl disabled:opacity-50">Cấp tài khoản</button>
           </div>
         </form>
+      </div>
+    </div>
+  }
+
+  <!-- Batch Delete Modal -->
+  @if (isBatchDeleteModalOpen() && !isReadOnly()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-4">
+        <h3 class="text-base font-bold text-gray-900 dark:text-white">Xác nhận xóa hàng loạt</h3>
+        <p class="text-xs text-gray-500">Bạn sắp xóa <strong>{{ selectedStaffIds().length }}</strong> nhân sự. Những nhân sự đã có dữ liệu ràng buộc (dạy học, chấm công) sẽ được tự động bỏ qua. Bạn có chắc chắn muốn tiếp tục?</p>
+        <div class="flex justify-end gap-3 pt-2">
+          <button (click)="closeBatchDeleteModal()" class="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl">Hủy</button>
+          <button (click)="executeBatchDelete()" [disabled]="isLoading()" class="px-4 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-xl disabled:opacity-50">Tiến hành Xóa</button>
+        </div>
       </div>
     </div>
   }

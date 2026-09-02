@@ -35,6 +35,10 @@ export class EnrollmentService {
     return this.http.get<Enrollment[]>(`${this.apiUrl}/class/${classId}`);
   }
 
+  getByStudentId(studentId: number | string): Observable<Enrollment[]> {
+    return this.http.get<Enrollment[]>(`${this.apiUrl}/student/${studentId}`);
+  }
+
   enrollStudent(classId: number | string, studentId: number | string): Observable<Enrollment> {
     return this.http.post<Enrollment>(`${this.apiUrl}`, { classId, studentId });
   }

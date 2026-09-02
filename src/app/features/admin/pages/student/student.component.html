@@ -7,6 +7,9 @@
     </div>
     <div class="flex items-center gap-3">
       @if (selectedStudentIds().length > 0) {
+        <button *hasPermission="'STUDENT_DELETE'" (click)="openBatchDeleteModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm">
+          Xóa hàng loạt ({{ selectedStudentIds().length }})
+        </button>
         <button *hasPermission="'STUDENT_PROVISION'" (click)="openBatchAccountModal()" class="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm">
           Cấp TK hàng loạt ({{ selectedStudentIds().length }})
         </button>
@@ -47,7 +50,7 @@
       <table class="w-full text-sm text-left text-gray-600 dark:text-gray-300">
         <thead class="text-xs uppercase bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
           <tr>
-            <th *hasPermission="'STUDENT_PROVISION'" class="p-4 w-4">
+            <th *hasAnyPermission="['STUDENT_PROVISION', 'STUDENT_DELETE']" class="p-4 w-4">
               <input type="checkbox" (change)="toggleAllStudents($event)" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
             </th>
             <th class="px-6 py-3.5 font-semibold">Học viên</th>
@@ -56,7 +59,7 @@
             <th class="px-6 py-3.5 font-semibold">Phụ huynh & SĐT</th>
             <th class="px-6 py-3.5 font-semibold text-center">Trạng thái</th>
             <th *hasPermission="'STUDENT_PROVISION'" class="px-6 py-3.5 font-semibold text-center">Tài khoản</th>
-            <th *hasAnyPermission="['STUDENT_UPDATE', 'STUDENT_DELETE']" class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
+            <th *hasAnyPermission="['STUDENT_UPDATE', 'STUDENT_DELETE', 'ENROLLMENT_VIEW']" class="px-6 py-3.5 font-semibold text-right">Thao tác</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-50">
@@ -71,7 +74,7 @@
           </tr>
           
           <tr *ngFor="let std of students()" class="bg-white hover:bg-blue-50/50 transition duration-200">
-            <td *hasPermission="'STUDENT_PROVISION'" class="px-4 py-4 text-center">
+            <td *hasAnyPermission="['STUDENT_PROVISION', 'STUDENT_DELETE']" class="px-4 py-4 text-center">
               <input type="checkbox" [checked]="selectedStudentIds().includes(std.id)" (change)="toggleStudent(std.id)" class="w-4 h-4 rounded text-blue-600 cursor-pointer">
             </td>
             <td class="px-6 py-4">
@@ -112,7 +115,10 @@
                 + Cấp TK
               </button>
             </td>
-            <td *hasAnyPermission="['STUDENT_UPDATE', 'STUDENT_DELETE']" class="px-6 py-4 text-right space-x-3">
+            <td *hasAnyPermission="['STUDENT_UPDATE', 'STUDENT_DELETE', 'ENROLLMENT_VIEW']" class="px-6 py-4 text-right space-x-3 whitespace-nowrap">
+              <button *hasPermission="'ENROLLMENT_VIEW'" (click)="openViewClassesModal(std)" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 p-1.5 rounded-lg transition" title="Xem lớp học">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              </button>
               <button *hasPermission="'STUDENT_UPDATE'" (click)="openModal(std)" class="font-medium text-blue-600 hover:text-blue-800 transition">Sửa</button>
               <button *hasPermission="'STUDENT_DELETE'" (click)="onDelete(std.id)" class="font-medium text-red-600 hover:text-red-800 transition">Xóa</button>
             </td>
@@ -335,6 +341,100 @@
         <div class="flex justify-end gap-3 pt-2">
           <button (click)="closeDeleteModal()" class="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl">Hủy</button>
           <button (click)="confirmDelete()" [disabled]="isLoading()" class="px-4 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-xl disabled:opacity-50">Xóa</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Batch Delete Modal -->
+  @if (isBatchDeleteModalOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-sm w-full p-6 shadow-xl border border-gray-100 dark:border-gray-700 space-y-4">
+        <h3 class="text-base font-bold text-gray-900 dark:text-white">Xác nhận xóa hàng loạt</h3>
+        <p class="text-xs text-gray-500">Bạn sắp xóa <strong>{{ selectedStudentIds().length }}</strong> học viên. Những học viên đã có dữ liệu ràng buộc (điểm số, điểm danh, xếp lớp) sẽ được tự động bỏ qua để đảm bảo an toàn hệ thống. Bạn có chắc chắn muốn tiếp tục?</p>
+        <div class="flex justify-end gap-3 pt-2">
+          <button (click)="closeBatchDeleteModal()" class="px-4 py-2 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl">Hủy</button>
+          <button (click)="executeBatchDelete()" [disabled]="isLoading()" class="px-4 py-2 text-xs font-medium bg-rose-600 hover:bg-rose-700 text-white rounded-xl disabled:opacity-50">Tiến hành Xóa</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- View Classes Modal -->
+  @if (isViewClassesModalOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full p-6 shadow-xl border border-gray-100 dark:border-gray-700 flex flex-col max-h-[85vh]">
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Lịch sử Lớp học</h3>
+            <p class="text-sm text-gray-500 mt-1">
+              Học viên: <span class="font-bold text-blue-600">{{ selectedStudentForClasses()?.fullName }}</span> 
+              - Mã: <span class="font-mono text-gray-700">{{ selectedStudentForClasses()?.studentCode || 'HV#' + selectedStudentForClasses()?.id }}</span>
+            </p>
+          </div>
+          <button (click)="closeViewClassesModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto pr-2">
+          @if (isLoadingClasses()) {
+            <div class="py-12 flex flex-col items-center justify-center text-gray-500">
+              <svg class="animate-spin h-8 w-8 text-blue-500 mb-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              <span>Đang tải danh sách lớp...</span>
+            </div>
+          } @else if (studentEnrollments().length === 0) {
+            <div class="py-12 flex flex-col items-center justify-center text-gray-500 border-2 border-dashed border-gray-200 rounded-xl">
+              <svg class="w-12 h-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+              <p class="font-medium text-gray-600">Học viên này chưa đăng ký lớp học nào.</p>
+            </div>
+          } @else {
+            <div class="overflow-hidden border border-gray-200 rounded-xl">
+              <table class="w-full text-sm text-left text-gray-600">
+                <thead class="bg-gray-50 text-gray-500 uppercase text-xs border-b border-gray-200">
+                  <tr>
+                    <th class="px-4 py-3 font-semibold">Lớp học</th>
+                    <th class="px-4 py-3 font-semibold text-center">Ngày ĐK</th>
+                    <th class="px-4 py-3 font-semibold text-center">Trạng thái</th>
+                    <th class="px-4 py-3 font-semibold text-center">Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  @for (enroll of studentEnrollments(); track enroll.id) {
+                    <tr class="hover:bg-blue-50/50 transition">
+                      <td class="px-4 py-3">
+                        <div class="font-bold text-gray-900">{{ enroll.className }}</div>
+                        <div class="text-xs text-gray-500 font-mono">{{ enroll.classCode }}</div>
+                      </td>
+                      <td class="px-4 py-3 text-center text-gray-900 font-medium">
+                        {{ enroll.enrollmentDate | date:'dd/MM/yyyy' }}
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <span class="px-2.5 py-1 text-xs font-semibold rounded-full border"
+                              [ngClass]="{
+                                'bg-green-50 text-green-700 border-green-200': enroll.status === 'ACTIVE',
+                                'bg-blue-50 text-blue-700 border-blue-200': enroll.status === 'COMPLETED',
+                                'bg-amber-50 text-amber-700 border-amber-200': enroll.status === 'PENDING',
+                                'bg-red-50 text-red-700 border-red-200': enroll.status === 'DROPPED'
+                              }">
+                          {{ enroll.status === 'ACTIVE' ? 'Đang học' :
+                             enroll.status === 'COMPLETED' ? 'Đã học xong' :
+                             enroll.status === 'PENDING' ? 'Chờ xếp lớp' :
+                             enroll.status === 'DROPPED' ? 'Đã nghỉ' : enroll.status }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 text-center">
+                        <span *ngIf="enroll.note" [title]="enroll.note" class="text-gray-400 hover:text-blue-600 cursor-help">
+                          <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </span>
+                        <span *ngIf="!enroll.note" class="text-gray-300">-</span>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
         </div>
       </div>
     </div>

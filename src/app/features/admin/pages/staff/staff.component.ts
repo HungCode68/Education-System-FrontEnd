@@ -58,6 +58,8 @@ export class StaffComponent implements OnInit {
   isDeleteModalOpen = signal(false);
   idToDelete = signal<number | string | null>(null);
 
+  isBatchDeleteModalOpen = signal(false);
+
   selectedStaffIds = signal<(number | string)[]>([]);
   
   isAccountModalOpen = signal(false);
@@ -451,6 +453,36 @@ export class StaffComponent implements OnInit {
         this.isLoading.set(false);
         this.closeBatchAccountModal();
         this.toastService.error('Lỗi hệ thống', err.error?.message || 'Có lỗi xảy ra khi tạo hàng loạt!');
+      }
+    });
+  }
+
+  openBatchDeleteModal() {
+    if (this.selectedStaffIds().length === 0) return;
+    this.isBatchDeleteModalOpen.set(true);
+  }
+
+  closeBatchDeleteModal() {
+    this.isBatchDeleteModalOpen.set(false);
+  }
+
+  executeBatchDelete() {
+    const ids = this.selectedStaffIds();
+    if (ids.length === 0) return;
+
+    this.isLoading.set(true);
+    this.staffService.deleteMultiple(ids).subscribe({
+      next: (res: any) => {
+        this.loadData();
+        this.closeBatchDeleteModal();
+        this.selectedStaffIds.set([]);
+        const data = res.data || res;
+        this.toastService.success('Tiến trình xóa hoàn tất', `Thành công: ${data.success || 0}, Bỏ qua (vướng dữ liệu): ${data.skipped || 0}`);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.closeBatchDeleteModal();
+        this.toastService.error('Lỗi hệ thống', err.error?.message || 'Có lỗi xảy ra khi xóa hàng loạt!');
       }
     });
   }

@@ -11,6 +11,8 @@ import { Student, StudentStatus } from '../../../../modules/user/models/student.
 import { RoleService } from '../../../../modules/user/services/role.service';
 import { Role } from '../../../../modules/user/models/role.model';
 import { AuthService } from '../../../../core/services/auth.service';
+import { EnrollmentService } from '../../../../modules/academic/services/enrollment.service';
+import { Enrollment } from '../../../../modules/academic/models/enrollment.model';
 
 import { HasPermissionDirective } from '../../../../core/directives/has-permission.directive';
 
@@ -29,6 +31,7 @@ export class StudentComponent implements OnInit {
   private router = inject(Router);
   private roleService = inject(RoleService);
   private authService = inject(AuthService);
+  private enrollmentService = inject(EnrollmentService);
 
   isReadOnly = signal(false);
   isAcademic = signal(false);
@@ -64,11 +67,18 @@ export class StudentComponent implements OnInit {
   isDeleteModalOpen = signal(false);
   idToDelete = signal<number | string | null>(null);
 
+  isBatchDeleteModalOpen = signal(false);
+
   isBatchAccountModalOpen = signal(false);
   batchAccountForm!: FormGroup;
   isDistributeModalOpen = signal(false);
   selectedClassIds = signal<string[]>([]);
   distributeForm!: FormGroup;
+
+  isViewClassesModalOpen = signal(false);
+  selectedStudentForClasses = signal<Student | null>(null);
+  studentEnrollments = signal<Enrollment[]>([]);
+  isLoadingClasses = signal(false);
 
   ngOnInit() {
     const isAcad = this.router.url.startsWith('/academic');
@@ -444,6 +454,35 @@ export class StudentComponent implements OnInit {
     });
   }
 
+  openBatchDeleteModal() {
+    if (this.selectedStudentIds().length === 0) return;
+    this.isBatchDeleteModalOpen.set(true);
+  }
+
+  closeBatchDeleteModal() {
+    this.isBatchDeleteModalOpen.set(false);
+  }
+
+  executeBatchDelete() {
+    const ids = this.selectedStudentIds();
+    if (ids.length === 0) return;
+
+    this.isLoading.set(true);
+    this.studentService.deleteMultiple(ids).subscribe({
+      next: (res: any) => {
+        this.loadData();
+        this.closeBatchDeleteModal();
+        const data = res.data || res;
+        this.toastService.success('Tiến trình xóa hoàn tất', `Thành công: ${data.success || 0}, Bỏ qua (vướng dữ liệu): ${data.skipped || 0}`);
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.closeBatchDeleteModal();
+        this.toastService.error('Lỗi hệ thống', err.error?.message || 'Có lỗi xảy ra khi xóa hàng loạt!');
+      }
+    });
+  }
+
   onDelete(id: number | string) {
     this.idToDelete.set(id);
     this.isDeleteModalOpen.set(true);
@@ -456,20 +495,44 @@ export class StudentComponent implements OnInit {
 
   confirmDelete() {
     const id = this.idToDelete();
-    if (id !== null && id !== undefined) {
-      this.isLoading.set(true);
-      this.studentService.delete(id).subscribe({
-        next: () => {
-          this.loadData();
-          this.closeDeleteModal();
-          this.toastService.success('Đã xóa', 'Xóa hồ sơ học viên thành công!');
-        },
-        error: (err) => {
-          this.isLoading.set(false);
-          this.closeDeleteModal();
-          this.toastService.error('Lỗi xóa', err.error?.message || 'Không thể xóa học viên này!');
-        }
-      });
-    }
+    if (!id) return;
+
+    this.isLoading.set(true);
+    this.studentService.delete(id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => {
+        this.loadData();
+        this.closeDeleteModal();
+        this.toastService.success('Đã xóa', 'Xóa hồ sơ học viên thành công!');
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.closeDeleteModal();
+        this.toastService.error('Lỗi xóa', err.error?.message || 'Không thể xóa học viên này!');
+      }
+    });
+  }
+
+  // --- LOGIC XEM DANH SÁCH LỚP HỌC ---
+  openViewClassesModal(student: Student) {
+    this.selectedStudentForClasses.set(student);
+    this.isViewClassesModalOpen.set(true);
+    this.isLoadingClasses.set(true);
+    this.studentEnrollments.set([]);
+
+    this.enrollmentService.getByStudentId(student.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (enrollments) => {
+        this.studentEnrollments.set(enrollments || []);
+        this.isLoadingClasses.set(false);
+      },
+      error: (err) => {
+        this.isLoadingClasses.set(false);
+        this.toastService.error('Lỗi', 'Không thể tải danh sách lớp học của học viên này.');
+      }
+    });
+  }
+
+  closeViewClassesModal() {
+    this.isViewClassesModalOpen.set(false);
+    this.selectedStudentForClasses.set(null);
   }
 }

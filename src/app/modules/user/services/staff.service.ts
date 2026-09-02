@@ -60,6 +60,10 @@ export class StaffService {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }
 
+  deleteMultiple(ids: (number | string)[]): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/batch`, { body: ids });
+  }
+
   createAccount(id: number | string, roleIds: (number | string)[], email?: string): Observable<any> {
     const payload: any = { staffIds: [id], roleIds };
     if (email) payload.email = email;

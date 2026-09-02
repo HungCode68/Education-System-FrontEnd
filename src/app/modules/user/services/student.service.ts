@@ -64,6 +64,10 @@ export class StudentService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 
+  deleteMultiple(ids: (number | string)[]): Observable<any> {
+    return this.http.delete<any>(`${this.apiUrl}/batch`, { body: ids });
+  }
+
   /**
    * Backend endpoint: POST /api/v1/students/provision-accounts
    * Cấp tài khoản hàng loạt — nhận { studentIds: number[] }

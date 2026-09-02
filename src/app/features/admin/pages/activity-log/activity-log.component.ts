@@ -49,6 +49,8 @@ export class ActivityLogComponent implements OnInit {
   isDetailLoading = signal(false);
   selectedLog = signal<ActivityLog | null>(null);
   formattedJsonDetails = signal('');
+  formattedOldValue = signal('');
+  formattedNewValue = signal('');
 
   /** Module thực tế từ `@LogActivity` trên backend mới */
   readonly modules = [
@@ -219,15 +221,21 @@ export class ActivityLogComponent implements OnInit {
     this.isDetailLoading.set(true);
     this.selectedLog.set(log);
     this.formattedJsonDetails.set('');
+    this.formattedOldValue.set('');
+    this.formattedNewValue.set('');
 
     this.logService.getById(log.id).subscribe({
       next: detail => {
         this.selectedLog.set(detail);
         this.formattedJsonDetails.set(this.formatDetails(detail.details));
+        this.formattedOldValue.set(this.formatDetails(detail.oldValue));
+        this.formattedNewValue.set(this.formatDetails(detail.newValue));
         this.isDetailLoading.set(false);
       },
       error: () => {
         this.formattedJsonDetails.set(this.formatDetails(log.details));
+        this.formattedOldValue.set(this.formatDetails(log.oldValue));
+        this.formattedNewValue.set(this.formatDetails(log.newValue));
         this.isDetailLoading.set(false);
         this.toastService.error('Lỗi', 'Không thể tải chi tiết nhật ký.');
       }
@@ -239,6 +247,8 @@ export class ActivityLogComponent implements OnInit {
     this.isDetailLoading.set(false);
     this.selectedLog.set(null);
     this.formattedJsonDetails.set('');
+    this.formattedOldValue.set('');
+    this.formattedNewValue.set('');
   }
 
   copyToClipboard() {

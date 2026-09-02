@@ -9,6 +9,10 @@ export interface ActivityLog {
   action: string;
   targetType?: string | null;
   targetId?: string | null;
+  method?: string | null;
+  endpoint?: string | null;
+  oldValue?: string | null;
+  newValue?: string | null;
   details?: string | null;
   status: LogStatus;
   ipAddress?: string | null;

@@ -273,12 +273,15 @@ export class SidebarComponent implements OnInit {
   }
 
   getPortalName(): string {
-    const url = this.router.url;
-    if (url.startsWith('/admin')) return 'Quản trị Hệ thống';
-    if (url.startsWith('/academic')) return 'Bộ phận Đào tạo';
-    if (url.startsWith('/hr')) return 'Bộ phận Nhân sự';
-    if (url.startsWith('/teacher')) return 'Cổng Giảng viên';
-    if (url.startsWith('/student')) return 'Cổng Học viên';
+    const roles = this.authService.authState().roles || [];
+    const hasRole = (role: string) => roles.some(r => r === role || r === `ROLE_${role}` || r.endsWith(`_${role}`));
+
+    if (hasRole('ADMIN') || hasRole('SYSTEM_ADMIN')) return 'Quản trị Hệ thống';
+    if (hasRole('ACADEMIC') || hasRole('TRAINING')) return 'Bộ phận Đào tạo';
+    if (hasRole('HR') || hasRole('NHAN_SU')) return 'Bộ phận Nhân sự';
+    if (roles.some(r => r.includes('TEACHER'))) return 'Cổng Giảng viên';
+    if (hasRole('STUDENT')) return 'Cổng Học viên';
+    
     return 'Cổng Nội bộ';
   }
 
