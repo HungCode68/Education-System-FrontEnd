@@ -983,10 +983,28 @@ export class ClassDetailComponent implements OnInit {
 
     if (srcType === 'EXTERNAL' || matType === 'EXTERNAL_LINK' || matType === 'link') {
       let embedUrl = rawUrl;
-      if (embedUrl.includes('youtube.com/watch?v=')) {
-        embedUrl = embedUrl.replace('watch?v=', 'embed/');
-      } else if (embedUrl.includes('youtu.be/')) {
-        embedUrl = embedUrl.replace('youtu.be/', 'youtube.com/embed/');
+      try {
+        const urlObj = new URL(embedUrl);
+        if (urlObj.hostname.includes('youtube.com') && urlObj.pathname === '/watch') {
+          const videoId = urlObj.searchParams.get('v');
+          if (videoId) {
+            urlObj.searchParams.delete('v');
+            const remainingParams = urlObj.searchParams.toString();
+            embedUrl = `https://www.youtube.com/embed/${videoId}${remainingParams ? '?' + remainingParams : ''}`;
+          }
+        } else if (urlObj.hostname.includes('youtu.be')) {
+          const videoId = urlObj.pathname.substring(1);
+          const remainingParams = urlObj.searchParams.toString();
+          embedUrl = `https://www.youtube.com/embed/${videoId}${remainingParams ? '?' + remainingParams : ''}`;
+        } else if (urlObj.hostname.includes('drive.google.com') && urlObj.pathname.includes('/view')) {
+          embedUrl = embedUrl.replace('/view', '/preview');
+        }
+      } catch (e) {
+        if (embedUrl.includes('youtube.com/watch?v=')) {
+          embedUrl = embedUrl.replace('watch?v=', 'embed/');
+        } else if (embedUrl.includes('youtu.be/')) {
+          embedUrl = embedUrl.replace('youtu.be/', 'youtube.com/embed/');
+        }
       }
       safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
     } else if (rawUrl) {

@@ -65,19 +65,7 @@ export class ReportingComponent implements OnInit {
   });
 
   // Computed Averages across classes
-  overallAvgAttendance = computed(() => {
-    const list = this.classMetrics();
-    if (list.length === 0) return 0;
-    const sum = list.reduce((acc, curr) => acc + (Number(curr.averageAttendanceRate) || 0), 0);
-    return Math.round((sum / list.length) * 10) / 10;
-  });
 
-  overallAvgScore = computed(() => {
-    const list = this.classMetrics();
-    if (list.length === 0) return 0;
-    const sum = list.reduce((acc, curr) => acc + (Number(curr.averageAssignmentScore) || 0), 0);
-    return Math.round((sum / list.length) * 10) / 10;
-  });
 
   totalDroppedInClasses = computed(() => {
     return this.classMetrics().reduce((acc, curr) => acc + (curr.droppedStudents || 0), 0);

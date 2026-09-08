@@ -33,8 +33,8 @@ export class ActivityLogService {
     if (module) params = params.set('module', module);
     if (action) params = params.set('action', action);
     if (status) params = params.set('status', status);
-    if (startDate) params = params.set('startDate', `${startDate}T00:00:00`);
-    if (endDate) params = params.set('endDate', `${endDate}T23:59:59`);
+    if (startDate) params = params.set('startDate', new Date(`${startDate}T00:00:00`).toISOString());
+    if (endDate) params = params.set('endDate', new Date(`${endDate}T23:59:59`).toISOString());
 
     return this.http.get<SpringPage<ActivityLog>>(this.apiUrl, { params });
   }

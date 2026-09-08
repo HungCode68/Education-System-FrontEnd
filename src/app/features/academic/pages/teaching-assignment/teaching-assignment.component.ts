@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal, computed, DestroyRef, ChangeDetectio
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { merge } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { TeachingAssignmentService } from '../../../../modules/teaching/services/teaching-assignment.service';
 import { ClassesService } from '../../../../modules/academic/services/class.service';
@@ -39,6 +40,7 @@ export class TeachingAssignmentComponent implements OnInit {
   pageSize = signal(10);
   isLoading = signal(false);
   searchControl = new FormControl('');
+  classFilterControl = new FormControl('');
 
   // Modal State
   isModalOpen = signal(false);
@@ -85,9 +87,10 @@ export class TeachingAssignmentComponent implements OnInit {
   }
 
   private setupSearch() {
-    this.searchControl.valueChanges.pipe(
-      debounceTime(400),
-      distinctUntilChanged(),
+    merge(
+      this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged()),
+      this.classFilterControl.valueChanges
+    ).pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(() => {
       this.currentPage.set(1);
@@ -111,11 +114,16 @@ export class TeachingAssignmentComponent implements OnInit {
 
   loadData() {
     this.isLoading.set(true);
-    this.assignmentService.getAllAssignments({
+    const params: any = {
       page: this.currentPage(),
       size: this.pageSize(),
       keyword: this.searchControl.value || ''
-    }).subscribe({
+    };
+    if (this.classFilterControl.value) {
+      params.classId = this.classFilterControl.value;
+    }
+    
+    this.assignmentService.getAllAssignments(params).subscribe({
       next: (response) => {
         this.assignments.set(response.content || []);
         this.totalElements.set(response.totalElements || 0);

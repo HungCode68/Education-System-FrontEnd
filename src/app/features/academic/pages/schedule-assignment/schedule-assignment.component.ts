@@ -473,7 +473,8 @@ export class ScheduleAssignmentComponent implements OnInit {
   getEventsForCell(dateStr: string, slot: any): any[] {
     return this.calendarTimetable().filter(item => 
       item.date === dateStr && 
-      (item.startTime === slot.startTime || item.startTime?.substring(0, 5) === slot.startTime.substring(0, 5))
+      (item.startTime === slot.startTime || item.startTime?.substring(0, 5) === slot.startTime.substring(0, 5)) &&
+      (item.endTime === slot.endTime || item.endTime?.substring(0, 5) === slot.endTime.substring(0, 5))
     );
   }
 

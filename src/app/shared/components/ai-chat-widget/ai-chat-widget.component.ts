@@ -52,8 +52,13 @@ export class AiChatWidgetComponent implements AfterViewChecked {
 
   @ViewChild('chatScrollContainer') private chatScrollContainer!: ElementRef;
 
+  private prevMessages: ChatMessage[] = [];
+
   ngAfterViewChecked() {
-    this.scrollToBottom();
+    if (this.messages() !== this.prevMessages) {
+      this.scrollToBottom();
+      this.prevMessages = this.messages();
+    }
   }
 
   toggleChat() {
@@ -62,6 +67,8 @@ export class AiChatWidgetComponent implements AfterViewChecked {
       this.loadSessions();
       if (this.messages().length === 0 && !this.sessionId()) {
         this.startNewChat();
+      } else {
+        setTimeout(() => this.scrollToBottom(), 100);
       }
     }
   }
