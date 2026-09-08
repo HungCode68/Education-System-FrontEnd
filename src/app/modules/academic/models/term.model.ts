@@ -1,4 +1,4 @@
-export type TermStatus = 'ACTIVE' | 'CLOSED';
+export type TermStatus = 'ACTIVE' | 'CLOSED' | 'PENDING';
 
 export interface Term {
   id: number | string;
